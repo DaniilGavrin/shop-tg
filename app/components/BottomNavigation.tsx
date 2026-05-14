@@ -38,9 +38,9 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
       className={`${styles.navigation} ${styles[activeTab]}`}
       aria-label="Главное меню"
     >
-      <div className={styles.highlight} aria-hidden="true" />
-
       <div className={styles.inner}>
+        <div className={styles.highlight} aria-hidden="true" />
+
         {items.map((item) => {
           const isActive = activeTab === item.id;
 

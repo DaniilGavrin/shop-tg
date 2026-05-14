@@ -41,12 +41,11 @@
   max-width: 460px;
   height: 84px;
   margin: 0 auto;
-  padding: 0 30px;
 }
 
 .highlight {
   position: absolute;
-  top: -28px;
+  top: -25px;
   left: var(--active-x);
   z-index: 1;
   width: 60px;
