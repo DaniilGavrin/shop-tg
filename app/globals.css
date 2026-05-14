@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Fallback для браузера */
+  /* Дефолтные цвета (если вдруг Telegram не передаст) */
   --tg-bg: #ffffff;
   --tg-text: #000000;
   --tg-button: #3390ec;
@@ -12,13 +12,15 @@
   --tg-hint: #888888;
 }
 
-/* Telegram подставляет эти переменные автоматически */
 body {
+  /* Используем переменные Telegram, фоллбэк на дефолтные */
   background-color: var(--tg-theme-bg-color, var(--tg-bg));
   color: var(--tg-theme-text-color, var(--tg-text));
+  margin: 0;
+  padding: 0;
 }
 
-button {
-  background-color: var(--tg-theme-button-color, var(--tg-button));
-  color: var(--tg-theme-button-text-color, var(--tg-button-text));
+/* Принудительный сброс для инпутов и кнопок */
+button, input, select {
+  font-family: inherit;
 }
