@@ -1,65 +1,101 @@
-import Image from "next/image";
+'use client';
+import { useEffect, useState } from 'react';
+
+// Тип для данных пользователя из Telegram
+interface TGUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+}
 
 export default function Home() {
+  const [user, setUser] = useState<TGUser | null>(null);
+  const [isTG, setIsTG] = useState(false);
+
+  useEffect(() => {
+    // Проверяем, запущено ли внутри Telegram
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp;
+      setIsTG(true);
+      
+      // Расширяем на весь экран
+      tg.expand();
+      
+      // Получаем данные пользователя
+      if (tg.initDataUnsafe?.user) {
+        setUser(tg.initDataUnsafe.user);
+      }
+      
+      // Настраиваем цвета под тему
+      document.documentElement.style.setProperty('--tg-bg', tg.backgroundColor || '#ffffff');
+      document.documentElement.style.setProperty('--tg-text', tg.textColor || '#000000');
+    }
+  }, []);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-lg opacity-60 animate-pulse">
+          {isTG ? 'Загрузка профиля...' : 'Откройте в Telegram'}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="p-4 max-w-md mx-auto space-y-4">
+      <header className="flex items-center gap-3 pb-4 border-b border-[var(--tg-hint)]/20">
+        {user.photo_url && (
+          <img src={user.photo_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+        )}
+        <div>
+          <h1 className="text-xl font-bold">ByteWizard Shop</h1>
+          <p className="text-sm opacity-60">@{user.username || user.id}</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </header>
+
+      {/* Карточки товаров */}
+      <ProductCard 
+        title="🎮 Шаблон игры"
+        desc="Готовый шаблон + документация"
+        priceStars={50}
+        priceTON={1.2}
+        onAddToCart={() => console.log('Added to cart')}
+      />
+      <ProductCard 
+        title="🛠 Консультация"
+        desc="1 час диагностики + отчёт"
+        priceStars={30}
+        priceTON={0.8}
+        onAddToCart={() => console.log('Added to cart')}
+      />
+
+      <footer className="pt-6 text-center text-xs opacity-40">
+        TON + Telegram Mini Apps
+      </footer>
+    </main>
+  );
+}
+
+// Простой компонент карточки (можно вынести в /components)
+function ProductCard({ title, desc, priceStars, priceTON, onAddToCart }: {
+  title: string; desc: string; priceStars: number; priceTON: number; onAddToCart: () => void;
+}) {
+  return (
+    <div className="p-4 rounded-xl bg-[var(--tg-secondary)] border border-[var(--tg-hint)]/10">
+      <h3 className="font-semibold">{title}</h3>
+      <p className="text-sm opacity-60 mt-1">{desc}</p>
+      <div className="flex justify-between items-center mt-3">
+        <span className="font-mono text-sm">{priceStars} ⭐ / {priceTON} TON</span>
+        <button 
+          onClick={onAddToCart}
+          className="px-4 py-2 rounded-lg font-medium hover:opacity-90 transition text-sm"
+        >
+          В корзину
+        </button>
+      </div>
     </div>
   );
 }
