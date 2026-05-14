@@ -3,75 +3,56 @@
 @tailwind utilities;
 
 :root {
-  /* Киберпанк палитра */
-  --cp-bg: #0a0a0f;
-  --cp-surface: #151520;
-  --cp-primary: #00f0ff;
-  --cp-secondary: #ff00ff;
-  --cp-accent: #7000ff;
-  --cp-text: #e0e0ff;
-  --cp-text-dim: #8888aa;
-  --cp-border: #2a2a4a;
-  --cp-success: #00ff88;
-  --cp-warning: #ffcc00;
+  --bg-deep: #05020a;
+  --bg-surface: #130a24;
+  --neon-purple: #b026ff;
+  --neon-pink: #ff007f;
+  --neon-blue: #00f0ff;
+  --text-main: #f3e8ff;
+  --text-dim: #8b5cf6;
 }
 
 body {
-  background: var(--cp-bg);
-  color: var(--cp-text);
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow-x: hidden; /* Чтобы меню не ломало скролл */
 }
 
-/* Неоновые эффекты */
-.neon-text {
-  text-shadow: 0 0 10px var(--cp-primary), 0 0 20px var(--cp-primary);
+/* Неоновые тексты */
+.text-neon-purple {
+  color: var(--neon-purple);
+  text-shadow: 0 0 10px rgba(176, 38, 255, 0.7);
 }
 
-.neon-border {
-  box-shadow: 0 0 5px var(--cp-primary), inset 0 0 5px var(--cp-primary);
+.text-neon-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 10px rgba(255, 0, 127, 0.7);
 }
 
-.cyber-card {
-  background: linear-gradient(135deg, var(--cp-surface) 0%, #1a1a2e 100%);
-  border: 1px solid var(--cp-border);
-  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.1);
-  transition: all 0.3s ease;
+/* Стекло */
+.glass {
+  background: rgba(19, 10, 36, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(176, 38, 255, 0.3);
 }
 
-.cyber-card:hover {
-  border-color: var(--cp-primary);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+/* Сайдбар анимации */
+.sidebar-enter {
+  transform: translateX(0);
+}
+.sidebar-exit {
+  transform: translateX(-100%);
 }
 
-.cyber-button {
-  background: linear-gradient(135deg, var(--cp-primary) 0%, var(--cp-accent) 100%);
-  color: #000;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border: none;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s;
+/* Скроллбар */
+::-webkit-scrollbar {
+  width: 6px;
 }
-
-.cyber-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(0, 240, 255, 0.6);
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
 }
-
-.cyber-button:active {
-  transform: translateY(0);
-}
-
-/* Анимация пульсации */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-pulse-slow {
-  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+::-webkit-scrollbar-thumb {
+  background: var(--neon-purple);
+  border-radius: 3px;
 }

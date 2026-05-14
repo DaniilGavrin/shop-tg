@@ -3,142 +3,162 @@ import { useEffect, useState } from 'react';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       tg.expand();
+      // Красим хедер телеграма в цвет фона, чтобы было бесшовно
+      tg.setHeaderColor('#05020a'); 
+      
       if (tg.initDataUnsafe?.user) {
         setUser(tg.initDataUnsafe.user);
       } else {
-        setUser({ first_name: 'User', id: 0 });
+        setUser({ first_name: 'User', last_name: '' });
       }
     }
   }, []);
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="text-4xl mb-4 neon-text">⚡</div>
-          <p className="text-cyan-400 animate-pulse-slow">Connecting to network...</p>
+      <div className="flex items-center justify-center h-screen bg-[#05020a]">
+        <div className="text-2xl font-bold animate-pulse text-purple-500">
+          LOADING SYSTEM...
         </div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-4 max-w-md mx-auto">
-      {/* Шапка с неоновым эффектом */}
-      <header className="mb-8 pt-4">
-        <div className="flex items-center gap-4">
-          {/* АВАТАРКА: ЖЁСТКИЙ ФИКС РАЗМЕРА */}
-          <div 
-            style={{ 
-              width: '48px', 
-              height: '48px', 
-              minWidth: '48px',
-              minHeight: '48px',
-              maxWidth: '48px',
-              maxHeight: '48px'
-            }}
-            className="rounded-full overflow-hidden border-2 border-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.5)]"
+    <div className="relative min-h-screen">
+      
+      {/* --- ГЛАВНАЯ СТРАНИЦА --- */}
+      <div className={`transition-all duration-300 ${menuOpen ? 'opacity-30 scale-95 blur-sm' : 'opacity-100 scale-100'}`}>
+        
+        {/* Верхняя панель (Хедер) */}
+        <header className="flex justify-between items-center p-4">
+          <button 
+            onClick={() => setMenuOpen(true)}
+            className="text-3xl text-purple-400 hover:text-purple-300 transition"
           >
-            {user.photo_url ? (
-              <img 
-                src={user.photo_url} 
-                alt="User" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-xl font-bold">
-                {user.first_name[0]?.toUpperCase()}
+            ☰
+          </button>
+          <div className="w-8 h-8 rounded-full border border-purple-500/50 bg-purple-900/20 flex items-center justify-center">
+             {/* Иконка магазина или лого */}
+             <span className="text-xs">🛒</span>
+          </div>
+        </header>
+
+        {/* Центральный контент */}
+        <main className="flex flex-col items-center justify-center h-[70vh] px-6 text-center">
+          
+          {/* Логотип/Название */}
+          <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(176,38,255,0.5)]">
+            ByteWizard
+          </h1>
+          <p className="text-lg font-light tracking-widest text-purple-300 uppercase mb-8">
+            Shop
+          </p>
+
+          {/* Декоративная линия */}
+          <div className="w-24 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent rounded-full mb-6 shadow-[0_0_10px_#b026ff]"></div>
+
+          <p className="text-gray-400 text-sm max-w-xs leading-relaxed">
+            Цифровые товары и услуги в экосистеме TON.
+            <br/>
+            <span className="text-purple-500 mt-2 block">System Online</span>
+          </p>
+
+          {/* Кнопка призыва к действию (заглушка) */}
+          <button className="mt-8 px-8 py-3 rounded-full bg-purple-600/20 border border-purple-500 text-purple-200 hover:bg-purple-600 hover:text-white hover:shadow-[0_0_20px_#b026ff] transition-all duration-300">
+            Explore
+          </button>
+        </main>
+      </div>
+
+      {/* --- БОКОВОЕ МЕНЮ (DRAWER) --- */}
+      {/* Оверлей (фон затемнения) */}
+      {menuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
+      {/* Панель меню */}
+      <div 
+        className={`fixed top-0 left-0 h-full w-3/4 max-w-[300px] bg-[#0a0514] border-r border-purple-500/30 z-50 transform transition-transform duration-300 ease-in-out shadow-[10px_0_30px_rgba(0,0,0,0.8)] ${
+          menuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          
+          {/* Шапка меню (Крестик) */}
+          <div className="flex justify-end p-4">
+            <button 
+              onClick={() => setMenuOpen(false)}
+              className="text-2xl text-gray-400 hover:text-white transition"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Профиль (По центру) */}
+          <div className="flex flex-col items-center mt-4 px-6">
+            {/* Аватарка */}
+            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-b from-purple-500 to-pink-600 mb-4 shadow-[0_0_20px_rgba(176,38,255,0.6)]">
+              <div className="w-full h-full rounded-full overflow-hidden bg-black">
+                {user.photo_url ? (
+                  <img 
+                    src={user.photo_url} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl">👤</div>
+                )}
               </div>
-            )}
-          </div>
-          
-          <div>
-            <h1 className="text-2xl font-bold neon-text text-cyan-400">
-              BYTEWIZARD
-            </h1>
-            <p className="text-sm text-gray-400">
-              ID: <span className="text-purple-400 font-mono">{user.id}</span>
-            </p>
-          </div>
-        </div>
-      </header>
+            </div>
 
-      {/* Карточка товара в киберпанк стиле */}
-      <div className="cyber-card rounded-xl p-5 mb-6">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="text-3xl">🎮</div>
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-cyan-300 mb-1">
-              GAME_TEMPLATE_v2.0
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Готовый шаблон игры + документация + исходники
+            {/* Имя и Фамилия */}
+            <h2 className="text-xl font-bold text-white text-center">
+              {user.first_name} {user.last_name || ''}
+            </h2>
+            <p className="text-sm text-purple-400 font-mono mt-1">
+              ID: {user.id}
             </p>
+
+            {/* Статус */}
+            <div className="mt-4 px-3 py-1 rounded-full bg-purple-900/40 border border-purple-500/30 text-xs text-purple-300">
+               Active
+            </div>
           </div>
-        </div>
-        
-        <div className="border-t border-gray-700 pt-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-yellow-400">50</span>
-            <span className="text-yellow-400 text-sm">⭐</span>
-            <span className="text-gray-500 text-xs ml-2">|</span>
-            <span className="text-purple-400 text-sm ml-2">1.2 TON</span>
+
+          {/* Разделитель */}
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent my-6"></div>
+
+          {/* Пункты меню (Заглушки) */}
+          <nav className="flex flex-col gap-2 px-6">
+            <button className="text-left px-4 py-3 rounded-lg hover:bg-purple-800/30 text-gray-300 hover:text-purple-200 transition border border-transparent hover:border-purple-500/30">
+              🛒 Мои покупки
+            </button>
+            <button className="text-left px-4 py-3 rounded-lg hover:bg-purple-800/30 text-gray-300 hover:text-purple-200 transition border border-transparent hover:border-purple-500/30">
+              💰 Кошелёк
+            </button>
+            <button className="text-left px-4 py-3 rounded-lg hover:bg-purple-800/30 text-gray-300 hover:text-purple-200 transition border border-transparent hover:border-purple-500/30">
+              ️ Настройки
+            </button>
+          </nav>
+
+          {/* Футер меню */}
+          <div className="mt-auto p-6 text-center">
+            <p className="text-[10px] text-gray-600">ByteWizard Shop v1.0</p>
           </div>
-          
-          <button 
-            className="cyber-button px-6 py-2 rounded text-sm"
-            onClick={() => alert('Добавлено в систему')}
-          >
-            BUY NOW
-          </button>
+
         </div>
       </div>
 
-      {/* Вторая карточка */}
-      <div className="cyber-card rounded-xl p-5 mb-6">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="text-3xl">🛠</div>
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-cyan-300 mb-1">
-              TECH_SUPPORT
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              1 час консультации + диагностика + отчёт
-            </p>
-          </div>
-        </div>
-        
-        <div className="border-t border-gray-700 pt-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-yellow-400">30</span>
-            <span className="text-yellow-400 text-sm">⭐</span>
-            <span className="text-gray-500 text-xs ml-2">|</span>
-            <span className="text-purple-400 text-sm ml-2">0.8 TON</span>
-          </div>
-          
-          <button 
-            className="cyber-button px-6 py-2 rounded text-sm"
-            onClick={() => alert('Добавлено в систему')}
-          >
-            BUY NOW
-          </button>
-        </div>
-      </div>
-
-      {/* Футер */}
-      <footer className="text-center pt-6 pb-4">
-        <p className="text-xs text-gray-600 font-mono">
-          [ SYSTEM: ONLINE ]
-        </p>
-        <p className="text-xs text-gray-700 mt-1">
-          POWERED BY TON NETWORK
-        </p>
-      </footer>
-    </main>
+    </div>
   );
 }
