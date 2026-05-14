@@ -1,0 +1,135 @@
+.navigation {
+  --active-x: 25%;
+
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  height: calc(84px + env(safe-area-inset-bottom, 0px));
+  overflow: visible;
+  border-top: 1px solid rgba(176, 38, 255, 0.46);
+  background:
+    linear-gradient(90deg, rgba(176, 38, 255, 0.18), rgba(0, 240, 255, 0.12), rgba(255, 0, 127, 0.16)),
+    linear-gradient(180deg, rgba(26, 9, 50, 0.98), rgba(7, 3, 16, 0.99));
+  box-shadow:
+    0 -18px 42px rgba(0, 0, 0, 0.42),
+    0 -1px 24px rgba(176, 38, 255, 0.28);
+}
+
+.navigation::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-purple), transparent);
+  opacity: 0.8;
+}
+
+.profile {
+  --active-x: 75%;
+}
+
+.inner {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  max-width: 460px;
+  height: 84px;
+  margin: 0 auto;
+  padding: 0 30px;
+}
+
+.highlight {
+  position: absolute;
+  top: -28px;
+  left: var(--active-x);
+  z-index: 1;
+  width: 60px;
+  height: 60px;
+  border: 1px solid rgba(0, 240, 255, 0.48);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(28, 9, 55, 0.98), rgba(9, 3, 18, 1));
+  box-shadow:
+    0 0 0 10px var(--bg-deep),
+    0 0 22px rgba(176, 38, 255, 0.68),
+    0 0 30px rgba(0, 240, 255, 0.28);
+  transform: translateX(-50%);
+  transition: left 240ms ease;
+}
+
+.item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 84px;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  padding: 0 0 12px;
+  color: rgba(243, 232, 255, 0.44);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: currentColor;
+  transition:
+    color 200ms ease,
+    filter 200ms ease,
+    transform 240ms ease;
+}
+
+.icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.label {
+  overflow: hidden;
+  max-width: 96px;
+  color: currentColor;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    color 200ms ease,
+    text-shadow 200ms ease;
+}
+
+.active {
+  color: var(--neon-purple);
+}
+
+.active .icon {
+  color: var(--text-main);
+  filter:
+    drop-shadow(0 0 7px rgba(176, 38, 255, 0.95))
+    drop-shadow(0 0 12px rgba(0, 240, 255, 0.36));
+  transform: translateY(-38px);
+}
+
+.active .label {
+  color: var(--neon-purple);
+  text-shadow: 0 0 12px rgba(176, 38, 255, 0.65);
+}
