@@ -10,14 +10,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ru">
       <head>
-        {/*  Принудительно подключаем SDK Telegram */}
-        <script src="https://telegram.org/js/telegram-web-app.js"></script>
-        {/* Запрещаем кеширование, чтобы видеть изменения сразу */}
+        <script src="https://telegram.org/js/telegram-web-app.js" />
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
       </head>
-      <body className="min-h-screen bg-[var(--tg-bg)] text-[var(--tg-text)] font-sans antialiased">
+      <body className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-main)] font-sans antialiased">
         {children}
       </body>
     </html>
