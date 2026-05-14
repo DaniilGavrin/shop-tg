@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, type ReactNode } from 'react';
 
 type TelegramUser = {
   id: number;
@@ -9,35 +10,89 @@ type TelegramUser = {
   photo_url?: string;
 };
 
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        expand: () => void;
+        setHeaderColor: (color: string) => void;
+        setBackgroundColor: (color: string) => void;
+        initDataUnsafe?: {
+          user?: TelegramUser;
+        };
+      };
+    };
+  }
+}
+
 type Tab = 'home' | 'history' | 'profile';
 
+const tabs: Array<{
+  id: Tab;
+  label: string;
+  icon: ReactNode;
+}> = [
+  {
+    id: 'home',
+    label: 'Главная',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5H15v-6H9v6H3.5a.5.5 0 0 1-.5-.5v-9.7Z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'history',
+    label: 'История',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M7 20a1.2 1.2 0 0 1-1.2-1.2v-4.6A1.2 1.2 0 0 1 7 13h1.6a1.2 1.2 0 0 1 1.2 1.2v4.6A1.2 1.2 0 0 1 8.6 20H7Zm4.2 0a1.2 1.2 0 0 1-1.2-1.2V8.2A1.2 1.2 0 0 1 11.2 7h1.6A1.2 1.2 0 0 1 14 8.2v10.6a1.2 1.2 0 0 1-1.2 1.2h-1.6Zm4.2 0a1.2 1.2 0 0 1-1.2-1.2V5.2A1.2 1.2 0 0 1 15.4 4H17a1.2 1.2 0 0 1 1.2 1.2v13.6A1.2 1.2 0 0 1 17 20h-1.6Z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'profile',
+    label: 'Профиль',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm-7.2 7.3c.7-3.8 3.5-5.7 7.2-5.7s6.5 1.9 7.2 5.7c.1.8-.5 1.5-1.3 1.5H6.1c-.8 0-1.4-.7-1.3-1.5Z" />
+      </svg>
+    ),
+  },
+];
+
+function getTelegramUser() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.Telegram?.WebApp?.initDataUnsafe?.user ?? null;
+}
+
 export default function Home() {
-  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [user] = useState<TelegramUser | null>(() => getTelegramUser());
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
+    const tg = window.Telegram?.WebApp;
+
     if (tg) {
       tg.expand();
       tg.setHeaderColor('#05020a');
       tg.setBackgroundColor('#05020a');
-      
-      if (tg.initDataUnsafe?.user) {
-        setUser(tg.initDataUnsafe.user);
-      }
     }
+
     const timer = setTimeout(() => setLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05020a]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-deep)]">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-[#b026ff] animate-spin" 
-               style={{borderTopColor: 'transparent'}} />
-          <p className="text-[#8b5cf6] animate-pulse">Загрузка...</p>
+          <div className="mx-auto mb-4 h-14 w-14 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" />
+          <p className="animate-pulse text-[var(--text-dim)]">Загрузка...</p>
         </div>
       </div>
     );
@@ -45,148 +100,79 @@ export default function Home() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05020a]">
-        <p className="text-[#8b5cf6]">Ошибка загрузки</p>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-deep)] px-6 text-center">
+        <p className="text-[var(--text-dim)]">Ошибка загрузки</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#05020a] text-[#f3e8ff] relative" 
-         style={{paddingBottom: '100px'}}>
-      
-      {/* === КОНТЕНТ === */}
-      <div className="px-6 pt-12">
-        <h1 className="text-3xl font-bold text-center mb-2"
-            style={{
-              background: 'linear-gradient(135deg, #b026ff, #ff007f)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow: '0 0 30px rgba(176, 38, 255, 0.5)'
-            }}>
-          ByteWizard Shop
-        </h1>
-
-        <div className="mt-8 p-6 rounded-2xl text-center"
-             style={{
-               background: 'rgba(19, 10, 36, 0.85)',
-               backdropFilter: 'blur(12px)',
-               border: '1px solid rgba(176, 38, 255, 0.3)',
-               boxShadow: '0 0 20px rgba(176, 38, 255, 0.3)'
-             }}>
-          <p className="text-lg mb-2">
-            Добро пожаловать, <span style={{color: '#b026ff', fontWeight: '600'}}>{user.first_name}</span>! 👋
-          </p>
-          <p className="text-sm" style={{color: '#8b5cf6'}}>
-            Здесь скоро будут твои заказы и настройки
+    <main className="min-h-screen bg-[var(--bg-deep)] px-5 pt-12 text-[var(--text-main)]">
+      <section className="mx-auto flex min-h-[calc(100vh-128px)] max-w-md flex-col pb-32">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gradient-neon">ByteWizard Shop</h1>
+          <p className="mt-8 rounded-[28px] border border-[rgba(176,38,255,0.28)] bg-[var(--bg-surface-glass)] px-5 py-5 text-lg shadow-[0_0_22px_rgba(176,38,255,0.22)] backdrop-blur-md">
+            Добро пожаловать,{' '}
+            <span className="font-semibold text-[var(--neon-purple)]">{user.first_name}</span>!
           </p>
         </div>
 
         {activeTab === 'history' && (
-          <div className="mt-6 p-8 rounded-2xl text-center"
-               style={{
-                 background: 'rgba(19, 10, 36, 0.85)',
-                 backdropFilter: 'blur(12px)',
-                 border: '1px solid rgba(176, 38, 255, 0.2)'
-               }}>
-            <div className="text-5xl mb-4">📋</div>
-            <p style={{color: '#8b5cf6'}}>История пуста</p>
+          <div className="mt-6 rounded-[24px] border border-[rgba(176,38,255,0.18)] bg-[rgba(19,10,36,0.62)] px-5 py-6 text-center text-[var(--text-dim)]">
+            История пуста
           </div>
         )}
 
         {activeTab === 'profile' && (
-          <div className="mt-6 p-6 rounded-2xl"
-               style={{
-                 background: 'rgba(19, 10, 36, 0.85)',
-                 backdropFilter: 'blur(12px)',
-                 border: '1px solid rgba(176, 38, 255, 0.3)'
-               }}>
-            <div className="flex flex-col items-center">
-              <div className="w-24 h-24 rounded-full mb-4 flex items-center justify-center text-4xl"
-                   style={{
-                     background: 'linear-gradient(135deg, #b026ff, #ff007f)',
-                     boxShadow: '0 0 20px rgba(176, 38, 255, 0.5)'
-                   }}>
-                {user.photo_url ? (
-                  <img src={user.photo_url} alt="avatar" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  '👤'
+          <div className="mt-6 rounded-[24px] border border-[rgba(176,38,255,0.22)] bg-[rgba(19,10,36,0.68)] px-5 py-6 backdrop-blur-md">
+            <div className="flex items-center gap-4">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-2xl font-bold shadow-[0_0_22px_rgba(176,38,255,0.45)]">
+                {user.first_name[0]}
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-semibold">
+                  {user.first_name} {user.last_name || ''}
+                </h2>
+                {user.username && (
+                  <p className="truncate text-sm text-[var(--neon-blue)]">@{user.username}</p>
                 )}
               </div>
-              <h2 className="text-xl font-bold">{user.first_name} {user.last_name || ''}</h2>
-              {user.username && <p className="text-sm mt-1" style={{color: '#00f0ff'}}>@{user.username}</p>}
             </div>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* === НИЖНЕЕ МЕНЮ === */}
-      <div className="fixed bottom-6 left-4 right-4 z-50">
-        <div className="flex items-end justify-center gap-2">
-          
-          {/* Главная */}
-          <button
-            onClick={() => setActiveTab('home')}
-            className="flex-1 max-w-[100px] py-4 px-3 rounded-2xl transition-all duration-300 relative"
-            style={{
-              background: activeTab === 'home' 
-                ? 'linear-gradient(135deg, #b026ff, #ff007f)'
-                : 'rgba(19, 10, 36, 0.85)',
-              backdropFilter: 'blur(12px)',
-              border: `1px solid ${activeTab === 'home' ? '#b026ff' : 'rgba(176, 38, 255, 0.2)'}`,
-              boxShadow: activeTab === 'home' ? '0 0 20px rgba(176, 38, 255, 0.5)' : 'none',
-              transform: activeTab === 'home' ? 'translateY(-10px)' : 'translateY(0)',
-              color: activeTab === 'home' ? 'white' : '#8b5cf6'
-            }}>
-            <svg className="w-6 h-6 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/>
-            </svg>
-            <span className="text-xs font-medium">Главная</span>
-          </button>
+      <nav className="safe-area-pb fixed inset-x-0 bottom-0 z-50 px-4 pb-4" aria-label="Главное меню">
+        <div className="mx-auto grid h-[76px] max-w-md grid-cols-3 items-end rounded-[34px] border border-[rgba(176,38,255,0.2)] bg-[rgba(247,241,255,0.96)] px-4 shadow-[0_14px_42px_rgba(0,0,0,0.38),0_0_28px_rgba(176,38,255,0.22)] backdrop-blur-xl">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
 
-          {/* История */}
-          <button
-            onClick={() => setActiveTab('history')}
-            className="flex-1 max-w-[100px] py-4 px-3 rounded-2xl transition-all duration-300"
-            style={{
-              background: activeTab === 'history' 
-                ? 'linear-gradient(135deg, #b026ff, #ff007f)'
-                : 'rgba(19, 10, 36, 0.85)',
-              backdropFilter: 'blur(12px)',
-              border: `1px solid ${activeTab === 'history' ? '#b026ff' : 'rgba(176, 38, 255, 0.2)'}`,
-              boxShadow: activeTab === 'history' ? '0 0 20px rgba(176, 38, 255, 0.5)' : 'none',
-              transform: activeTab === 'history' ? 'translateY(-10px)' : 'translateY(0)',
-              color: activeTab === 'history' ? 'white' : '#8b5cf6'
-            }}>
-            <svg className="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-xs font-medium">История</span>
-          </button>
-
-          {/* Профиль */}
-          <button
-            onClick={() => setActiveTab('profile')}
-            className="flex-1 max-w-[100px] py-4 px-3 rounded-2xl transition-all duration-300"
-            style={{
-              background: activeTab === 'profile' 
-                ? 'linear-gradient(135deg, #b026ff, #ff007f)'
-                : 'rgba(19, 10, 36, 0.85)',
-              backdropFilter: 'blur(12px)',
-              border: `1px solid ${activeTab === 'profile' ? '#b026ff' : 'rgba(176, 38, 255, 0.2)'}`,
-              boxShadow: activeTab === 'profile' ? '0 0 20px rgba(176, 38, 255, 0.5)' : 'none',
-              transform: activeTab === 'profile' ? 'translateY(-10px)' : 'translateY(0)',
-              color: activeTab === 'profile' ? 'white' : '#8b5cf6'
-            }}>
-            <svg className="w-6 h-6 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
-            <span className="text-xs font-medium">Профиль</span>
-          </button>
-
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className="relative flex h-[76px] flex-col items-center justify-end pb-3 text-[11px] font-semibold transition-colors duration-200"
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span
+                  className={[
+                    'grid h-7 w-7 place-items-center transition-all duration-300 [&>svg]:h-[22px] [&>svg]:w-[22px] [&>svg]:fill-current',
+                    isActive
+                      ? '-translate-y-9 scale-125 rounded-full bg-white text-[var(--neon-purple)] shadow-[0_8px_28px_rgba(176,38,255,0.32)] ring-[10px] ring-[rgba(176,38,255,0.12)]'
+                      : 'text-[#a7a9b4]',
+                  ].join(' ')}
+                >
+                  {tab.icon}
+                </span>
+                <span className={isActive ? 'text-[var(--neon-purple)]' : 'text-[#a7a9b4]'}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
-      </div>
-    </div>
+      </nav>
+    </main>
   );
 }
