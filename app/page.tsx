@@ -26,7 +26,6 @@ export default function Home() {
         setUser(tg.initDataUnsafe.user);
       }
     }
-    // Фолбэк: если через 2 сек нет данных — показываем демо
     const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
@@ -45,7 +44,7 @@ export default function Home() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-deep)]">
-        <p className="text-[var(--text-dim)]">Не удалось загрузить данные пользователя</p>
+        <p className="text-[var(--text-dim)]">Не удалось загрузить данные</p>
       </div>
     );
   }
@@ -53,35 +52,58 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-main)] relative overflow-hidden">
       
-      {/* === ГЛАВНЫЙ ЭКРАН === */}
+      {/* === КНОПКА МЕНЮ (верхний левый угол) === */}
       <button 
         onClick={() => setMenuOpen(true)}
-        className="absolute top-4 left-4 z-10 text-3xl text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition-colors drop-shadow-[0_0_8px_rgba(176,38,255,0.8)]"
+        className="fixed top-4 left-4 z-30 text-3xl p-2 rounded-lg 
+                   text-[var(--neon-purple)] hover:text-[var(--neon-pink)]
+                   transition-all duration-200
+                   shadow-[0_0_15px_rgba(176,38,255,0.8)]
+                   hover:shadow-[0_0_25px_rgba(255,0,127,0.9)]
+                   active:scale-95"
         aria-label="Открыть меню"
       >
         ☰
       </button>
 
-      <div className="flex items-center justify-center h-screen px-4">
-        <h1 className="text-4xl md:text-5xl font-bold text-gradient-neon drop-shadow-[0_0_25px_rgba(176,38,255,0.6)] text-center">
+      {/* === ЗАГОЛОВОК (сверху по центру) === */}
+      <header className="pt-16 pb-8 px-4">
+        <h1 className="text-3xl md:text-4xl font-bold text-center text-gradient-neon 
+                       drop-shadow-[0_0_20px_rgba(176,38,255,0.7)]">
           ByteWizard Shop
         </h1>
-      </div>
+      </header>
 
-      {/* === БОКОВОЕ МЕНЮ === */}
+      {/* === ОСНОВНОЙ КОНТЕНТ === */}
+      <main className="px-4 pb-8">
+        {/* Сюда потом добавишь карточки товаров, категории и т.д. */}
+        <div className="glass rounded-2xl p-6 border border-[var(--neon-purple)]/20">
+          <p className="text-[var(--text-dim)] text-center">
+            Добро пожаловать, {user.first_name}! 👋<br/>
+            Здесь скоро будут твои заказы и настройки.
+          </p>
+        </div>
+      </main>
+
+      {/* === ЗАТЕМНЕНИЕ ФОНА === */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-20 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/70 z-40 backdrop-blur-sm transition-opacity"
           onClick={() => setMenuOpen(false)}
         />
       )}
 
-      <div className={`sidebar fixed top-0 left-0 h-full w-72 bg-[var(--bg-surface)] z-30 border-r border-[var(--neon-purple)]/30 ${menuOpen ? 'open' : ''}`}>
+      {/* === SIDEBAR (исправленная анимация) === */}
+      <div className={`fixed top-0 left-0 h-full w-72 bg-[var(--bg-surface)] z-50 
+                      border-r border-[var(--neon-purple)]/30
+                      transition-transform duration-300 ease-out
+                      ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Кнопка закрытия */}
         <button 
           onClick={() => setMenuOpen(false)}
-          className="absolute top-4 right-4 text-xl text-gray-400 hover:text-[var(--neon-pink)] transition-colors"
+          className="absolute top-4 right-4 text-2xl text-gray-400 
+                     hover:text-[var(--neon-pink)] transition-colors p-2"
         >
           ✕
         </button>
@@ -90,22 +112,26 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center h-full px-6 py-8">
           
           {/* Аватар с неоном */}
-          <div className="avatar-neon mb-5">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-[var(--bg-deep)]">
+          <div className="relative mb-5">
+            <div className="absolute inset-0 rounded-full 
+                          bg-gradient-to-br from-[var(--neon-purple)] to-[var(--neon-pink)] 
+                          blur-md opacity-70 animate-pulse" />
+            <div className="relative w-24 h-24 rounded-full overflow-hidden 
+                          border-2 border-[var(--neon-purple)] bg-[var(--bg-deep)]">
               {user.photo_url ? (
                 <img 
                   src={user.photo_url} 
-                  alt={`${user.first_name}'s avatar`} 
+                  alt="avatar" 
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl">👤</div>
+                <div className="w-full h-full flex items-center justify-center text-4xl">👤</div>
               )}
             </div>
           </div>
 
           {/* Имя */}
-          <p className="text-xl font-bold text-center text-[var(--text-main)]">
+          <p className="text-xl font-bold text-center">
             {user.first_name} {user.last_name || ''}
           </p>
           
@@ -117,14 +143,18 @@ export default function Home() {
           )}
 
           {/* Декоративная линия */}
-          <div className="w-16 h-px bg-gradient-to-r from-transparent via-[var(--neon-purple)] to-transparent my-6" />
+          <div className="w-20 h-px bg-gradient-to-r from-transparent via-[var(--neon-purple)] to-transparent my-6" />
 
-          {/* Кнопки меню (заглушки) */}
+          {/* Кнопки меню */}
           <nav className="w-full space-y-2">
             {['🛒 Мои заказы', '⚙️ Настройки', '❓ Помощь'].map((item, i) => (
               <button
                 key={i}
-                className="w-full text-left px-4 py-3 rounded-lg glass hover:bg-[var(--neon-purple)]/10 hover:border-[var(--neon-pink)]/50 transition-all text-[var(--text-main)] hover:text-[var(--neon-pink)]"
+                className="w-full text-left px-4 py-3 rounded-xl glass 
+                           hover:bg-[var(--neon-purple)]/10 
+                           hover:border-[var(--neon-pink)]/50 
+                           transition-all text-[var(--text-main)] 
+                           hover:text-[var(--neon-pink)]"
               >
                 {item}
               </button>
