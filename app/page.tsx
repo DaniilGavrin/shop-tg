@@ -27,16 +27,17 @@ export default function Home() {
         setUser(tg.initDataUnsafe.user);
       }
     }
-    const timer = setTimeout(() => setLoading(false), 1500);
+    const timer = setTimeout(() => setLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading && !user) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-deep)]">
+      <div className="min-h-screen flex items-center justify-center bg-[#05020a]">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-[var(--neon-purple)] animate-pulse" />
-          <p className="text-[var(--text-dim)] animate-pulse">Загрузка...</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-[#b026ff] animate-spin" 
+               style={{borderTopColor: 'transparent'}} />
+          <p className="text-[#8b5cf6] animate-pulse">Загрузка...</p>
         </div>
       </div>
     );
@@ -44,212 +45,148 @@ export default function Home() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-deep)] pb-20">
-        <p className="text-[var(--text-dim)]">Не удалось загрузить данные</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#05020a]">
+        <p className="text-[#8b5cf6]">Ошибка загрузки</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-main)] relative pb-24">
+    <div className="min-h-screen bg-[#05020a] text-[#f3e8ff] relative" 
+         style={{paddingBottom: '100px'}}>
       
-      {/* === ГЛАВНЫЙ ЭКРАН === */}
-      {activeTab === 'home' && (
-        <main className="px-6 pt-12 pb-8">
-          <h1 className="text-3xl font-bold text-center mb-3 text-gradient-neon 
-                         drop-shadow-[0_0_20px_rgba(176,38,255,0.7)]">
-            ByteWizard Shop
-          </h1>
+      {/* === КОНТЕНТ === */}
+      <div className="px-6 pt-12">
+        <h1 className="text-3xl font-bold text-center mb-2"
+            style={{
+              background: 'linear-gradient(135deg, #b026ff, #ff007f)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 0 30px rgba(176, 38, 255, 0.5)'
+            }}>
+          ByteWizard Shop
+        </h1>
 
-          <div className="glass rounded-2xl p-6 border border-[var(--neon-purple)]/20">
-            <p className="text-lg text-center">
-              Добро пожаловать, <span className="text-[var(--neon-purple)] font-semibold">{user.first_name}</span>! 👋
-            </p>
-            <p className="text-[var(--text-dim)] text-center text-sm mt-2">
-              Здесь скоро будут твои заказы и настройки
-            </p>
-          </div>
-        </main>
-      )}
-
-      {/* === ЭКРАН ИСТОРИИ === */}
-      {activeTab === 'history' && (
-        <main className="px-6 pt-12 pb-8">
-          <h1 className="text-3xl font-bold text-center mb-8 text-gradient-neon">
-            История
-          </h1>
-          
-          <div className="glass rounded-2xl p-8 border border-[var(--neon-purple)]/20 text-center">
-            <div className="text-5xl mb-4">📋</div>
-            <p className="text-[var(--text-dim)]">История заказов пока пуста</p>
-          </div>
-        </main>
-      )}
-
-      {/* === ЭКРАН ПРОФИЛЯ === */}
-      {activeTab === 'profile' && (
-        <main className="px-6 pt-12 pb-8">
-          <h1 className="text-3xl font-bold text-center mb-8 text-gradient-neon">
-            Профиль
-          </h1>
-
-          <div className="glass rounded-2xl p-6 border border-[var(--neon-purple)]/30 mb-6">
-            <div className="flex flex-col items-center mb-6">
-              <div className="relative mb-4">
-                <div className="absolute inset-0 rounded-full 
-                              bg-gradient-to-br from-[var(--neon-purple)] to-[var(--neon-pink)] 
-                              blur-md opacity-70" />
-                <div className="relative w-24 h-24 rounded-full overflow-hidden 
-                              border-2 border-[var(--neon-purple)] bg-[var(--bg-deep)]">
-                  {user.photo_url ? (
-                    <img 
-                      src={user.photo_url} 
-                      alt="avatar" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl bg-[var(--bg-surface)]">
-                      👤
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <h2 className="text-xl font-bold text-center">
-                {user.first_name} {user.last_name || ''}
-              </h2>
-              
-              {user.username ? (
-                <p className="text-sm text-[var(--neon-blue)] font-mono mt-1">@{user.username}</p>
-              ) : (
-                <p className="text-xs text-[var(--text-dim)] font-mono mt-1">ID: {user.id}</p>
-              )}
-            </div>
-
-            <div className="h-px bg-gradient-to-r from-transparent via-[var(--neon-purple)] to-transparent my-4" />
-
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-2 border-b border-[var(--neon-purple)]/10">
-                <span className="text-[var(--text-dim)]">Telegram ID</span>
-                <span className="font-mono text-[var(--neon-purple)]">{user.id}</span>
-              </div>
-            </div>
-          </div>
-        </main>
-      )}
-
-      {/* === НИЖНЯЯ НАВИГАЦИЯ (как на скриншоте) === */}
-      <nav className="fixed bottom-6 left-4 right-4 z-50 safe-area-pb">
-        <div className="glass rounded-2xl border border-[var(--neon-purple)]/30 backdrop-blur-xl px-2 py-2">
-          <div className="flex items-center justify-around relative">
-            
-            {/* Кнопка: Главная */}
-            <button
-              onClick={() => setActiveTab('home')}
-              className={`flex-1 flex flex-col items-center justify-center py-3 px-3 
-                          transition-all duration-300 relative
-                          ${activeTab === 'home' 
-                            ? 'text-[var(--neon-purple)]' 
-                            : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              {activeTab === 'home' && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-14 h-14 
-                              bg-gradient-to-br from-[var(--neon-purple)] to-[var(--neon-pink)] 
-                              rounded-full flex items-center justify-center
-                              shadow-[0_0_20px_rgba(176,38,255,0.6)]
-                              border-2 border-[var(--neon-purple)]/50">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/>
-                  </svg>
-                </div>
-              )}
-              <svg 
-                className={`w-6 h-6 mb-1 ${activeTab === 'home' ? 'opacity-0' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <span className={`text-xs font-medium ${activeTab === 'home' ? 'opacity-0' : ''}`}>
-                Главная
-              </span>
-            </button>
-
-            {/* Кнопка: История */}
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`flex-1 flex flex-col items-center justify-center py-3 px-3 
-                          transition-all duration-300 relative
-                          ${activeTab === 'history' 
-                            ? 'text-[var(--neon-purple)]' 
-                            : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              {activeTab === 'history' && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-14 h-14 
-                              bg-gradient-to-br from-[var(--neon-purple)] to-[var(--neon-pink)] 
-                              rounded-full flex items-center justify-center
-                              shadow-[0_0_20px_rgba(176,38,255,0.6)]
-                              border-2 border-[var(--neon-purple)]/50">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              )}
-              <svg 
-                className={`w-6 h-6 mb-1 ${activeTab === 'history' ? 'opacity-0' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className={`text-xs font-medium ${activeTab === 'history' ? 'opacity-0' : ''}`}>
-                История
-              </span>
-            </button>
-
-            {/* Кнопка: Профиль */}
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`flex-1 flex flex-col items-center justify-center py-3 px-3 
-                          transition-all duration-300 relative
-                          ${activeTab === 'profile' 
-                            ? 'text-[var(--neon-purple)]' 
-                            : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              {activeTab === 'profile' && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-14 h-14 
-                              bg-gradient-to-br from-[var(--neon-purple)] to-[var(--neon-pink)] 
-                              rounded-full flex items-center justify-center
-                              shadow-[0_0_20px_rgba(176,38,255,0.6)]
-                              border-2 border-[var(--neon-purple)]/50">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                </div>
-              )}
-              <svg 
-                className={`w-6 h-6 mb-1 ${activeTab === 'profile' ? 'opacity-0' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className={`text-xs font-medium ${activeTab === 'profile' ? 'opacity-0' : ''}`}>
-                Профиль
-              </span>
-            </button>
-
-          </div>
+        <div className="mt-8 p-6 rounded-2xl text-center"
+             style={{
+               background: 'rgba(19, 10, 36, 0.85)',
+               backdropFilter: 'blur(12px)',
+               border: '1px solid rgba(176, 38, 255, 0.3)',
+               boxShadow: '0 0 20px rgba(176, 38, 255, 0.3)'
+             }}>
+          <p className="text-lg mb-2">
+            Добро пожаловать, <span style={{color: '#b026ff', fontWeight: '600'}}>{user.first_name}</span>! 👋
+          </p>
+          <p className="text-sm" style={{color: '#8b5cf6'}}>
+            Здесь скоро будут твои заказы и настройки
+          </p>
         </div>
-      </nav>
 
+        {activeTab === 'history' && (
+          <div className="mt-6 p-8 rounded-2xl text-center"
+               style={{
+                 background: 'rgba(19, 10, 36, 0.85)',
+                 backdropFilter: 'blur(12px)',
+                 border: '1px solid rgba(176, 38, 255, 0.2)'
+               }}>
+            <div className="text-5xl mb-4">📋</div>
+            <p style={{color: '#8b5cf6'}}>История пуста</p>
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="mt-6 p-6 rounded-2xl"
+               style={{
+                 background: 'rgba(19, 10, 36, 0.85)',
+                 backdropFilter: 'blur(12px)',
+                 border: '1px solid rgba(176, 38, 255, 0.3)'
+               }}>
+            <div className="flex flex-col items-center">
+              <div className="w-24 h-24 rounded-full mb-4 flex items-center justify-center text-4xl"
+                   style={{
+                     background: 'linear-gradient(135deg, #b026ff, #ff007f)',
+                     boxShadow: '0 0 20px rgba(176, 38, 255, 0.5)'
+                   }}>
+                {user.photo_url ? (
+                  <img src={user.photo_url} alt="avatar" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  '👤'
+                )}
+              </div>
+              <h2 className="text-xl font-bold">{user.first_name} {user.last_name || ''}</h2>
+              {user.username && <p className="text-sm mt-1" style={{color: '#00f0ff'}}>@{user.username}</p>}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* === НИЖНЕЕ МЕНЮ === */}
+      <div className="fixed bottom-6 left-4 right-4 z-50">
+        <div className="flex items-end justify-center gap-2">
+          
+          {/* Главная */}
+          <button
+            onClick={() => setActiveTab('home')}
+            className="flex-1 max-w-[100px] py-4 px-3 rounded-2xl transition-all duration-300 relative"
+            style={{
+              background: activeTab === 'home' 
+                ? 'linear-gradient(135deg, #b026ff, #ff007f)'
+                : 'rgba(19, 10, 36, 0.85)',
+              backdropFilter: 'blur(12px)',
+              border: `1px solid ${activeTab === 'home' ? '#b026ff' : 'rgba(176, 38, 255, 0.2)'}`,
+              boxShadow: activeTab === 'home' ? '0 0 20px rgba(176, 38, 255, 0.5)' : 'none',
+              transform: activeTab === 'home' ? 'translateY(-10px)' : 'translateY(0)',
+              color: activeTab === 'home' ? 'white' : '#8b5cf6'
+            }}>
+            <svg className="w-6 h-6 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/>
+            </svg>
+            <span className="text-xs font-medium">Главная</span>
+          </button>
+
+          {/* История */}
+          <button
+            onClick={() => setActiveTab('history')}
+            className="flex-1 max-w-[100px] py-4 px-3 rounded-2xl transition-all duration-300"
+            style={{
+              background: activeTab === 'history' 
+                ? 'linear-gradient(135deg, #b026ff, #ff007f)'
+                : 'rgba(19, 10, 36, 0.85)',
+              backdropFilter: 'blur(12px)',
+              border: `1px solid ${activeTab === 'history' ? '#b026ff' : 'rgba(176, 38, 255, 0.2)'}`,
+              boxShadow: activeTab === 'history' ? '0 0 20px rgba(176, 38, 255, 0.5)' : 'none',
+              transform: activeTab === 'history' ? 'translateY(-10px)' : 'translateY(0)',
+              color: activeTab === 'history' ? 'white' : '#8b5cf6'
+            }}>
+            <svg className="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-xs font-medium">История</span>
+          </button>
+
+          {/* Профиль */}
+          <button
+            onClick={() => setActiveTab('profile')}
+            className="flex-1 max-w-[100px] py-4 px-3 rounded-2xl transition-all duration-300"
+            style={{
+              background: activeTab === 'profile' 
+                ? 'linear-gradient(135deg, #b026ff, #ff007f)'
+                : 'rgba(19, 10, 36, 0.85)',
+              backdropFilter: 'blur(12px)',
+              border: `1px solid ${activeTab === 'profile' ? '#b026ff' : 'rgba(176, 38, 255, 0.2)'}`,
+              boxShadow: activeTab === 'profile' ? '0 0 20px rgba(176, 38, 255, 0.5)' : 'none',
+              transform: activeTab === 'profile' ? 'translateY(-10px)' : 'translateY(0)',
+              color: activeTab === 'profile' ? 'white' : '#8b5cf6'
+            }}>
+            <svg className="w-6 h-6 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span className="text-xs font-medium">Профиль</span>
+          </button>
+
+        </div>
+      </div>
     </div>
   );
 }
