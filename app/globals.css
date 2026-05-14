@@ -3,24 +3,75 @@
 @tailwind utilities;
 
 :root {
-  /* Дефолтные цвета (если вдруг Telegram не передаст) */
-  --tg-bg: #ffffff;
-  --tg-text: #000000;
-  --tg-button: #3390ec;
-  --tg-button-text: #ffffff;
-  --tg-secondary: #f0f0f0;
-  --tg-hint: #888888;
+  /* Киберпанк палитра */
+  --cp-bg: #0a0a0f;
+  --cp-surface: #151520;
+  --cp-primary: #00f0ff;
+  --cp-secondary: #ff00ff;
+  --cp-accent: #7000ff;
+  --cp-text: #e0e0ff;
+  --cp-text-dim: #8888aa;
+  --cp-border: #2a2a4a;
+  --cp-success: #00ff88;
+  --cp-warning: #ffcc00;
 }
 
 body {
-  /* Используем переменные Telegram, фоллбэк на дефолтные */
-  background-color: var(--tg-theme-bg-color, var(--tg-bg));
-  color: var(--tg-theme-text-color, var(--tg-text));
+  background: var(--cp-bg);
+  color: var(--cp-text);
   margin: 0;
   padding: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Принудительный сброс для инпутов и кнопок */
-button, input, select {
-  font-family: inherit;
+/* Неоновые эффекты */
+.neon-text {
+  text-shadow: 0 0 10px var(--cp-primary), 0 0 20px var(--cp-primary);
+}
+
+.neon-border {
+  box-shadow: 0 0 5px var(--cp-primary), inset 0 0 5px var(--cp-primary);
+}
+
+.cyber-card {
+  background: linear-gradient(135deg, var(--cp-surface) 0%, #1a1a2e 100%);
+  border: 1px solid var(--cp-border);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.cyber-card:hover {
+  border-color: var(--cp-primary);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+.cyber-button {
+  background: linear-gradient(135deg, var(--cp-primary) 0%, var(--cp-accent) 100%);
+  color: #000;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.cyber-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(0, 240, 255, 0.6);
+}
+
+.cyber-button:active {
+  transform: translateY(0);
+}
+
+/* Анимация пульсации */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
