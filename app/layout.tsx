@@ -4,6 +4,7 @@ import Script from 'next/script';
 import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { ClientLayout } from './ClientLayout';
 
 const cyberFont = Exo_2({
   subsets: ['cyrillic', 'latin'],
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${cyberFont.className} min-h-screen overflow-x-hidden bg-[var(--bg-deep)] text-[var(--text-main)] antialiased`}
       >
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-        {children}
+        <ClientLayout>{children}</ClientLayout>
 
         {/* Аналитика — в конце body, после контента */}
         <Analytics />
