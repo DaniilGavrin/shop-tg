@@ -17,9 +17,3 @@ export default function Home() {
   return <HomeIntro user={user} />;
 }
 
-// Segmented page - load only when needed
-export const metadata = {
-  title: 'ByteWizard Shop - Home',
-  description: 'Главная страница магазина',
-};
-
