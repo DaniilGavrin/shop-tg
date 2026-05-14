@@ -1,101 +1,116 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-// Тип для данных пользователя из Telegram
-interface TGUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-}
-
 export default function Home() {
-  const [user, setUser] = useState<TGUser | null>(null);
-  const [isTG, setIsTG] = useState(false);
+  const [debug, setDebug] = useState<string[]>([]);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // Проверяем, запущено ли внутри Telegram
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-      const tg = (window as any).Telegram.WebApp;
-      setIsTG(true);
-      
-      // Расширяем на весь экран
-      tg.expand();
-      
-      // Получаем данные пользователя
-      if (tg.initDataUnsafe?.user) {
-        setUser(tg.initDataUnsafe.user);
-      }
-      
-      // Настраиваем цвета под тему
-      document.documentElement.style.setProperty('--tg-bg', tg.backgroundColor || '#ffffff');
-      document.documentElement.style.setProperty('--tg-text', tg.textColor || '#000000');
+    const logs: string[] = [];
+    
+    // 1. Проверяем окно
+    logs.push(`Window loaded: ${typeof window !== 'undefined'}`);
+    
+    if (typeof window === 'undefined') {
+      setDebug(logs);
+      return;
     }
+
+    // 2. Проверяем Telegram объект
+    const tg = (window as any).Telegram;
+    logs.push(`window.Telegram exists: ${!!tg}`);
+    
+    if (!tg) {
+      logs.push('💡 Открой через t.me/твой_бот/shortname');
+      setDebug(logs);
+      return;
+    }
+
+    // 3. Проверяем WebApp
+    const webApp = tg.WebApp;
+    logs.push(`Telegram.WebApp exists: ${!!webApp}`);
+    
+    if (!webApp) {
+      setDebug(logs);
+      return;
+    }
+
+    // 4. Успех — расширяем и получаем данные
+    logs.push('✅ Telegram Mini App detected');
+    webApp.expand?.();
+    logs.push(`initDataUnsafe: ${!!webApp.initDataUnsafe}`);
+    
+    if (webApp.initDataUnsafe?.user) {
+      setUser(webApp.initDataUnsafe.user);
+      logs.push(`User: ${webApp.initDataUnsafe.user.first_name}`);
+    }
+    
+    // 5. Применяем цвета
+    if (webApp.backgroundColor) {
+      document.documentElement.style.setProperty('--tg-bg', webApp.backgroundColor);
+    }
+    if (webApp.textColor) {
+      document.documentElement.style.setProperty('--tg-text', webApp.textColor);
+    }
+    
+    setDebug(logs);
   }, []);
 
-  if (!user) {
+  // Если есть пользователь — показываем магазин
+  if (user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-lg opacity-60 animate-pulse">
-          {isTG ? 'Загрузка профиля...' : 'Откройте в Telegram'}
-        </p>
-      </div>
+      <main className="p-4 max-w-md mx-auto space-y-4">
+        <header className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+          {user.photo_url && (
+            <img src={user.photo_url} alt="" className="w-12 h-12 rounded-full" />
+          )}
+          <div>
+            <h1 className="text-xl font-bold">ByteWizard Shop</h1>
+            <p className="text-sm opacity-60">@{user.username || `ID:${user.id}`}</p>
+          </div>
+        </header>
+
+        <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800">
+          <h3 className="font-semibold">🎮 Шаблон игры</h3>
+          <p className="text-sm opacity-60 mt-1">Готовый шаблон + инструкция</p>
+          <div className="flex justify-between items-center mt-3">
+            <span className="font-mono">50 ⭐ / 1.2 TON</span>
+            <button className="px-4 py-2 rounded-lg bg-blue-500 text-white text-sm">
+              В корзину
+            </button>
+          </div>
+        </div>
+      </main>
     );
   }
 
+  // Если нет — показываем отладку
   return (
-    <main className="p-4 max-w-md mx-auto space-y-4">
-      <header className="flex items-center gap-3 pb-4 border-b border-[var(--tg-hint)]/20">
-        {user.photo_url && (
-          <img src={user.photo_url} alt="" className="w-12 h-12 rounded-full object-cover" />
-        )}
-        <div>
-          <h1 className="text-xl font-bold">ByteWizard Shop</h1>
-          <p className="text-sm opacity-60">@{user.username || user.id}</p>
-        </div>
-      </header>
-
-      {/* Карточки товаров */}
-      <ProductCard 
-        title="🎮 Шаблон игры"
-        desc="Готовый шаблон + документация"
-        priceStars={50}
-        priceTON={1.2}
-        onAddToCart={() => console.log('Added to cart')}
-      />
-      <ProductCard 
-        title="🛠 Консультация"
-        desc="1 час диагностики + отчёт"
-        priceStars={30}
-        priceTON={0.8}
-        onAddToCart={() => console.log('Added to cart')}
-      />
-
-      <footer className="pt-6 text-center text-xs opacity-40">
-        TON + Telegram Mini Apps
-      </footer>
-    </main>
-  );
-}
-
-// Простой компонент карточки (можно вынести в /components)
-function ProductCard({ title, desc, priceStars, priceTON, onAddToCart }: {
-  title: string; desc: string; priceStars: number; priceTON: number; onAddToCart: () => void;
-}) {
-  return (
-    <div className="p-4 rounded-xl bg-[var(--tg-secondary)] border border-[var(--tg-hint)]/10">
-      <h3 className="font-semibold">{title}</h3>
-      <p className="text-sm opacity-60 mt-1">{desc}</p>
-      <div className="flex justify-between items-center mt-3">
-        <span className="font-mono text-sm">{priceStars} ⭐ / {priceTON} TON</span>
-        <button 
-          onClick={onAddToCart}
-          className="px-4 py-2 rounded-lg font-medium hover:opacity-90 transition text-sm"
-        >
-          В корзину
-        </button>
+    <main className="p-4 font-mono text-sm">
+      <h2 className="text-lg font-bold mb-4">🔍 Диагностика Mini App</h2>
+      <div className="space-y-2">
+        {debug.map((line, i) => (
+          <div key={i} className="p-2 rounded bg-gray-100 dark:bg-gray-800">
+            {line}
+          </div>
+        ))}
       </div>
-    </div>
+      
+      <div className="mt-6 p-3 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+        <p className="font-semibold">Чек-лист:</p>
+        <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
+          <li>Открываешь ссылку вида <code>https://t.me/БОТ/shortname</code>?</li>
+          <li>В @BotFather → Mini App → URL указан <code>https://*.vercel.app</code>?</li>
+          <li>После смены URL в BotFather нажал <code>/revoke</code> и заново создал приложение?</li>
+        </ul>
+      </div>
+      
+      <button 
+        onClick={() => window.location.reload()}
+        className="mt-4 w-full py-2 rounded bg-blue-500 text-white"
+      >
+        🔄 Перезагрузить
+      </button>
+    </main>
   );
 }
