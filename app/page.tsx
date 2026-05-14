@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { BottomNavigation } from './components/BottomNavigation';
+import { CartScreen } from './components/CartScreen';
+import { CatalogScreen } from './components/CatalogScreen';
 import { HomeIntro } from './components/HomeIntro';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ProfilePanel } from './components/ProfilePanel';
@@ -31,8 +33,9 @@ export default function Home() {
   return (
     <main className="app-shell">
       <section className="app-content">
-        <HomeIntro user={user} />
-
+        {activeTab === 'home' && <HomeIntro user={user} />}
+        {activeTab === 'catalog' && <CatalogScreen />}
+        {activeTab === 'cart' && <CartScreen />}
         {activeTab === 'profile' && <ProfilePanel user={user} />}
       </section>
 

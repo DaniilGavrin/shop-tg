@@ -16,7 +16,7 @@ export type TelegramWebApp = {
   };
 };
 
-export type AppTab = 'home' | 'profile';
+export type AppTab = 'home' | 'catalog' | 'cart' | 'profile';
 
 declare global {
   interface Window {
