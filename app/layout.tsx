@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import './globals.css';
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: 'ByteWizard Shop',
@@ -17,6 +19,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-main)] font-sans antialiased">
         {children}
+
+        {/* Аналитика — в конце body, после контента */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

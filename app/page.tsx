@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 type TelegramUser = {
   id: number;
@@ -163,8 +162,6 @@ export default function Home() {
 
         </div>
       </div>
-
-      <SpeedInsights />
     </div>
   );
 }
