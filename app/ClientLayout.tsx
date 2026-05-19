@@ -16,21 +16,22 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const locale = pathname.split('/')[1] || 'ru';
 
   const getActiveTab = (): AppTab => {
-    if (pathname === '/') return 'home';
-    if (pathname === '/catalog') return 'catalog';
-    if (pathname === '/cart') return 'cart';
-    if (pathname === '/profile') return 'profile';
+    if (pathname === `/${locale}`) return 'home';
+    if (pathname.includes('/catalog')) return 'catalog';
+    if (pathname.includes('/cart')) return 'cart';
+    if (pathname.includes('/profile')) return 'profile';
     return 'home';
   };
 
   const handleTabChange = (tab: AppTab) => {
     const routes: Record<AppTab, string> = {
-      home: '/',
-      catalog: '/catalog',
-      cart: '/cart',
-      profile: '/profile',
+      home: `/${locale}`,
+      catalog: `/${locale}/catalog`,
+      cart: `/${locale}/cart`,
+      profile: `/${locale}/profile`,
     };
     router.push(routes[tab]);
   };
