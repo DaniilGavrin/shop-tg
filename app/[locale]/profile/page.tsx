@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
+import { useTranslation } from '../../lib/i18n/useTranslation';
 import type { TelegramUser } from '../../types/telegram';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { getDisplayTelegramUser } from '../../lib/telegram';
@@ -11,6 +11,7 @@ function getFullName(user: TelegramUser) {
 }
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -42,7 +43,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <ScreenTitle>Профиль</ScreenTitle>
+      <ScreenTitle>{t.nav.profile}</ScreenTitle>
 
       <section className="mt-6 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
@@ -68,7 +69,7 @@ export default function ProfilePage() {
 
             <div className="flex min-w-0 flex-col justify-center text-left">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-                Аккаунт
+                {t.profile.account}
               </p>
 
               <h2 className="truncate text-lg font-bold text-[var(--text-main)]">
@@ -110,11 +111,11 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              Язык
+              {t.profile.language}
             </p>
 
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              Русский
+              {t.profile.currency}
             </h3>
           </div>
 
@@ -122,7 +123,7 @@ export default function ProfilePage() {
             type="button"
             className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
           >
-            Изменить
+            {t.profile.change}
           </button>
         </div>
       </section>
@@ -133,7 +134,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              Валюта
+              {t.profile.currency}
             </p>
 
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
@@ -145,7 +146,7 @@ export default function ProfilePage() {
             type="button"
             className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
           >
-            Изменить
+            {t.profile.change}
           </button>
         </div>
       </section>

@@ -1,5 +1,7 @@
 import { ScreenTitle } from '../../components/ScreenTitle';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 export default function CartPage() {
-  return <ScreenTitle>Корзина</ScreenTitle>;
+  const { t } = useTranslation();
+  return <ScreenTitle>{t.nav.cart}</ScreenTitle>;
 }
