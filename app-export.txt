@@ -1,0 +1,871 @@
+﻿=== ByteWizard App Export ===
+Дата: 19.05.2026 15:50:05
+
+=============================================
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\ClientLayout.tsx
+─────────────────────────────────────────
+'use client';
+
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { BottomNavigation } from './components/BottomNavigation';
+import { LoadingScreen } from './components/LoadingScreen';
+import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
+import type { AppTab, TelegramUser } from './types/telegram';
+
+type ClientLayoutProps = {
+  children: React.ReactNode;
+};
+
+export function ClientLayout({ children }: ClientLayoutProps) {
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const getActiveTab = (): AppTab => {
+    if (pathname === '/') return 'home';
+    if (pathname === '/catalog') return 'catalog';
+    if (pathname === '/cart') return 'cart';
+    if (pathname === '/profile') return 'profile';
+    return 'home';
+  };
+
+  const handleTabChange = (tab: AppTab) => {
+    const routes: Record<AppTab, string> = {
+      home: '/',
+      catalog: '/catalog',
+      cart: '/cart',
+      profile: '/profile',
+    };
+    router.push(routes[tab]);
+  };
+
+  useEffect(() => {
+    setupTelegramWebApp();
+
+    const timer = window.setTimeout(() => {
+      setUser(getDisplayTelegramUser());
+      setLoading(false);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (loading || !user) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <main className="app-shell">
+      <section className="app-content">
+        {children}
+      </section>
+
+      <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
+    </main>
+  );
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\globals.css
+─────────────────────────────────────────
+@import "tailwindcss";
+
+:root {
+  --bg-deep: #05020a;
+  --bg-surface: #130a24;
+  --bg-surface-glass: rgba(19, 10, 36, 0.85);
+  
+  --neon-purple: #b026ff;
+  --neon-pink: #ff007f;
+  --neon-blue: #00f0ff;
+  
+  --text-main: #f3e8ff;
+  --text-dim: #8b5cf6;
+  
+  --glow-purple: 0 0 10px rgba(176, 38, 255, 0.7), 0 0 25px rgba(176, 38, 255, 0.4);
+  --glow-pink: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 25px rgba(255, 0, 127, 0.4);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: var(--bg-deep);
+}
+
+body {
+  min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-deep);
+  color: var(--text-main);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100svh;
+  width: 100%;
+  overflow-x: hidden;
+  background:
+    linear-gradient(180deg, rgba(176, 38, 255, 0.1), transparent 180px),
+    linear-gradient(160deg, rgba(0, 240, 255, 0.08), transparent 42%),
+    var(--bg-deep);
+  padding: 20px 0 0;
+}
+
+.app-content {
+  width: calc(100vw - 40px);
+  max-width: 448px;
+  min-height: calc(100svh - 84px);
+  margin: 0 auto;
+  padding-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Неоновые тексты */
+.text-neon-purple {
+  color: var(--neon-purple);
+  text-shadow: var(--glow-purple);
+}
+.text-neon-pink {
+  color: var(--neon-pink);
+  text-shadow: var(--glow-pink);
+}
+
+/* Стекло + неон */
+.glass {
+  background: var(--bg-surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(176, 38, 255, 0.3);
+  box-shadow: var(--glow-purple);
+}
+
+/* Сайдбар с плавной анимацией */
+.sidebar {
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.sidebar.open {
+  transform: translateX(0);
+}
+
+/* Неоновая рамка для аватара */
+.avatar-neon {
+  position: relative;
+  border-radius: 9999px;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  box-shadow: var(--glow-purple);
+}
+.avatar-neon::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue), var(--neon-pink));
+  filter: blur(8px);
+  opacity: 0.6;
+  z-index: -1;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Скроллбар */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb {
+  background: var(--neon-purple);
+  border-radius: 3px;
+  box-shadow: var(--glow-purple);
+}
+
+/* Утилиты для градиентов */
+@layer utilities {
+  .text-gradient-neon {
+    background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink), var(--neon-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(176, 38, 255, 0.5);
+  }
+}
+
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\layout.tsx
+─────────────────────────────────────────
+import type { Metadata } from 'next';
+import { Exo_2 } from 'next/font/google';
+import Script from 'next/script';
+import './globals.css';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { ClientLayout } from './ClientLayout';
+
+const cyberFont = Exo_2({
+  subsets: ['cyrillic', 'latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+export const metadata: Metadata = {
+  title: 'ByteWizard Shop',
+  description: 'ByteWizard Shop for Telegram',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ru" suppressHydrationWarning>
+      <head>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+      </head>
+      <body
+        className={`${cyberFont.className} min-h-screen overflow-x-hidden bg-[var(--bg-deep)] text-[var(--text-main)] antialiased`}
+      >
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+        <ClientLayout>{children}</ClientLayout>
+
+        {/* Аналитика — в конце body, после контента */}
+        <Analytics />
+        <SpeedInsights />
+      </body>
+    </html>
+  );
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useEffect, useState } from 'react';
+import { HomeIntro } from './components/HomeIntro';
+import { getDisplayTelegramUser } from './lib/telegram';
+import type { TelegramUser } from './types/telegram';
+
+export default function Home() {
+  const [user, setUser] = useState<TelegramUser | null>(null);
+
+  useEffect(() => {
+    setUser(getDisplayTelegramUser());
+  }, []);
+
+  if (!user) return null;
+
+  return <HomeIntro user={user} />;
+}
+
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\robots.ts
+─────────────────────────────────────────
+import { MetadataRoute } from 'next'
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+    },
+    sitemap: 'https://shop.bytewizard.ru/sitemap.xml',
+  }
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\sitemap.ts
+─────────────────────────────────────────
+import { MetadataRoute } from 'next'
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  return [
+    {
+      url: 'https://shop.bytewizard.ru',
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1,
+    },
+    {
+      url: 'https://shop.bytewizard.ru/catalog',
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+  ]
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\BottomNavigation.module.css
+─────────────────────────────────────────
+.navigation {
+  --active-x: 12.5%;
+
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  height: calc(84px + env(safe-area-inset-bottom, 0px));
+  overflow: visible;
+  border-top: 1px solid rgba(176, 38, 255, 0.46);
+  background:
+    linear-gradient(90deg, rgba(176, 38, 255, 0.18), rgba(0, 240, 255, 0.12), rgba(255, 0, 127, 0.16)),
+    linear-gradient(180deg, rgba(26, 9, 50, 0.98), rgba(7, 3, 16, 0.99));
+  box-shadow:
+    0 -18px 42px rgba(0, 0, 0, 0.42),
+    0 -1px 24px rgba(176, 38, 255, 0.28);
+}
+
+.navigation::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-purple), transparent);
+  opacity: 0.8;
+}
+
+.home {
+  --active-x: 12.5%;
+}
+
+.catalog {
+  --active-x: 37.5%;
+}
+
+.cart {
+  --active-x: 62.5%;
+}
+
+.profile {
+  --active-x: 87.5%;
+}
+
+.inner {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  max-width: 460px;
+  height: 84px;
+  margin: 0 auto;
+}
+
+.highlight {
+  position: absolute;
+  top: -25px;
+  left: var(--active-x);
+  z-index: 1;
+  width: 60px;
+  height: 60px;
+  border: 1px solid rgba(0, 240, 255, 0.48);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(28, 9, 55, 0.98), rgba(9, 3, 18, 1));
+  box-shadow:
+    0 0 0 10px var(--bg-deep),
+    0 0 22px rgba(176, 38, 255, 0.68),
+    0 0 30px rgba(0, 240, 255, 0.28);
+  transform: translateX(-50%);
+  transition: left 240ms ease;
+}
+
+.item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 84px;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  padding: 0 0 12px;
+  color: rgba(243, 232, 255, 0.44);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: currentColor;
+  transition:
+    color 200ms ease,
+    filter 200ms ease,
+    transform 240ms ease;
+}
+
+.icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.label {
+  overflow: hidden;
+  max-width: 96px;
+  color: currentColor;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    color 200ms ease,
+    text-shadow 200ms ease;
+}
+
+.active {
+  color: var(--neon-purple);
+}
+
+.active .icon {
+  color: var(--text-main);
+  filter:
+    drop-shadow(0 0 7px rgba(176, 38, 255, 0.95))
+    drop-shadow(0 0 12px rgba(0, 240, 255, 0.36));
+  transform: translateY(-38px);
+}
+
+.active .label {
+  color: var(--neon-purple);
+  text-shadow: 0 0 12px rgba(176, 38, 255, 0.65);
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\BottomNavigation.tsx
+─────────────────────────────────────────
+import type { ReactNode } from 'react';
+import type { AppTab } from '../types/telegram';
+import styles from './BottomNavigation.module.css';
+
+type BottomNavigationProps = {
+  activeTab: AppTab;
+  onTabChange: (tab: AppTab) => void;
+};
+
+const items: Array<{
+  id: AppTab;
+  label: string;
+  icon: ReactNode;
+}> = [
+  {
+    id: 'home',
+    label: 'Главная',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5H15v-6H9v6H3.5a.5.5 0 0 1-.5-.5v-9.7Z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'catalog',
+    label: 'Каталог',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M4.8 4h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8H4.8a.8.8 0 0 1-.8-.8V4.8c0-.4.4-.8.8-.8Zm9 0h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8h-5.4a.8.8 0 0 1-.8-.8V4.8c0-.4.4-.8.8-.8Zm-9 9h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8H4.8a.8.8 0 0 1-.8-.8v-5.4c0-.4.4-.8.8-.8Zm9 0h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8h-5.4a.8.8 0 0 1-.8-.8v-5.4c0-.4.4-.8.8-.8Z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'cart',
+    label: 'Корзина',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M6.3 5.2 7 8h12.1c.7 0 1.2.7 1 1.4l-1.5 5.2a2 2 0 0 1-1.9 1.4H9.4a2 2 0 0 1-2-1.5L5.5 6.8H3.8a1.1 1.1 0 1 1 0-2.2h1.4c.5 0 1 .2 1.1.6ZM9.5 21a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Zm7 0a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'profile',
+    label: 'Профиль',
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm-7.2 7.3c.7-3.8 3.5-5.7 7.2-5.7s6.5 1.9 7.2 5.7c.1.8-.5 1.5-1.3 1.5H6.1c-.8 0-1.4-.7-1.3-1.5Z" />
+      </svg>
+    ),
+  },
+];
+
+export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationProps) {
+  return (
+    <nav
+      className={`${styles.navigation} ${styles[activeTab]}`}
+      aria-label="Главное меню"
+    >
+      <div className={styles.inner}>
+        <div className={styles.highlight} aria-hidden="true" />
+
+        {items.map((item) => {
+          const isActive = activeTab === item.id;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`${styles.item} ${isActive ? styles.active : ''}`}
+              onClick={() => onTabChange(item.id)}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <span className={styles.icon}>{item.icon}</span>
+              <span className={styles.label}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\CartScreen.tsx
+─────────────────────────────────────────
+import { ScreenTitle } from './ScreenTitle';
+
+export function CartScreen() {
+  return <ScreenTitle>Корзина</ScreenTitle>;
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\CatalogScreen.tsx
+─────────────────────────────────────────
+import { ScreenTitle } from './ScreenTitle';
+
+export function CatalogScreen() {
+  return <ScreenTitle>Каталог</ScreenTitle>;
+
+  // динамически грузим картинки из базы данных, и расчетом валюты пользователя, также в профиль добавляем возможность выбора валюты и 
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\HomeIntro.tsx
+─────────────────────────────────────────
+import type { TelegramUser } from '../types/telegram';
+
+type HomeIntroProps = {
+  user: TelegramUser;
+};
+
+export function HomeIntro({ user }: HomeIntroProps) {
+  return (
+    <header className="text-center">
+      <h1 className="text-3xl font-bold text-gradient-neon">ByteWizard Shop</h1>
+      <p className="mt-8 rounded-2xl border border-[rgba(176,38,255,0.28)] bg-[var(--bg-surface-glass)] px-5 py-5 text-lg font-medium shadow-[0_0_22px_rgba(176,38,255,0.22)] backdrop-blur-md">
+        Добро пожаловать,{' '}
+        <span className="font-bold text-[var(--neon-purple)]">{user.first_name}</span>!
+      </p>
+    </header>
+  );
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\LoadingScreen.tsx
+─────────────────────────────────────────
+export function LoadingScreen() {
+  return (
+    <main className="grid min-h-screen place-items-center bg-[var(--bg-deep)] px-6 text-center">
+      <div>
+        <div className="mx-auto mb-4 h-14 w-14 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent shadow-[0_0_22px_rgba(176,38,255,0.45)]" />
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-dim)]">
+          Загрузка
+        </p>
+      </div>
+    </main>
+  );
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\ProfilePanel.tsx
+─────────────────────────────────────────
+import { useState } from 'react';
+
+import type { TelegramUser } from '../types/telegram';
+import { ScreenTitle } from './ScreenTitle';
+
+type ProfilePanelProps = {
+  user: TelegramUser;
+};
+
+function getFullName(user: TelegramUser) {
+  return [user.first_name, user.last_name].filter(Boolean).join(' ');
+}
+
+export function ProfilePanel({ user }: ProfilePanelProps) {
+  const fullName = getFullName(user);
+
+  const [copied, setCopied] = useState(false);
+
+  async function copyId() {
+    try {
+      await navigator.clipboard.writeText(String(user.id));
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 1800);
+    } catch (error) {
+      console.error('Ошибка копирования ID', error);
+    }
+  }
+
+  return (
+    <>
+      <ScreenTitle>Профиль</ScreenTitle>
+
+      <section className="mt-6 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
+        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+
+        <div className="px-5 py-5">
+          {/* Верхняя строка */}
+          <div className="flex gap-4">
+            <div className="avatar-neon h-[76px] w-[76px] shrink-0">
+              <div className="h-full w-full overflow-hidden rounded-full bg-[var(--bg-surface)]">
+                {user.photo_url ? (
+                  <img
+                    src={user.photo_url}
+                    alt={fullName}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="grid h-full w-full place-items-center text-2xl font-bold text-[var(--text-main)]">
+                    {user.first_name?.[0] ?? '?'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex min-w-0 flex-col justify-center text-left">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+                Аккаунт
+              </p>
+
+              <h2 className="truncate text-lg font-bold text-[var(--text-main)]">
+                {fullName}
+              </h2>
+            </div>
+          </div>
+
+          {/* Нижний блок */}
+          <div className="mt-4 flex flex-col items-start">
+            <button
+              type="button"
+              onClick={copyId}
+              className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
+            >
+              <span>ID: {user.id}</span>
+            </button>
+
+            {user.username && (
+              <a
+                href={`https://t.me/${user.username}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 text-sm text-[var(--neon-purple)] transition hover:text-[var(--neon-pink)] hover:underline"
+              >
+                @{user.username}
+              </a>
+            )}
+          </div>
+        </div>
+      </section>
+      {/* Язык */}
+      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
+        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+              Язык
+            </p>
+
+            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
+              Русский
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
+          >
+            Изменить
+          </button>
+        </div>
+      </section>
+
+      {/* Валюта */}
+      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
+        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+              Валюта
+            </p>
+
+            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
+              TON
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
+          >
+            Изменить
+          </button>
+        </div>
+      </section>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\ScreenTitle.tsx
+─────────────────────────────────────────
+import type { ReactNode } from 'react';
+
+type ScreenTitleProps = {
+  children: ReactNode;
+};
+
+export function ScreenTitle({ children }: ScreenTitleProps) {
+  return (
+    <header className="text-center">
+      <h1 className="text-3xl font-bold text-gradient-neon">{children}</h1>
+    </header>
+  );
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\lib\telegram.ts
+─────────────────────────────────────────
+import type { TelegramUser, TelegramWebApp } from '../types/telegram';
+
+const FALLBACK_USER: TelegramUser = {
+  id: 0,
+  first_name: 'Гость',
+};
+
+export function getTelegramWebApp(): TelegramWebApp | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.Telegram?.WebApp ?? null;
+}
+
+export function getTelegramUser(): TelegramUser | null {
+  return getTelegramWebApp()?.initDataUnsafe?.user ?? null;
+}
+
+export function getDisplayTelegramUser(): TelegramUser {
+  return getTelegramUser() ?? FALLBACK_USER;
+}
+
+export function setupTelegramWebApp() {
+  const tg = getTelegramWebApp();
+
+  if (!tg) {
+    return;
+  }
+
+  tg.expand();
+
+  if (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.1')) {
+    tg.setHeaderColor('#05020a');
+    tg.setBackgroundColor('#05020a');
+  }
+}
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\types\telegram.ts
+─────────────────────────────────────────
+export type TelegramUser = {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+};
+
+export type TelegramWebApp = {
+  expand: () => void;
+  setHeaderColor: (color: string) => void;
+  setBackgroundColor: (color: string) => void;
+  isVersionAtLeast?: (version: string) => boolean;
+  initDataUnsafe?: {
+    user?: TelegramUser;
+  };
+};
+
+export type AppTab = 'home' | 'catalog' | 'cart' | 'profile';
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: TelegramWebApp;
+    };
+  }
+}
+

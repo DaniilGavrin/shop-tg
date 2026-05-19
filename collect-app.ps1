@@ -1,4 +1,4 @@
-# Настройки
+﻿# Настройки
 $SOURCE_DIR = "app"
 $OUTPUT_FILE = "app-export.txt"
 $EXCLUDE = @("node_modules", ".next", "dist", ".git")

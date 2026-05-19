@@ -1,4 +1,4 @@
-import { ScreenTitle } from './ScreenTitle';
+import { ScreenTitle } from '../../components/ScreenTitle';
 
 export function CatalogScreen() {
   return <ScreenTitle>Каталог</ScreenTitle>;

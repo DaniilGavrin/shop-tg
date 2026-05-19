@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import type { TelegramUser } from '../types/telegram';
-import { ScreenTitle } from './ScreenTitle';
+import type { TelegramUser } from '../../types/telegram';
+import { ScreenTitle } from '../../components/ScreenTitle';
 
 type ProfilePanelProps = {
   user: TelegramUser;
