@@ -1,3 +1,5 @@
+'use client';
+
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 
