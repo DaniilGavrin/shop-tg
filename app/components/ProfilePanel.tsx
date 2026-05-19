@@ -37,7 +37,7 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
       <section className="mt-6 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
 
-        <div className="flex items-center gap-4 px-5 py-5">
+        <div className="flex gap-4 px-5 py-5">
           <div className="avatar-neon h-[76px] w-[76px] shrink-0">
             <div className="h-full w-full overflow-hidden rounded-full bg-[var(--bg-surface)]">
               {user.photo_url ? (
@@ -56,7 +56,7 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
             </div>
           </div>
 
-          <div className="min-w-0 text-left">
+          <div className="flex min-w-0 flex-col justify-center text-left">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
               Аккаунт
             </p>
@@ -68,7 +68,7 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
             <button
               type="button"
               onClick={copyId}
-              className="mt-1 flex items-center gap-2 text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
+              className="mt-2 flex flex-col items-start text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
             >
               <span>ID: {user.id}</span>
 
@@ -82,7 +82,7 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
                 href={`https://t.me/${user.username}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 block text-sm text-[var(--neon-purple)] transition hover:text-[var(--neon-pink)] hover:underline"
+                className="mt-2 text-sm text-[var(--neon-purple)] transition hover:text-[var(--neon-pink)] hover:underline"
               >
                 @{user.username}
               </a>
