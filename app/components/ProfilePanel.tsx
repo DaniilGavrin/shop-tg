@@ -76,10 +76,6 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
               className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
             >
               <span>ID: {user.id}</span>
-
-              <span className="inline-block w-[150px] text-xs opacity-70">
-                {copied ? 'Скопировано ✓' : 'Нажми чтобы скопировать'}
-              </span>
             </button>
 
             {user.username && (
