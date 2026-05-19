@@ -1,24 +1,34 @@
-import { useState } from 'react';
+'use client';
+
+import { useEffect, useState } from 'react';
 
 import type { TelegramUser } from '../../types/telegram';
 import { ScreenTitle } from '../../components/ScreenTitle';
-
-type ProfilePanelProps = {
-  user: TelegramUser;
-};
+import { getDisplayTelegramUser } from '../../lib/telegram';
 
 function getFullName(user: TelegramUser) {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
 }
 
-export function ProfilePanel({ user }: ProfilePanelProps) {
-  const fullName = getFullName(user);
-
+export default function ProfilePage() {
+  const [user, setUser] = useState<TelegramUser | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setUser(getDisplayTelegramUser());
+  }, []);
+
+  if (!user) {
+    return null;
+  }
+
+  const currentUser = user;
+
+  const fullName = getFullName(currentUser);
 
   async function copyId() {
     try {
-      await navigator.clipboard.writeText(String(user.id));
+      await navigator.clipboard.writeText(String(currentUser.id));
 
       setCopied(true);
 
@@ -38,7 +48,6 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
 
         <div className="px-5 py-5">
-          {/* Верхняя строка */}
           <div className="flex gap-4">
             <div className="avatar-neon h-[76px] w-[76px] shrink-0">
               <div className="h-full w-full overflow-hidden rounded-full bg-[var(--bg-surface)]">
@@ -68,7 +77,6 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
             </div>
           </div>
 
-          {/* Нижний блок */}
           <div className="mt-4 flex flex-col items-start">
             <button
               type="button"
@@ -76,6 +84,10 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
               className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
             >
               <span>ID: {user.id}</span>
+
+              <span className="ml-2 text-xs opacity-70">
+                {copied ? 'Скопировано ✓' : 'Нажми чтобы скопировать'}
+              </span>
             </button>
 
             {user.username && (
@@ -91,7 +103,7 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
           </div>
         </div>
       </section>
-      {/* Язык */}
+
       <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
 
@@ -115,7 +127,6 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
         </div>
       </section>
 
-      {/* Валюта */}
       <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
 

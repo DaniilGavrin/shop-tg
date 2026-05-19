@@ -1,10 +1,11 @@
+
 import type { Metadata } from 'next';
 import { Exo_2 } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { ClientLayout } from '../ClientLayout';
+import { ClientLayout } from './ClientLayout';
 
 const cyberFont = Exo_2({
   subsets: ['cyrillic', 'latin'],

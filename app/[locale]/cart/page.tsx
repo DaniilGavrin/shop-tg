@@ -1,5 +1,5 @@
 import { ScreenTitle } from '../../components/ScreenTitle';
 
-export function CartScreen() {
+export default function CartPage() {
   return <ScreenTitle>Корзина</ScreenTitle>;
 }

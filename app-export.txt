@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 19.05.2026 15:50:05
+Дата: 19.05.2026 16:11:19
 
 =============================================
 
@@ -220,75 +220,6 @@ select {
     background-clip: text;
     text-shadow: 0 0 30px rgba(176, 38, 255, 0.5);
   }
-}
-
-
-
-─────────────────────────────────────────
- FILE: C:\Users\user\Python\SHOP_TG\frontend\app\layout.tsx
-─────────────────────────────────────────
-import type { Metadata } from 'next';
-import { Exo_2 } from 'next/font/google';
-import Script from 'next/script';
-import './globals.css';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { ClientLayout } from './ClientLayout';
-
-const cyberFont = Exo_2({
-  subsets: ['cyrillic', 'latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
-
-export const metadata: Metadata = {
-  title: 'ByteWizard Shop',
-  description: 'ByteWizard Shop for Telegram',
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="ru" suppressHydrationWarning>
-      <head>
-        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta httpEquiv="Expires" content="0" />
-      </head>
-      <body
-        className={`${cyberFont.className} min-h-screen overflow-x-hidden bg-[var(--bg-deep)] text-[var(--text-main)] antialiased`}
-      >
-        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-        <ClientLayout>{children}</ClientLayout>
-
-        {/* Аналитика — в конце body, после контента */}
-        <Analytics />
-        <SpeedInsights />
-      </body>
-    </html>
-  );
-}
-
-
-─────────────────────────────────────────
- FILE: C:\Users\user\Python\SHOP_TG\frontend\app\page.tsx
-─────────────────────────────────────────
-'use client';
-
-import { useEffect, useState } from 'react';
-import { HomeIntro } from './components/HomeIntro';
-import { getDisplayTelegramUser } from './lib/telegram';
-import type { TelegramUser } from './types/telegram';
-
-export default function Home() {
-  const [user, setUser] = useState<TelegramUser | null>(null);
-
-  useEffect(() => {
-    setUser(getDisplayTelegramUser());
-  }, []);
-
-  if (!user) return null;
-
-  return <HomeIntro user={user} />;
 }
 
 
@@ -570,28 +501,6 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
 
 
 ─────────────────────────────────────────
- FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\CartScreen.tsx
-─────────────────────────────────────────
-import { ScreenTitle } from './ScreenTitle';
-
-export function CartScreen() {
-  return <ScreenTitle>Корзина</ScreenTitle>;
-}
-
-
-─────────────────────────────────────────
- FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\CatalogScreen.tsx
-─────────────────────────────────────────
-import { ScreenTitle } from './ScreenTitle';
-
-export function CatalogScreen() {
-  return <ScreenTitle>Каталог</ScreenTitle>;
-
-  // динамически грузим картинки из базы данных, и расчетом валюты пользователя, также в профиль добавляем возможность выбора валюты и 
-}
-
-
-─────────────────────────────────────────
  FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\HomeIntro.tsx
 ─────────────────────────────────────────
 import type { TelegramUser } from '../types/telegram';
@@ -626,154 +535,6 @@ export function LoadingScreen() {
         </p>
       </div>
     </main>
-  );
-}
-
-
-─────────────────────────────────────────
- FILE: C:\Users\user\Python\SHOP_TG\frontend\app\components\ProfilePanel.tsx
-─────────────────────────────────────────
-import { useState } from 'react';
-
-import type { TelegramUser } from '../types/telegram';
-import { ScreenTitle } from './ScreenTitle';
-
-type ProfilePanelProps = {
-  user: TelegramUser;
-};
-
-function getFullName(user: TelegramUser) {
-  return [user.first_name, user.last_name].filter(Boolean).join(' ');
-}
-
-export function ProfilePanel({ user }: ProfilePanelProps) {
-  const fullName = getFullName(user);
-
-  const [copied, setCopied] = useState(false);
-
-  async function copyId() {
-    try {
-      await navigator.clipboard.writeText(String(user.id));
-
-      setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 1800);
-    } catch (error) {
-      console.error('Ошибка копирования ID', error);
-    }
-  }
-
-  return (
-    <>
-      <ScreenTitle>Профиль</ScreenTitle>
-
-      <section className="mt-6 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
-        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
-
-        <div className="px-5 py-5">
-          {/* Верхняя строка */}
-          <div className="flex gap-4">
-            <div className="avatar-neon h-[76px] w-[76px] shrink-0">
-              <div className="h-full w-full overflow-hidden rounded-full bg-[var(--bg-surface)]">
-                {user.photo_url ? (
-                  <img
-                    src={user.photo_url}
-                    alt={fullName}
-                    className="h-full w-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="grid h-full w-full place-items-center text-2xl font-bold text-[var(--text-main)]">
-                    {user.first_name?.[0] ?? '?'}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex min-w-0 flex-col justify-center text-left">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-                Аккаунт
-              </p>
-
-              <h2 className="truncate text-lg font-bold text-[var(--text-main)]">
-                {fullName}
-              </h2>
-            </div>
-          </div>
-
-          {/* Нижний блок */}
-          <div className="mt-4 flex flex-col items-start">
-            <button
-              type="button"
-              onClick={copyId}
-              className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
-            >
-              <span>ID: {user.id}</span>
-            </button>
-
-            {user.username && (
-              <a
-                href={`https://t.me/${user.username}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 text-sm text-[var(--neon-purple)] transition hover:text-[var(--neon-pink)] hover:underline"
-              >
-                @{user.username}
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
-      {/* Язык */}
-      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
-        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
-
-        <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              Язык
-            </p>
-
-            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              Русский
-            </h3>
-          </div>
-
-          <button
-            type="button"
-            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
-          >
-            Изменить
-          </button>
-        </div>
-      </section>
-
-      {/* Валюта */}
-      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
-        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
-
-        <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              Валюта
-            </p>
-
-            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              TON
-            </h3>
-          </div>
-
-          <button
-            type="button"
-            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
-          >
-            Изменить
-          </button>
-        </div>
-      </section>
-    </>
   );
 }
 
@@ -868,4 +629,29 @@ declare global {
     };
   }
 }
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\[locale]\layout.tsx
+─────────────────────────────────────────
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\[locale]\page.tsx
+─────────────────────────────────────────
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\[locale]\cart\page.tsx
+─────────────────────────────────────────
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\[locale]\catalog\page.tsx
+─────────────────────────────────────────
+
+
+─────────────────────────────────────────
+ FILE: C:\Users\user\Python\SHOP_TG\frontend\app\[locale]\profile\page.tsx
+─────────────────────────────────────────
 

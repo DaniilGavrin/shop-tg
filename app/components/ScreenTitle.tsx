@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+
 type ScreenTitleProps = {
   children: ReactNode;
 };

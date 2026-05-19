@@ -1,3 +1,4 @@
+
 import type { TelegramUser } from '../types/telegram';
 
 type HomeIntroProps = {

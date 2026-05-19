@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node setup-routes.js",
+    "predev": "",
     "dev": "next dev",
-    "prebuild": "node setup-routes.js",
+    "prebuild": "",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
