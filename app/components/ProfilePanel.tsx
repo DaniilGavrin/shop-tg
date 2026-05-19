@@ -77,9 +77,9 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
             >
               <span>ID: {user.id}</span>
 
-              <div className="text-xs opacity-70">
+              <span className="inline-block w-[150px] text-xs opacity-70">
                 {copied ? 'Скопировано ✓' : 'Нажми чтобы скопировать'}
-              </div>
+              </span>
             </button>
 
             {user.username && (
