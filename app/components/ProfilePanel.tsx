@@ -64,7 +64,8 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
             <h2 className="truncate text-lg font-bold text-[var(--text-main)]">
               {fullName}
             </h2>
-
+          </div>
+          <div>
             <button
               type="button"
               onClick={copyId}
