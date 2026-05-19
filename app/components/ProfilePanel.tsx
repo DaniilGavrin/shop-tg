@@ -91,6 +91,53 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
           </div>
         </div>
       </section>
+      {/* Язык */}
+      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
+        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+              Язык
+            </p>
+
+            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
+              Русский
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
+          >
+            Изменить
+          </button>
+        </div>
+      </section>
+
+      {/* Валюта */}
+      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
+        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+              Валюта
+            </p>
+
+            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
+              TON
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
+          >
+            Изменить
+          </button>
+        </div>
+      </section>
     </>
   );
 }
