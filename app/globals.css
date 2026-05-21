@@ -63,13 +63,15 @@ select {
 }
 
 .app-content {
-  width: calc(100vw - 40px);
-  max-width: 448px;
+  width: 100%;
   min-height: calc(100svh - 84px);
-  margin: 0 auto;
-  padding-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
-}
 
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+
+  margin: 0 auto;
+}
 /* Неоновые тексты */
 .text-neon-purple {
   color: var(--neon-purple);

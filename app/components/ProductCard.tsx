@@ -7,7 +7,7 @@ type Props = {
 
 export function ProductCard({ item }: Props) {
   return (
-    <Link href={`/ru/catalog/${item.slug}`}>
+    <Link href={`/ru/catalog/${item.id}`}>
       <article
         className="
           group overflow-hidden rounded-3xl

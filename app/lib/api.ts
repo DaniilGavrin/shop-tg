@@ -5,7 +5,9 @@ const API_BASE_URL = 'https://api.shop.bytewizard.ru';
 export async function getCatalog(): Promise<CatalogResponse> {
   try {
     const response = await fetch(`${API_BASE_URL}/catalog`, {
-      cache: 'no-store',
+      next: {
+        revalidate: 60,
+      },
     });
 
     console.log('API STATUS:', response.status);
