@@ -16,6 +16,9 @@ const cyberFont = Exo_2({
 export const metadata: Metadata = {
   title: 'ByteWizard Shop',
   description: 'ByteWizard Shop for Telegram',
+  verification: {
+    yandex: '2690b0d0f79c5b4c',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
