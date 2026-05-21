@@ -8,7 +8,6 @@ function getLocale(request: NextRequest) {
 
   if (!acceptLanguage) return defaultLocale;
 
-  // парсим язык браузера
   const preferred = acceptLanguage
     .split(',')
     .map((l) => l.split(';')[0].trim().toLowerCase());
@@ -24,19 +23,27 @@ function getLocale(request: NextRequest) {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (
+    pathname.startsWith('/yandex_') ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname.startsWith('/.well-known')
+  ) {
+    return NextResponse.next();
+  }
+
   // пропускаем уже локализованные роуты
   const hasLocale = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+    (locale) =>
+      pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
   if (hasLocale) {
     return NextResponse.next();
   }
 
-  // редирект с "/" и других путей без locale
+  // редирект
   const locale = getLocale(request);
-
-  console.log('[middleware] detected locale:', locale);
 
   const url = request.nextUrl.clone();
   url.pathname = `/${locale}${pathname}`;
@@ -44,7 +51,6 @@ export function middleware(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-// важно: ограничиваем matcher
 export const config = {
-  matcher: ['/((?!_next|api|favicon.ico|robots.txt|sitemap.xml).*)'],
+  matcher: ['/((?!_next|api|favicon.ico).*)'],
 };
