@@ -1,11 +1,14 @@
-import { MetadataRoute } from 'next'
+import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const base = 'https://shop.bytewizard.ru';
+
   return {
     rules: {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://shop.bytewizard.ru/sitemap.xml',
-  }
+    sitemap: `${base}/sitemap.xml`,
+    host: base,
+  };
 }

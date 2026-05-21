@@ -15,7 +15,7 @@ const cyberFont = Exo_2({
 
 export const metadata: Metadata = {
   title: 'ByteWizard Shop',
-  description: 'ByteWizard Shop for Telegram',
+  description: 'Telegram WebApp marketplace for digital products',
   verification: {
     yandex: 'd89a024f898728e2',
   },
