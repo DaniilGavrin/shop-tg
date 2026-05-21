@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: 'ByteWizard Shop',
   description: 'ByteWizard Shop for Telegram',
   verification: {
-    yandex: '2690b0d0f79c5b4c',
+    yandex: 'd89a024f898728e2',
   },
 };
 

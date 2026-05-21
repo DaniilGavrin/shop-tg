@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   verification: {
-    yandex: '2690b0d0f79c5b4c',
+    yandex: 'd89a024f898728e2',
   },
 };
 
