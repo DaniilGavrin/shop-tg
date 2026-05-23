@@ -24,6 +24,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/auth') ||
     pathname.startsWith('/yandex_') ||
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml' ||
