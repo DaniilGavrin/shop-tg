@@ -2,9 +2,15 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
 import { BottomNavigation } from './components/BottomNavigation';
 import { LoadingScreen } from './components/LoadingScreen';
-import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
+
+import {
+  getDisplayTelegramUser,
+  setupTelegramWebApp,
+} from './lib/telegram';
+
 import type { AppTab, TelegramUser } from './types/telegram';
 
 type ClientLayoutProps = {
@@ -13,9 +19,10 @@ type ClientLayoutProps = {
 
 export function ClientLayout({ children }: ClientLayoutProps) {
   const [user, setUser] = useState<TelegramUser | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const pathname = usePathname();
   const router = useRouter();
+
   const locale = pathname.split('/')[1] || 'ru';
 
   const getActiveTab = (): AppTab => {
@@ -23,6 +30,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     if (pathname.includes('/catalog')) return 'catalog';
     if (pathname.includes('/cart')) return 'cart';
     if (pathname.includes('/profile')) return 'profile';
+
     return 'home';
   };
 
@@ -33,21 +41,21 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       cart: `/${locale}/cart`,
       profile: `/${locale}/profile`,
     };
+
     router.push(routes[tab]);
   };
 
   useEffect(() => {
+    // Безопасная инициализация Telegram
     setupTelegramWebApp();
 
-    const timer = window.setTimeout(() => {
-      setUser(getDisplayTelegramUser());
-      setLoading(false);
-    }, 350);
+    // ВСЕГДА возвращает user или Guest
+    const resolvedUser = getDisplayTelegramUser();
 
-    return () => window.clearTimeout(timer);
+    setUser(resolvedUser);
   }, []);
 
-  if (loading || !user) {
+  if (!user) {
     return <LoadingScreen />;
   }
 
@@ -57,7 +65,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         {children}
       </section>
 
-      <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
+      <BottomNavigation
+        activeTab={getActiveTab()}
+        onTabChange={handleTabChange}
+      />
     </main>
   );
 }

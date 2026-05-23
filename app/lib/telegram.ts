@@ -2,19 +2,40 @@ import type { TelegramUser, TelegramWebApp } from '../types/telegram';
 
 const FALLBACK_USER: TelegramUser = {
   id: 0,
-  first_name: 'Гость',
+  first_name: 'Guest',
+  last_name: '',
+  username: 'guest',
+  photo_url: '',
 };
 
 export function getTelegramWebApp(): TelegramWebApp | null {
-  if (typeof window === 'undefined') {
+  try {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.Telegram?.WebApp ?? null;
+  } catch (error) {
+    console.error('[Telegram] SDK access error:', error);
+
     return null;
   }
-
-  return window.Telegram?.WebApp ?? null;
 }
 
 export function getTelegramUser(): TelegramUser | null {
-  return getTelegramWebApp()?.initDataUnsafe?.user ?? null;
+  try {
+    const tg = getTelegramWebApp();
+
+    if (!tg) {
+      return null;
+    }
+
+    return tg.initDataUnsafe?.user ?? null;
+  } catch (error) {
+    console.error('[Telegram] User resolve error:', error);
+
+    return null;
+  }
 }
 
 export function getDisplayTelegramUser(): TelegramUser {
@@ -22,16 +43,23 @@ export function getDisplayTelegramUser(): TelegramUser {
 }
 
 export function setupTelegramWebApp() {
-  const tg = getTelegramWebApp();
+  try {
+    const tg = getTelegramWebApp();
 
-  if (!tg) {
-    return;
-  }
+    // Telegram SDK отсутствует
+    if (!tg) {
+      console.warn('[Telegram] SDK unavailable');
 
-  tg.expand();
+      return;
+    }
 
-  if (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.1')) {
-    tg.setHeaderColor('#05020a');
-    tg.setBackgroundColor('#05020a');
+    tg.expand();
+
+    if (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.1')) {
+      tg.setHeaderColor('#05020a');
+      tg.setBackgroundColor('#05020a');
+    }
+  } catch (error) {
+    console.error('[Telegram] Setup failed:', error);
   }
 }
