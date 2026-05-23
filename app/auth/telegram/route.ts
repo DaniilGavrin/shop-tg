@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
       user: {
         id:
-          decoded.sub ||
+          decoded.id ||
           decoded.telegram_id,
 
         first_name:
