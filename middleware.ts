@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/yandex_') ||
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml' ||
-    pathname === 'telegram-web-app.js' ||
+    pathname === '/telegram-web-app.js' ||
     pathname.startsWith('/.well-known')
   ) {
     return NextResponse.next();
