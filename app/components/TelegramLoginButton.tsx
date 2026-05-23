@@ -5,9 +5,7 @@ import { saveTelegramUser } from '../lib/telegram';
 
 declare global {
   interface Window {
-    TelegramLoginWidget?: {
-      auth: (options: any, callback: (data: any) => void) => void;
-    };
+    onTelegramAuth: (data: any) => void;
   }
 }
 
@@ -17,38 +15,38 @@ export function TelegramLoginButton() {
   useEffect(() => {
     if (!ref.current) return;
 
-    const handleAuth = (data: any) => {
-      console.log('Telegram auth success', data);
-
-      // id_token или user data
+    // callback
+    window.onTelegramAuth = (data) => {
+      console.log('auth:', data);
       saveTelegramUser(data);
-
       window.location.reload();
     };
 
-    // создаём callback в window (для data-onauth fallback)
-    (window as any).onTelegramAuth = handleAuth;
+    // очищаем контейнер
+    ref.current.innerHTML = '';
 
+    // 1. создаём кнопку (ВАЖНО)
+    const button = document.createElement('button');
+    button.className = 'tg-auth-button';
+    button.setAttribute('data-style', 'shine');
+
+    ref.current.appendChild(button);
+
+    // 2. загружаем SDK ПОСЛЕ кнопки
     const script = document.createElement('script');
-
     script.async = true;
     script.src = 'https://oauth.telegram.org/js/telegram-login.js?5';
 
     script.setAttribute('data-client-id', '7173695626');
     script.setAttribute('data-onauth', 'onTelegramAuth(data)');
-    script.setAttribute('data-request-access', 'write');
+    script.setAttribute('data-request-access', 'phone');
 
-    ref.current.innerHTML = '';
     ref.current.appendChild(script);
 
     return () => {
-      delete (window as any).onTelegramAuth;
+        
     };
   }, []);
 
-  return (
-    <div className="mt-3 overflow-hidden rounded-2xl">
-      <div ref={ref} />
-    </div>
-  );
+  return <div ref={ref} />;
 }
