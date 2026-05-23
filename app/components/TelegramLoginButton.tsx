@@ -2,12 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 
-declare global {
-  interface Window {
-    onTelegramAuth?: (data: any) => void;
-  }
-}
-
 export function TelegramLoginButton() {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -16,10 +10,9 @@ export function TelegramLoginButton() {
 
     const script = document.createElement('script');
 
+    script.async = true;
     script.src =
       'https://oauth.telegram.org/js/telegram-login.js?5';
-
-    script.async = true;
 
     script.setAttribute('data-client-id', '7173695626');
 
@@ -28,7 +21,6 @@ export function TelegramLoginButton() {
       `${window.location.origin}/auth/telegram`
     );
 
-    // 🔥 сохраняем куда вернуться
     script.setAttribute(
       'data-state',
       encodeURIComponent(window.location.pathname)
@@ -40,5 +32,9 @@ export function TelegramLoginButton() {
     ref.current.appendChild(script);
   }, []);
 
-  return <div ref={ref} />;
+  return (
+    <div className="flex justify-center mt-3">
+      <div ref={ref} />
+    </div>
+  );
 }
