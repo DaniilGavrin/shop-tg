@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 23.05.2026 13:03:02
+Дата: 23.05.2026 13:09:23
 
 =============================================
 
@@ -20,6 +20,7 @@ import {
 } from './lib/telegram';
 
 import type { AppTab, TelegramUser } from './types/telegram';
+import { getAuthUser } from './lib/auth/getUser';
 
 type ClientLayoutProps = {
   children: React.ReactNode;
@@ -54,13 +55,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   };
 
   useEffect(() => {
-    // Р‘РµР·РѕРїР°СЃРЅР°СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Telegram
     setupTelegramWebApp();
 
-    // Р’РЎР•Р“Р”Рђ РІРѕР·РІСЂР°С‰Р°РµС‚ user РёР»Рё Guest
-    const resolvedUser = getDisplayTelegramUser();
-
-    setUser(resolvedUser);
+    const resolvedUser = getAuthUser();
+    setUser(resolvedUser ?? { id: 0, first_name: 'Guest' });
   }, []);
 
   if (!user) {
@@ -386,18 +384,21 @@ export async function POST(req: Request) {
   const { hash, ...rest } = data;
 
   const dataCheckString = Object.keys(rest)
-    .sort()
-    .map((k) => `${k}=${rest[k]}`)
-    .join('\n');
+  .sort()
+  .map((k) => `${k}=${rest[k]}`)
+  .join('\n');
 
   const computed = crypto
     .createHmac('sha256', secret)
     .update(dataCheckString)
     .digest('hex');
 
-  if (computed !== hash) {
+  if (!crypto.timingSafeEqual(
+    Buffer.from(computed, 'hex'),
+    Buffer.from(hash, 'hex')
+    )) {
     return Response.json({ ok: false }, { status: 401 });
-  }
+    }
 
   // вњ… С‚СѓС‚ СЃРѕР·РґР°С‘С€СЊ СЃРµСЃСЃРёСЋ / JWT
   return Response.json({
@@ -1028,6 +1029,32 @@ export function setupTelegramWebApp() {
   } catch (error) {
     console.error('[Telegram] Setup failed:', error);
   }
+}
+
+
+─────────────────────────────────────────
+FILE: lib\auth\getUser.ts
+─────────────────────────────────────────
+import { getTelegramWebApp } from '../telegram';
+
+export function getAuthUser() {
+  if (typeof window === 'undefined') return null;
+
+  // 1. Telegram WebApp (РіР»Р°РІРЅС‹Р№ РёСЃС‚РѕС‡РЅРёРє)
+  const tg = getTelegramWebApp();
+
+  const webAppUser = tg?.initDataUnsafe?.user;
+  if (webAppUser) return webAppUser;
+
+  // 2. Backend session (РµСЃР»Рё РґРѕР±Р°РІРёС€СЊ JWT РїРѕР·Р¶Рµ)
+  const session = localStorage.getItem('session');
+  if (session) return JSON.parse(session);
+
+  // 3. Fallback widget
+  const raw = localStorage.getItem('telegram_user');
+  if (raw) return JSON.parse(raw);
+
+  return null;
 }
 
 
