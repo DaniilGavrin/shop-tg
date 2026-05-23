@@ -31,7 +31,11 @@ export function TelegramLoginButton() {
 
       // Инициализируем с обработчиком
       window.Telegram.Login.init(
-        { client_id: clientId, lang: 'en' },
+        {
+            client_id: clientId,
+            redirect_uri: window.location.origin + '/auth/telegram/callback',
+            lang: 'en',
+        },
         async (data) => {
           try {
             console.log('[TG LOGIN SUCCESS]', data);

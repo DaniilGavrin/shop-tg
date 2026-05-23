@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 23.05.2026 13:09:23
+Дата: 23.05.2026 13:42:45
 
 =============================================
 
@@ -375,32 +375,110 @@ FILE: auth\telegram\route.ts
 ─────────────────────────────────────────
 import crypto from 'crypto';
 
+// Parse JWT without verification to get the payload
+function parseJwt(token: string) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return null;
+    }
+
+    const decoded = JSON.parse(
+      Buffer.from(parts[1], 'base64').toString('utf-8')
+    );
+
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: Request) {
   const data = await req.json();
 
+  // Handle OIDC id_token verification (new flow)
+  if (data.id_token) {
+    try {
+      const decoded = parseJwt(data.id_token);
+
+      if (!decoded) {
+        return Response.json(
+          { ok: false, error: 'Invalid token format' },
+          { status: 401 }
+        );
+      }
+
+      // Verify essential claims
+      if (decoded.iss !== 'https://oauth.telegram.org') {
+        return Response.json(
+          { ok: false, error: 'Invalid issuer' },
+          { status: 401 }
+        );
+      }
+
+      // Check expiration
+      if (decoded.exp && decoded.exp < Date.now() / 1000) {
+        return Response.json(
+          { ok: false, error: 'Token expired' },
+          { status: 401 }
+        );
+      }
+
+      // Extract user data from token
+      const user = {
+        id: decoded.sub || decoded.id,
+        first_name: decoded.name?.split(' ')[0] || 'User',
+        last_name: decoded.name?.split(' ').slice(1).join(' ') || '',
+        username: decoded.preferred_username || '',
+        photo_url: decoded.picture || '',
+      };
+
+      return Response.json({
+        ok: true,
+        user,
+      });
+    } catch (error) {
+      console.error('[Telegram] OIDC verification error:', error);
+      return Response.json(
+        { ok: false, error: 'Verification failed' },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Handle legacy widget verification (backward compatibility)
   const botToken = process.env.TG_BOT_TOKEN!;
   const secret = crypto.createHash('sha256').update(botToken).digest();
 
   const { hash, ...rest } = data;
 
+  if (!hash) {
+    return Response.json(
+      { ok: false, error: 'hash is required' },
+      { status: 400 }
+    );
+  }
+
   const dataCheckString = Object.keys(rest)
-  .sort()
-  .map((k) => `${k}=${rest[k]}`)
-  .join('\n');
+    .sort()
+    .map((k) => `${k}=${rest[k]}`)
+    .join('\n');
 
   const computed = crypto
     .createHmac('sha256', secret)
     .update(dataCheckString)
     .digest('hex');
 
-  if (!crypto.timingSafeEqual(
-    Buffer.from(computed, 'hex'),
-    Buffer.from(hash, 'hex')
-    )) {
-    return Response.json({ ok: false }, { status: 401 });
-    }
+  if (
+    !crypto.timingSafeEqual(
+      Buffer.from(computed, 'hex'),
+      Buffer.from(hash, 'hex')
+    )
+  ) {
+    return Response.json({ ok: false, error: 'Invalid hash' }, { status: 401 });
+  }
 
-  // вњ… С‚СѓС‚ СЃРѕР·РґР°С‘С€СЊ СЃРµСЃСЃРёСЋ / JWT
+  // вњ… Legacy widget successful verification
   return Response.json({
     ok: true,
     user: rest,
@@ -791,25 +869,113 @@ FILE: components\TelegramLoginButton.tsx
 ─────────────────────────────────────────
 'use client';
 
+import { useEffect, useRef } from 'react';
+import type { TelegramWebApp } from '../types/telegram';
+
 export function TelegramLoginButton() {
-  const login = () => {
-    const tg = (window as any).Telegram?.Login;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const initDoneRef = useRef(false);
 
-    if (!tg) {
-      console.warn('Telegram SDK not ready');
-      return;
+  useEffect(() => {
+    // Р—Р°РіСЂСѓР¶Р°РµРј СЃРєСЂРёРїС‚ РѕРґРёРЅ СЂР°Р·
+    if (initDoneRef.current) return;
+    initDoneRef.current = true;
+
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-login.js';
+    script.async = true;
+
+    script.onload = () => {
+      if (!window.Telegram?.Login) {
+        console.error('[Telegram] Login library not available');
+        return;
+      }
+
+      const clientId = parseInt(process.env.NEXT_PUBLIC_TG_CLIENT_ID || '0', 10);
+
+      if (!clientId) {
+        console.error('[Telegram] Client ID not configured');
+        return;
+      }
+
+      // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃ РѕР±СЂР°Р±РѕС‚С‡РёРєРѕРј
+      window.Telegram.Login.init(
+        { client_id: clientId, lang: 'en' },
+        async (data) => {
+          try {
+            console.log('[TG LOGIN SUCCESS]', data);
+
+            // РџРѕР»СѓС‡Р°РµРј id_token Рё user РґР°РЅРЅС‹Рµ
+            const { id_token, user } = data;
+
+            if (!id_token) {
+              console.error('[Telegram] No id_token received');
+              return;
+            }
+
+            // РћС‚РїСЂР°РІР»СЏРµРј РЅР° backend РґР»СЏ РІРµСЂРёС„РёРєР°С†РёРё
+            const response = await fetch('/auth/telegram', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ id_token }),
+            });
+
+            if (!response.ok) {
+              console.error('[Telegram] Backend verification failed:', await response.text());
+              return;
+            }
+
+            const result = await response.json();
+            console.log('[TG AUTH SUCCESS]', result);
+
+            // РЎРѕС…СЂР°РЅСЏРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Р»РѕРєР°Р»СЊРЅРѕ
+            if (result.user) {
+              localStorage.setItem('telegram_user', JSON.stringify(result.user));
+            }
+
+            // РџРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј СЃС‚СЂР°РЅРёС†Сѓ
+            window.location.reload();
+          } catch (err) {
+            console.error('[Telegram] Auth error:', err);
+          }
+        }
+      );
+    };
+
+    script.onerror = () => {
+      console.error('[Telegram] Failed to load login library');
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup: СѓРґР°Р»СЏРµРј СЃРєСЂРёРїС‚ РїСЂРё СЂР°Р·РјРѕРЅС‚РёСЂРѕРІР°РЅРёРё
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
+
+  const handleClick = () => {
+    if (window.Telegram?.Login?.open) {
+      window.Telegram.Login.open();
+    } else {
+      console.error('[Telegram] Login not initialized');
     }
-
-    tg.open();
   };
 
   return (
-    <button
-      onClick={login}
-      className="px-4 py-2 rounded-xl bg-purple-600 text-white"
-    >
-      Sign in with Telegram
-    </button>
+    <div ref={containerRef}>
+      <button
+        type="button"
+        onClick={handleClick}
+        className="rounded-lg border-2 border-[var(--neon-purple)] bg-[rgba(176,38,255,0.1)] px-4 py-2 text-sm font-semibold text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:bg-[rgba(176,38,255,0.2)] hover:text-[var(--neon-pink)]"
+      >
+        Login with Telegram
+      </button>
+    </div>
   );
 }
 
@@ -860,47 +1026,6 @@ export function getUser() {
 
 export function clearUser() {
   localStorage.removeItem('telegram_user');
-}
-
-
-─────────────────────────────────────────
-FILE: lib\telegram-auth.ts
-─────────────────────────────────────────
-// lib/telegram-login.ts
-export function initTelegramLogin() {
-  if (typeof window === 'undefined') return;
-
-  if ((window as any).Telegram?.Login) return;
-
-  const script = document.createElement('script');
-  script.src = 'https://oauth.telegram.org/js/telegram-login.js';
-  script.async = true;
-
-  script.onload = () => {
-    const tg = (window as any).Telegram;
-
-    tg.Login.init(
-      {
-        client_id: Number(process.env.NEXT_PUBLIC_TG_BOT_ID),
-        request_access: ['write'],
-      },
-      (user: any) => {
-        // рџ”Ґ Р’РђР–РќРћ: С‚СѓС‚ С‚РѕР»СЊРєРѕ РєР»РёРµРЅС‚, РќР• РґРѕРІРµСЂСЏРµРј
-        console.log('[TG LOGIN]', user);
-
-        localStorage.setItem('telegram_user', JSON.stringify(user));
-
-        // рџ‘‰ Р»СѓС‡С€Рµ СЃСЂР°Р·Сѓ РѕС‚РїСЂР°РІРёС‚СЊ РЅР° backend
-        fetch('/api/auth/telegram-web', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(user),
-        });
-      }
-    );
-  };
-
-  document.head.appendChild(script);
 }
 
 
@@ -1157,12 +1282,19 @@ export type TelegramWebApp = {
   };
 };
 
+export type TelegramLogin = {
+  init(options: { client_id: number; lang?: string }, callback: (data: any) => void): void;
+  auth(options: { client_id: number; lang?: string }, callback: (data: any) => void): void;
+  open(): void;
+};
+
 export type AppTab = 'home' | 'catalog' | 'cart' | 'profile';
 
 declare global {
   interface Window {
     Telegram?: {
       WebApp?: TelegramWebApp;
+      Login?: TelegramLogin;
     };
   }
 }
