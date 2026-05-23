@@ -6,23 +6,48 @@ export type TelegramUser = {
   photo_url?: string;
 };
 
-export type TelegramWebApp = {
-  expand: () => void;
-  setHeaderColor: (color: string) => void;
-  setBackgroundColor: (color: string) => void;
-  isVersionAtLeast?: (version: string) => boolean;
-  initDataUnsafe?: {
-    user?: TelegramUser;
-  };
+export type TelegramLoginCallback = {
+  id_token?: string;
+  user?: TelegramUser;
+  error?: string;
 };
 
 export type TelegramLogin = {
-  init(options: { client_id: number; redirect_uri?: string; lang?: string }, callback: (data: any) => void): void;
-  auth(options: { client_id: number; redirect_uri?: string; lang?: string }, callback: (data: any) => void): void;
-  open(): void;
+  init: (
+    options: {
+      client_id: number;
+      request_access?: ('write' | 'phone')[];
+      lang?: string;
+      nonce?: string;
+    },
+
+    callback: (
+      data: TelegramLoginCallback
+    ) => void
+  ) => void;
+
+  open: () => void;
 };
 
-export type AppTab = 'home' | 'catalog' | 'cart' | 'profile';
+export type TelegramWebApp = {
+  initDataUnsafe?: {
+    user?: TelegramUser;
+  };
+
+  expand: () => void;
+
+  setHeaderColor: (
+    color: string
+  ) => void;
+
+  setBackgroundColor: (
+    color: string
+  ) => void;
+
+  isVersionAtLeast?: (
+    version: string
+  ) => boolean;
+};
 
 declare global {
   interface Window {
@@ -32,3 +57,9 @@ declare global {
     };
   }
 }
+
+export type AppTab =
+  | 'home'
+  | 'catalog'
+  | 'cart'
+  | 'profile';

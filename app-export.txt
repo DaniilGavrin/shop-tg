@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 23.05.2026 14:29:29
+Дата: 23.05.2026 14:55:56
 
 =============================================
 
@@ -55,6 +55,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
 
   useEffect(() => {
     setupTelegramWebApp();
+
+    const resolvedUser = getDisplayTelegramUser();
+
+    setUser(resolvedUser);
   }, []);
 
   if (!user) {
@@ -369,116 +373,92 @@ export default function sitemap(): MetadataRoute.Sitemap {
 ─────────────────────────────────────────
 FILE: auth\telegram\route.ts
 ─────────────────────────────────────────
-import crypto from 'crypto';
-
-// Parse JWT without verification to get the payload
 function parseJwt(token: string) {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return null;
-    }
+    const payload = token.split('.')[1];
 
-    const decoded = JSON.parse(
-      Buffer.from(parts[1], 'base64').toString('utf-8')
+    return JSON.parse(
+      Buffer.from(payload, 'base64')
+        .toString('utf-8')
     );
-
-    return decoded;
   } catch {
     return null;
   }
 }
 
 export async function POST(req: Request) {
-  const data = await req.json();
+  try {
+    const data = await req.json();
 
-  // Handle OIDC id_token verification (new flow)
-  if (data.id_token) {
-    try {
-      const decoded = parseJwt(data.id_token);
-
-      if (!decoded) {
-        return Response.json(
-          { ok: false, error: 'Invalid token format' },
-          { status: 401 }
-        );
-      }
-
-      // Verify essential claims
-      if (decoded.iss !== 'https://oauth.telegram.org') {
-        return Response.json(
-          { ok: false, error: 'Invalid issuer' },
-          { status: 401 }
-        );
-      }
-
-      // Check expiration
-      if (decoded.exp && decoded.exp < Date.now() / 1000) {
-        return Response.json(
-          { ok: false, error: 'Token expired' },
-          { status: 401 }
-        );
-      }
-
-      // Extract user data from token
-      const user = {
-        id: decoded.sub || decoded.id,
-        first_name: decoded.name?.split(' ')[0] || 'User',
-        last_name: decoded.name?.split(' ').slice(1).join(' ') || '',
-        username: decoded.preferred_username || '',
-        photo_url: decoded.picture || '',
-      };
-
-      return Response.json({
-        ok: true,
-        user,
-      });
-    } catch (error) {
-      console.error('[Telegram] OIDC verification error:', error);
+    if (!data.id_token) {
       return Response.json(
-        { ok: false, error: 'Verification failed' },
-        { status: 500 }
+        {
+          ok: false,
+          error: 'Missing id_token',
+        },
+        {
+          status: 400,
+        }
       );
     }
-  }
 
-  // Handle legacy widget verification (backward compatibility)
-  const botToken = process.env.TG_BOT_TOKEN!;
-  const secret = crypto.createHash('sha256').update(botToken).digest();
+    const decoded = parseJwt(
+      data.id_token
+    );
 
-  const { hash, ...rest } = data;
+    if (!decoded) {
+      return Response.json(
+        {
+          ok: false,
+          error: 'Invalid token',
+        },
+        {
+          status: 401,
+        }
+      );
+    }
 
-  if (!hash) {
+    console.log(
+      '[Telegram JWT]',
+      decoded
+    );
+
+    return Response.json({
+      ok: true,
+
+      user: {
+        id:
+          decoded.sub ||
+          decoded.telegram_id,
+
+        first_name:
+          decoded.given_name ||
+          decoded.name ||
+          'User',
+
+        last_name:
+          decoded.family_name || '',
+
+        username:
+          decoded.preferred_username ||
+          '',
+
+        photo_url:
+          decoded.picture || '',
+      },
+    });
+  } catch (err) {
+    console.error(err);
+
     return Response.json(
-      { ok: false, error: 'hash is required' },
-      { status: 400 }
+      {
+        ok: false,
+      },
+      {
+        status: 500,
+      }
     );
   }
-
-  const dataCheckString = Object.keys(rest)
-    .sort()
-    .map((k) => `${k}=${rest[k]}`)
-    .join('\n');
-
-  const computed = crypto
-    .createHmac('sha256', secret)
-    .update(dataCheckString)
-    .digest('hex');
-
-  if (
-    !crypto.timingSafeEqual(
-      Buffer.from(computed, 'hex'),
-      Buffer.from(hash, 'hex')
-    )
-  ) {
-    return Response.json({ ok: false, error: 'Invalid hash' }, { status: 401 });
-  }
-
-  // вњ… Legacy widget successful verification
-  return Response.json({
-    ok: true,
-    user: rest,
-  });
 }
 
 
@@ -866,116 +846,136 @@ FILE: components\TelegramLoginButton.tsx
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { TelegramWebApp } from '../types/telegram';
+
+declare global {
+  interface Window {
+    Telegram?: {
+      Login?: {
+        init: (
+          options: {
+            client_id: number;
+            request_access?: ('write' | 'phone')[];
+            lang?: string;
+            nonce?: string;
+          },
+          callback: (data: any) => void
+        ) => void;
+
+        open: () => void;
+      };
+    };
+  }
+}
 
 export function TelegramLoginButton() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const initDoneRef = useRef(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    // Р—Р°РіСЂСѓР¶Р°РµРј СЃРєСЂРёРїС‚ РѕРґРёРЅ СЂР°Р·
-    if (initDoneRef.current) return;
-    initDoneRef.current = true;
+    if (initialized.current) return;
+    initialized.current = true;
 
     const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-login.js';
+
+    script.src =
+      'https://oauth.telegram.org/js/telegram-login.js?5';
+
     script.async = true;
 
     script.onload = () => {
       if (!window.Telegram?.Login) {
-        console.error('[Telegram] Login library not available');
+        console.error('[TG] Login SDK unavailable');
         return;
       }
 
-      const clientId = parseInt(process.env.NEXT_PUBLIC_TG_CLIENT_ID || '0', 10);
+      const clientId = Number(
+        process.env.NEXT_PUBLIC_TG_CLIENT_ID
+      );
 
       if (!clientId) {
-        console.error('[Telegram] Client ID not configured');
+        console.error('[TG] Missing client id');
         return;
       }
 
-      // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃ РѕР±СЂР°Р±РѕС‚С‡РёРєРѕРј
       window.Telegram.Login.init(
         {
-            client_id: clientId,
-            redirect_uri: window.location.origin + '/auth/telegram/callback',
-            lang: 'en',
+          client_id: clientId,
+          request_access: ['write'],
+          lang: 'en',
         },
+
         async (data) => {
+          console.log('[TG CALLBACK]', data);
+
+          if (data.error) {
+            console.error('[TG ERROR]', data.error);
+            return;
+          }
+
+          if (!data.id_token) {
+            console.error('[TG] No id_token');
+            return;
+          }
+
           try {
-            console.log('[TG LOGIN SUCCESS]', data);
-
-            // РџРѕР»СѓС‡Р°РµРј id_token Рё user РґР°РЅРЅС‹Рµ
-            const { id_token, user } = data;
-
-            if (!id_token) {
-              console.error('[Telegram] No id_token received');
-              return;
-            }
-
-            // РћС‚РїСЂР°РІР»СЏРµРј РЅР° backend РґР»СЏ РІРµСЂРёС„РёРєР°С†РёРё
             const response = await fetch('/auth/telegram', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ id_token }),
+              body: JSON.stringify({
+                id_token: data.id_token,
+              }),
             });
 
-            if (!response.ok) {
-              console.error('[Telegram] Backend verification failed:', await response.text());
+            const result = await response.json();
+
+            console.log('[TG VERIFY]', result);
+
+            if (!result.ok) {
               return;
             }
 
-            const result = await response.json();
-            console.log('[TG AUTH SUCCESS]', result);
+            localStorage.setItem(
+              'telegram_user',
+              JSON.stringify(result.user)
+            );
 
-            // РЎРѕС…СЂР°РЅСЏРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Р»РѕРєР°Р»СЊРЅРѕ
-            if (result.user) {
-              localStorage.setItem('telegram_user', JSON.stringify(result.user));
-            }
-
-            // РџРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј СЃС‚СЂР°РЅРёС†Сѓ
             window.location.reload();
           } catch (err) {
-            console.error('[Telegram] Auth error:', err);
+            console.error('[TG FETCH ERROR]', err);
           }
         }
       );
     };
 
     script.onerror = () => {
-      console.error('[Telegram] Failed to load login library');
+      console.error('[TG] Failed to load SDK');
     };
 
-    document.head.appendChild(script);
+    document.body.appendChild(script);
 
     return () => {
-      // Cleanup: СѓРґР°Р»СЏРµРј СЃРєСЂРёРїС‚ РїСЂРё СЂР°Р·РјРѕРЅС‚РёСЂРѕРІР°РЅРёРё
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      script.remove();
     };
   }, []);
 
-  const handleClick = () => {
-    if (window.Telegram?.Login?.open) {
-      window.Telegram.Login.open();
-    } else {
-      console.error('[Telegram] Login not initialized');
+  const handleLogin = () => {
+    if (!window.Telegram?.Login) {
+      console.error('[TG] SDK not initialized');
+      return;
     }
+
+    window.Telegram.Login.open();
   };
 
   return (
-    <div ref={containerRef}>
-      <button
-        type="button"
-        onClick={handleClick}
-        className="rounded-lg border-2 border-[var(--neon-purple)] bg-[rgba(176,38,255,0.1)] px-4 py-2 text-sm font-semibold text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:bg-[rgba(176,38,255,0.2)] hover:text-[var(--neon-pink)]"
-      >
-        Login with Telegram
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={handleLogin}
+      className="rounded-lg border-2 border-[var(--neon-purple)] bg-[rgba(176,38,255,0.1)] px-4 py-2 text-sm font-semibold text-[var(--neon-purple)]"
+    >
+      Login with Telegram
+    </button>
   );
 }
 
@@ -1215,6 +1215,30 @@ export type CatalogItem = {
 
 export type CatalogResponse = {
   items: CatalogItem[];
+};
+
+
+─────────────────────────────────────────
+FILE: types\telegram.ts
+─────────────────────────────────────────
+export type TelegramLoginCallback = {
+  id_token?: string;
+  user?: TelegramUser;
+  error?: string;
+};
+
+export type TelegramLogin = {
+  init: (
+    options: {
+      client_id: number;
+      request_access?: ('write' | 'phone')[];
+      lang?: string;
+      nonce?: string;
+    },
+    callback: (data: TelegramLoginCallback) => void
+  ) => void;
+
+  open: () => void;
 };
 
 
