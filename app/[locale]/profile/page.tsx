@@ -5,6 +5,7 @@ import { useTranslation } from '../../lib/i18n/useTranslation';
 import type { TelegramUser } from '../../types/telegram';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { getDisplayTelegramUser } from '../../lib/telegram';
+import { TelegramLoginButton } from '../../components/TelegramLoginButton';
 
 function getFullName(user: TelegramUser) {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   }
 
   const currentUser = user;
+  const isGuest = currentUser.id === 0;
 
   const fullName = getFullName(currentUser);
 
@@ -79,27 +81,35 @@ export default function ProfilePage() {
           </div>
 
           <div className="mt-4 flex flex-col items-start">
-            <button
-              type="button"
-              onClick={copyId}
-              className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
-            >
-              <span>ID: {user.id}</span>
+            {isGuest ? (
+              <>
+                <TelegramLoginButton />
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={copyId}
+                  className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
+                >
+                  <span>ID: {user.id}</span>
 
-              <span className="ml-2 text-xs opacity-70">
-                {copied ? 'Скопировано ✓' : 'Нажми чтобы скопировать'}
-              </span>
-            </button>
+                  <span className="ml-2 text-xs opacity-70">
+                    {copied ? 'Скопировано ✓' : 'Нажми чтобы скопировать'}
+                  </span>
+                </button>
 
-            {user.username && (
-              <a
-                href={`https://t.me/${user.username}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 text-sm text-[var(--neon-purple)] transition hover:text-[var(--neon-pink)] hover:underline"
-              >
-                @{user.username}
-              </a>
+                {user.username && (
+                  <a
+                    href={`https://t.me/${user.username}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 text-sm text-[var(--neon-purple)] transition hover:text-[var(--neon-pink)] hover:underline"
+                  >
+                    @{user.username}
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>
