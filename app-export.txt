@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 23.05.2026 12:24:18
+Дата: 23.05.2026 13:03:02
 
 =============================================
 
@@ -375,62 +375,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
 ─────────────────────────────────────────
 FILE: auth\telegram\route.ts
 ─────────────────────────────────────────
-import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+export async function POST(req: Request) {
+  const data = await req.json();
 
-  const code = searchParams.get('code');
-  const state = searchParams.get('state');
+  const botToken = process.env.TG_BOT_TOKEN!;
+  const secret = crypto.createHash('sha256').update(botToken).digest();
 
-  // РєСѓРґР° РІРѕР·РІСЂР°С‰Р°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (СѓРЅРёРІРµСЂСЃР°Р»СЊРЅРѕ)
-  const fallbackRedirect = '/ru/profile';
+  const { hash, ...rest } = data;
 
-  const redirectTo = state
-    ? decodeURIComponent(state)
-    : fallbackRedirect;
+  const dataCheckString = Object.keys(rest)
+    .sort()
+    .map((k) => `${k}=${rest[k]}`)
+    .join('\n');
 
-  if (!code) {
-    return NextResponse.redirect(new URL(redirectTo, req.url));
+  const computed = crypto
+    .createHmac('sha256', secret)
+    .update(dataCheckString)
+    .digest('hex');
+
+  if (computed !== hash) {
+    return Response.json({ ok: false }, { status: 401 });
   }
 
-  // рџ”ђ РѕР±РјРµРЅ РєРѕРґР° РЅР° С‚РѕРєРµРЅ Telegram OAuth
-  const tokenRes = await fetch('https://oauth.telegram.org/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization:
-        'Basic ' +
-        Buffer.from(
-          `${process.env.TG_CLIENT_ID}:${process.env.TG_CLIENT_SECRET}`
-        ).toString('base64'),
-    },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: `${process.env.APP_URL}/auth/telegram`,
-      client_id: process.env.TG_CLIENT_ID!,
-    }),
+  // вњ… С‚СѓС‚ СЃРѕР·РґР°С‘С€СЊ СЃРµСЃСЃРёСЋ / JWT
+  return Response.json({
+    ok: true,
+    user: rest,
   });
-
-  const tokenData = await tokenRes.json();
-
-  if (!tokenData?.id_token) {
-    return NextResponse.redirect(new URL(redirectTo, req.url));
-  }
-
-  // рџЌЄ СЃРѕС…СЂР°РЅСЏРµРј СЃРµСЃСЃРёСЋ
-  const res = NextResponse.redirect(new URL(redirectTo, req.url));
-
-  res.cookies.set('tg_auth', tokenData.id_token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 30,
-  });
-
-  return res;
 }
 
 
@@ -817,42 +790,25 @@ FILE: components\TelegramLoginButton.tsx
 ─────────────────────────────────────────
 'use client';
 
-import { useEffect, useRef } from 'react';
-
 export function TelegramLoginButton() {
-  const ref = useRef<HTMLDivElement>(null);
+  const login = () => {
+    const tg = (window as any).Telegram?.Login;
 
-  useEffect(() => {
-    if (!ref.current) return;
+    if (!tg) {
+      console.warn('Telegram SDK not ready');
+      return;
+    }
 
-    const script = document.createElement('script');
-
-    script.async = true;
-    script.src =
-      'https://oauth.telegram.org/js/telegram-login.js?5';
-
-    script.setAttribute('data-client-id', '7173695626');
-
-    script.setAttribute(
-      'data-redirect-url',
-      `${window.location.origin}/auth/telegram`
-    );
-
-    script.setAttribute(
-      'data-state',
-      encodeURIComponent(window.location.pathname)
-    );
-
-    script.setAttribute('data-request-access', 'phone');
-
-    ref.current.innerHTML = '';
-    ref.current.appendChild(script);
-  }, []);
+    tg.open();
+  };
 
   return (
-    <div className="flex justify-center mt-3">
-      <div ref={ref} />
-    </div>
+    <button
+      onClick={login}
+      className="px-4 py-2 rounded-xl bg-purple-600 text-white"
+    >
+      Sign in with Telegram
+    </button>
   );
 }
 
@@ -886,6 +842,64 @@ export async function getCatalog(): Promise<CatalogResponse> {
       items: [],
     };
   }
+}
+
+
+─────────────────────────────────────────
+FILE: lib\auth.ts
+─────────────────────────────────────────
+export function setUser(user: any) {
+  localStorage.setItem('telegram_user', JSON.stringify(user));
+}
+
+export function getUser() {
+  const raw = localStorage.getItem('telegram_user');
+  return raw ? JSON.parse(raw) : null;
+}
+
+export function clearUser() {
+  localStorage.removeItem('telegram_user');
+}
+
+
+─────────────────────────────────────────
+FILE: lib\telegram-auth.ts
+─────────────────────────────────────────
+// lib/telegram-login.ts
+export function initTelegramLogin() {
+  if (typeof window === 'undefined') return;
+
+  if ((window as any).Telegram?.Login) return;
+
+  const script = document.createElement('script');
+  script.src = 'https://oauth.telegram.org/js/telegram-login.js';
+  script.async = true;
+
+  script.onload = () => {
+    const tg = (window as any).Telegram;
+
+    tg.Login.init(
+      {
+        client_id: Number(process.env.NEXT_PUBLIC_TG_BOT_ID),
+        request_access: ['write'],
+      },
+      (user: any) => {
+        // рџ”Ґ Р’РђР–РќРћ: С‚СѓС‚ С‚РѕР»СЊРєРѕ РєР»РёРµРЅС‚, РќР• РґРѕРІРµСЂСЏРµРј
+        console.log('[TG LOGIN]', user);
+
+        localStorage.setItem('telegram_user', JSON.stringify(user));
+
+        // рџ‘‰ Р»СѓС‡С€Рµ СЃСЂР°Р·Сѓ РѕС‚РїСЂР°РІРёС‚СЊ РЅР° backend
+        fetch('/api/auth/telegram-web', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(user),
+        });
+      }
+    );
+  };
+
+  document.head.appendChild(script);
 }
 
 

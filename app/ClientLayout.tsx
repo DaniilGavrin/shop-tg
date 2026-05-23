@@ -12,6 +12,7 @@ import {
 } from './lib/telegram';
 
 import type { AppTab, TelegramUser } from './types/telegram';
+import { getAuthUser } from './lib/auth/getUser';
 
 type ClientLayoutProps = {
   children: React.ReactNode;
@@ -46,13 +47,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   };
 
   useEffect(() => {
-    // Безопасная инициализация Telegram
     setupTelegramWebApp();
 
-    // ВСЕГДА возвращает user или Guest
-    const resolvedUser = getDisplayTelegramUser();
-
-    setUser(resolvedUser);
+    const resolvedUser = getAuthUser();
+    setUser(resolvedUser ?? { id: 0, first_name: 'Guest' });
   }, []);
 
   if (!user) {
