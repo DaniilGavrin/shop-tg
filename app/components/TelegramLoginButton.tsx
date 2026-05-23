@@ -1,72 +1,36 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export function TelegramLoginButton() {
-  const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    if (!ref.current) return;
+    // Проверяем, не загружен ли уже скрипт (защита от дублей в Strict Mode)
+    if (document.querySelector('script[src*="telegram-login.js"]')) {
+      return;
+    }
 
-    // Очищаем контейнер
-    ref.current.innerHTML = '';
-
-    // Создаём скрипт виджета
     const script = document.createElement('script');
-    script.async = true;
     script.src = 'https://oauth.telegram.org/js/telegram-login.js?5';
+    script.async = true;
     
-    // Обязательные атрибуты
+    // 🔥 ВСЕ data-* атрибуты — на самом скрипте, как в доке
     script.setAttribute('data-client-id', process.env.NEXT_PUBLIC_TG_BOT_ID || '7173695626');
-    
-    // 🔥 Ключевое: redirect_url должен быть ЗАРЕГИСТРИРОВАН в @BotFather
-    // Формат: https://твой-домен/ру/профиль (без слэша в конце!)
-    const redirectUrl = `${window.location.origin}/ru/profile`;
-    script.setAttribute('data-redirect-url', redirectUrl);
-    
-    // Сохраняем текущий путь, чтобы вернуться после авторизации
-    script.setAttribute('data-state', encodeURIComponent(window.location.pathname));
-    
-    // Запрашиваем телефон (опционально)
+    script.setAttribute('data-redirect-url', `${window.location.origin}/auth/telegram`);
     script.setAttribute('data-request-access', 'phone');
-    
-    // Размер кнопки
+    script.setAttribute('data-lang', 'ru');
     script.setAttribute('data-size', 'large');
     
-    // Язык (ru/en)
-    script.setAttribute('data-lang', 'ru');
-
-    // ⚠️ НЕ используй data-onauth вместе с data-redirect-url — они конфликтуют!
-    // Если хочешь JS-коллбек вместо редиректа — удали data-redirect-url и раскомментируй:
-    /*
-    window.onTelegramAuth = function(user: any) {
-      // Отправляем данные на бэкенд для валидации
-      fetch('/api/auth/telegram/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user),
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          window.location.href = '/ru/profile';
-        }
-      });
-    };
-    script.setAttribute('data-onauth', 'onTelegramAuth');
-    */
-
-    ref.current.appendChild(script);
-
-    return () => {
-      // Очистка при размонтировании
-      ref.current!.innerHTML = '';
-    };
+    const container = document.getElementById('tg-login-container');
+    if (container) {
+      container.innerHTML = ''; // очищаем, если есть старый контент
+      container.appendChild(script);
+    }
   }, []);
 
   return (
     <div className="flex justify-center mt-3">
-      <div ref={ref} className="telegram-login-container" />
+      {/* 🔥 ID обязателен — скрипт ищет это место */}
+      <div id="tg-login-container" className="telegram-login-wrapper" />
     </div>
   );
 }
