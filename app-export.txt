@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 23.05.2026 13:42:45
+Дата: 23.05.2026 14:29:29
 
 =============================================
 
@@ -20,7 +20,6 @@ import {
 } from './lib/telegram';
 
 import type { AppTab, TelegramUser } from './types/telegram';
-import { getAuthUser } from './lib/auth/getUser';
 
 type ClientLayoutProps = {
   children: React.ReactNode;
@@ -56,9 +55,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
 
   useEffect(() => {
     setupTelegramWebApp();
-
-    const resolvedUser = getAuthUser();
-    setUser(resolvedUser ?? { id: 0, first_name: 'Guest' });
   }, []);
 
   if (!user) {
@@ -900,7 +896,11 @@ export function TelegramLoginButton() {
 
       // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃ РѕР±СЂР°Р±РѕС‚С‡РёРєРѕРј
       window.Telegram.Login.init(
-        { client_id: clientId, lang: 'en' },
+        {
+            client_id: clientId,
+            redirect_uri: window.location.origin + '/auth/telegram/callback',
+            lang: 'en',
+        },
         async (data) => {
           try {
             console.log('[TG LOGIN SUCCESS]', data);
@@ -1009,23 +1009,6 @@ export async function getCatalog(): Promise<CatalogResponse> {
       items: [],
     };
   }
-}
-
-
-─────────────────────────────────────────
-FILE: lib\auth.ts
-─────────────────────────────────────────
-export function setUser(user: any) {
-  localStorage.setItem('telegram_user', JSON.stringify(user));
-}
-
-export function getUser() {
-  const raw = localStorage.getItem('telegram_user');
-  return raw ? JSON.parse(raw) : null;
-}
-
-export function clearUser() {
-  localStorage.removeItem('telegram_user');
 }
 
 
@@ -1158,32 +1141,6 @@ export function setupTelegramWebApp() {
 
 
 ─────────────────────────────────────────
-FILE: lib\auth\getUser.ts
-─────────────────────────────────────────
-import { getTelegramWebApp } from '../telegram';
-
-export function getAuthUser() {
-  if (typeof window === 'undefined') return null;
-
-  // 1. Telegram WebApp (РіР»Р°РІРЅС‹Р№ РёСЃС‚РѕС‡РЅРёРє)
-  const tg = getTelegramWebApp();
-
-  const webAppUser = tg?.initDataUnsafe?.user;
-  if (webAppUser) return webAppUser;
-
-  // 2. Backend session (РµСЃР»Рё РґРѕР±Р°РІРёС€СЊ JWT РїРѕР·Р¶Рµ)
-  const session = localStorage.getItem('session');
-  if (session) return JSON.parse(session);
-
-  // 3. Fallback widget
-  const raw = localStorage.getItem('telegram_user');
-  if (raw) return JSON.parse(raw);
-
-  return null;
-}
-
-
-─────────────────────────────────────────
 FILE: lib\i18n\dictionaries.ts
 ─────────────────────────────────────────
 export const dictionaries = {
@@ -1259,45 +1216,6 @@ export type CatalogItem = {
 export type CatalogResponse = {
   items: CatalogItem[];
 };
-
-
-─────────────────────────────────────────
-FILE: types\telegram.ts
-─────────────────────────────────────────
-export type TelegramUser = {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-};
-
-export type TelegramWebApp = {
-  expand: () => void;
-  setHeaderColor: (color: string) => void;
-  setBackgroundColor: (color: string) => void;
-  isVersionAtLeast?: (version: string) => boolean;
-  initDataUnsafe?: {
-    user?: TelegramUser;
-  };
-};
-
-export type TelegramLogin = {
-  init(options: { client_id: number; lang?: string }, callback: (data: any) => void): void;
-  auth(options: { client_id: number; lang?: string }, callback: (data: any) => void): void;
-  open(): void;
-};
-
-export type AppTab = 'home' | 'catalog' | 'cart' | 'profile';
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: TelegramWebApp;
-      Login?: TelegramLogin;
-    };
-  }
-}
 
 
 ─────────────────────────────────────────

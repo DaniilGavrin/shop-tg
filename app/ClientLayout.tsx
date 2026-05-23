@@ -12,7 +12,6 @@ import {
 } from './lib/telegram';
 
 import type { AppTab, TelegramUser } from './types/telegram';
-import { getAuthUser } from './lib/auth/getUser';
 
 type ClientLayoutProps = {
   children: React.ReactNode;
@@ -49,8 +48,9 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   useEffect(() => {
     setupTelegramWebApp();
 
-    const resolvedUser = getAuthUser();
-    setUser(resolvedUser ?? { id: 0, first_name: 'Guest' });
+    const resolvedUser = getDisplayTelegramUser();
+
+    setUser(resolvedUser);
   }, []);
 
   if (!user) {
