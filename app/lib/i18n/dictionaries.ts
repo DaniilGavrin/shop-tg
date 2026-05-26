@@ -15,10 +15,14 @@ export const dictionaries = {
       language: 'Язык',
       currency: 'Валюта',
       change: 'Изменить',
+      contacts_hint: 'Все способы связи'
     },
     contact: {
       email_label: 'Почта', // 'Email' для en
       telegram_label: 'Telegram',
+      vk_label: "ВКонтакте",
+      wechat_label: "WeChat",
+      discord_label: 'Discord',
       hint: 'Нажмите на карточку, чтобы связаться', // 'Tap a card to contact us' для en
     }
   },
@@ -39,10 +43,14 @@ export const dictionaries = {
       language: 'Language',
       currency: 'Currency',
       change: 'Change',
+      contacts_hint: 'All ways to connect'
     },
     contact: {
       email_label: 'Email',
       telegram_label: 'Telegram',
+      vk_label: 'VK',
+      wechat_label: "WeChat",
+      discord_label: 'Discord',
       hint: 'Tap a card to contact us',
     }
   },

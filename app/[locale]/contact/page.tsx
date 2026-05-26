@@ -6,90 +6,70 @@ import { ScreenTitle } from '../../components/ScreenTitle';
 export default function ContactPage() {
   const { t } = useTranslation();
 
-  // Замените на ваши реальные контакты
-  const CONTACT_EMAIL = 'daniilgavrin@bytewizard.ru';
-  const CONTACT_TELEGRAM = '@danya_gavrin';
+  // 📝 ЗАМЕНИ ЗНАЧЕНИЯ НА СВОИ РЕАЛЬНЫЕ ДАННЫЕ
+  const CONTACTS = [
+    { label: t.contact.email_label, value: 'daniilgavrin@bytewizard.ru', href: 'mailto:daniilgavrin@bytewizard.ru' },
+    { label: t.contact.telegram_label, value: '@danya_gavrin', href: 'https://t.me/danya_gavrin', external: true },
+    { label: t.contact.vk_label, value: 'vk.com/danya_gavrin', href: 'https://vk.com/danya_gavrin', external: true },
+    //{ label: t.contact.wechat_label, value: 'your_wechat_id', href: '#' }, // WeChat не имеет прямой веб-ссылки, лучше копировать ID
+    //{ label: t.contact.discord_label, value: 'your_username#0000', href: '#' }, // Discord лучше копировать или дать invite-ссылку
+  ];
 
   return (
     <>
       <ScreenTitle>{t.nav.contact}</ScreenTitle>
 
-      {/* Email Card */}
-      <a
-        href={`mailto:${CONTACT_EMAIL}`}
-        className="block mt-6 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
-      >
-        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+      {CONTACTS.map((contact) => {
+        const isExternal = contact.external || contact.href.startsWith('http');
+        const isPlaceholder = contact.href === '#';
 
-        <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.contact.email_label}
-            </p>
-            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              {CONTACT_EMAIL}
-            </h3>
-          </div>
+        const cardStyle = "block mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]";
 
-          {/* Иконка стрелки */}
-          <svg
-            className="h-5 w-5 text-[var(--neon-purple)] transition group-hover:translate-x-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
+        if (isPlaceholder) {
+          return (
+            <button
+              key={contact.label}
+              type="button"
+              onClick={() => navigator.clipboard.writeText(contact.value)}
+              className={`${cardStyle} w-full text-left`}
+            >
+              <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+              <div className="flex items-center justify-between px-5 py-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">{contact.label}</p>
+                  <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">{contact.value}</h3>
+                </div>
+                <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+              </div>
+            </button>
+          );
+        }
+
+        return (
+          <a
+            key={contact.label}
+            href={contact.href}
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noreferrer' : undefined}
+            className={cardStyle}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </div>
-      </a>
+            <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+            <div className="flex items-center justify-between px-5 py-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">{contact.label}</p>
+                <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">{contact.value}</h3>
+              </div>
+              <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+        );
+      })}
 
-      {/* Telegram Card */}
-      <a
-        href={`https://t.me/${CONTACT_TELEGRAM.replace('@', '')}`}
-        target="_blank"
-        rel="noreferrer"
-        className="block mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
-      >
-        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
-
-        <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.contact.telegram_label}
-            </p>
-            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              {CONTACT_TELEGRAM}
-            </h3>
-          </div>
-
-          {/* Иконка стрелки */}
-          <svg
-            className="h-5 w-5 text-[var(--neon-purple)] transition group-hover:translate-x-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </div>
-      </a>
-
-      {/* Опционально: подсказка внизу */}
-      <p className="mt-6 text-center text-xs text-[var(--text-dim)]">
-        {t.contact.hint}
-      </p>
+      <p className="mt-6 text-center text-xs text-[var(--text-dim)]">{t.contact.hint}</p>
     </>
   );
 }
