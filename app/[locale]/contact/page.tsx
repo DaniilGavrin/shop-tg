@@ -7,8 +7,8 @@ export default function ContactPage() {
   const { t } = useTranslation();
 
   // Замените на ваши реальные контакты
-  const CONTACT_EMAIL = 'support@bytewizard.ru';
-  const CONTACT_TELEGRAM = '@bytewizard_support';
+  const CONTACT_EMAIL = 'daniilgavrin@bytewizard.ru';
+  const CONTACT_TELEGRAM = '@danya_gavrin';
 
   return (
     <>
