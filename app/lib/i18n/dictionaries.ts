@@ -15,7 +15,19 @@ export const dictionaries = {
       language: 'Язык',
       currency: 'Валюта',
       change: 'Изменить',
-      contacts_hint: 'Все способы связи'
+      contacts_hint: 'Все способы связи',
+      legal: 'Документы',
+      legal_hint: 'Оферта, политика, реквизиты'
+    },
+    legal: {
+      title: 'Документы',
+      privacy: 'Политика конфиденциальности',
+      terms: 'Пользовательское соглашение',
+      license: 'Лицензионное соглашение',
+      requisites: 'Реквизиты ИП',
+      refund: 'Возврат и отмена',
+      open_in_cloud: 'Открыть в просмотрщике',
+      updated: 'Обновлено:',
     },
     contact: {
       email_label: 'Почта', // 'Email' для en
@@ -43,7 +55,19 @@ export const dictionaries = {
       language: 'Language',
       currency: 'Currency',
       change: 'Change',
-      contacts_hint: 'All ways to connect'
+      contacts_hint: 'All ways to connect',
+      legal: 'Legal',
+      legal_hint: 'Terms, privacy, requisites'
+    },
+    legal: {
+      title: 'Legal',
+      privacy: 'Privacy Policy',
+      terms: 'Terms of Service',
+      license: 'Software License',
+      requisites: 'Business Details',
+      refund: 'Refund Policy',
+      open_in_cloud: 'Open in viewer',
+      updated: 'Updated:',
     },
     contact: {
       email_label: 'Email',
