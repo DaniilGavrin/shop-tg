@@ -5,6 +5,9 @@ import { ProductCard } from './ProductCard';
 import type { CatalogItem } from '../types/catalog';
 import { useTranslation } from '../lib/i18n/useTranslation';
 
+// 🔥 Выносим базовый URL в константу (или импортируй из lib/api)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
+
 export function FeaturedProducts() {
   const { t } = useTranslation();
   const [items, setItems] = useState<CatalogItem[]>([]);
@@ -15,13 +18,15 @@ export function FeaturedProducts() {
 
     const loadFeatured = async () => {
       try {
-        // 🔄 Запрос идёт параллельно, не блокируя рендер страницы
-        const response = await fetch('/catalog/featured', {
-          // Кэш браузера на 6 часов
+        const response = await fetch(`${API_BASE_URL}/catalog/featured`, {
+          // ✅ Для клиентского фетча: кэш браузера на 6 часов
           cache: 'force-cache',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
         
-        if (!response.ok) throw new Error('Failed to fetch');
+        if (!response.ok) throw new Error(`API ERROR ${response.status}`);
         
         const data = await response.json();
         
@@ -31,7 +36,7 @@ export function FeaturedProducts() {
         }
       } catch (error) {
         console.error('Featured load error:', error);
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoading(false); // Чтобы убрать скелетон при ошибке
       }
     };
 
@@ -47,7 +52,7 @@ export function FeaturedProducts() {
   }
 
   if (items.length === 0) {
-    return null; // Если нет featured-товаров — не рендерим блок
+    return null;
   }
 
   return (
@@ -65,18 +70,13 @@ export function FeaturedProducts() {
   );
 }
 
-// 🔹 Скелетон-заглушка (показываем пока грузятся данные)
 function FeaturedSkeleton() {
   return (
     <section className="mt-8 animate-pulse">
       <div className="mb-4 h-7 w-40 rounded bg-[var(--bg-surface)]" />
-      
       <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
         {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="h-64 rounded-3xl bg-[var(--bg-surface)]"
-          />
+          <div key={i} className="h-64 rounded-3xl bg-[var(--bg-surface)]" />
         ))}
       </div>
     </section>
