@@ -8,6 +8,7 @@ export const dictionaries = {
       catalog: 'Каталог',
       cart: 'Корзина',
       profile: 'Профиль',
+      contact: 'Контакты'
     },
     profile: {
       account: 'Аккаунт',
@@ -15,6 +16,11 @@ export const dictionaries = {
       currency: 'Валюта',
       change: 'Изменить',
     },
+    contact: {
+      email_label: 'Почта', // 'Email' для en
+      telegram_label: 'Telegram',
+      hint: 'Нажмите на карточку, чтобы связаться', // 'Tap a card to contact us' для en
+    }
   },
 
   en: {
@@ -26,6 +32,7 @@ export const dictionaries = {
       catalog: 'Catalog',
       cart: 'Cart',
       profile: 'Profile',
+      contact: 'Contact'
     },
     profile: {
       account: 'Account',
@@ -33,5 +40,10 @@ export const dictionaries = {
       currency: 'Currency',
       change: 'Change',
     },
+    contact: {
+      email_label: 'Email',
+      telegram_label: 'Telegram',
+      hint: 'Tap a card to contact us',
+    }
   },
 } as const;

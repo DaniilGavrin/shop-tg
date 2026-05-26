@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 23.05.2026 14:55:56
+Дата: 26.05.2026 15:28:46
 
 =============================================
 
@@ -428,7 +428,7 @@ export async function POST(req: Request) {
 
       user: {
         id:
-          decoded.sub ||
+          decoded.id ||
           decoded.telegram_id,
 
         first_name:
@@ -847,34 +847,22 @@ FILE: components\TelegramLoginButton.tsx
 
 import { useEffect, useRef } from 'react';
 
-declare global {
-  interface Window {
-    Telegram?: {
-      Login?: {
-        init: (
-          options: {
-            client_id: number;
-            request_access?: ('write' | 'phone')[];
-            lang?: string;
-            nonce?: string;
-          },
-          callback: (data: any) => void
-        ) => void;
-
-        open: () => void;
-      };
-    };
-  }
-}
+import type {
+  TelegramLoginCallback,
+} from '../types/telegram';
 
 export function TelegramLoginButton() {
   const initialized = useRef(false);
 
   useEffect(() => {
-    if (initialized.current) return;
+    if (initialized.current) {
+      return;
+    }
+
     initialized.current = true;
 
-    const script = document.createElement('script');
+    const script =
+      document.createElement('script');
 
     script.src =
       'https://oauth.telegram.org/js/telegram-login.js?5';
@@ -882,54 +870,88 @@ export function TelegramLoginButton() {
     script.async = true;
 
     script.onload = () => {
-      if (!window.Telegram?.Login) {
-        console.error('[TG] Login SDK unavailable');
+      const login =
+        window.Telegram?.Login;
+
+      if (!login) {
+        console.error(
+          '[TG] Login SDK unavailable'
+        );
+
         return;
       }
 
       const clientId = Number(
-        process.env.NEXT_PUBLIC_TG_CLIENT_ID
+        process.env
+          .NEXT_PUBLIC_TG_CLIENT_ID
       );
 
       if (!clientId) {
-        console.error('[TG] Missing client id');
+        console.error(
+          '[TG] Missing client id'
+        );
+
         return;
       }
 
-      window.Telegram.Login.init(
+      login.init(
         {
           client_id: clientId,
           request_access: ['write'],
           lang: 'en',
         },
 
-        async (data) => {
-          console.log('[TG CALLBACK]', data);
+        async (
+          data: TelegramLoginCallback
+        ) => {
+          console.log(
+            '[TG CALLBACK]',
+            data
+          );
 
           if (data.error) {
-            console.error('[TG ERROR]', data.error);
+            console.error(
+              '[TG ERROR]',
+              data.error
+            );
+
             return;
           }
 
           if (!data.id_token) {
-            console.error('[TG] No id_token');
+            console.error(
+              '[TG] Missing id_token'
+            );
+
             return;
           }
 
           try {
-            const response = await fetch('/auth/telegram', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                id_token: data.id_token,
-              }),
-            });
+            const response =
+              await fetch(
+                '/auth/telegram',
+                {
+                  method: 'POST',
 
-            const result = await response.json();
+                  headers: {
+                    'Content-Type':
+                      'application/json',
+                  },
 
-            console.log('[TG VERIFY]', result);
+                  body: JSON.stringify({
+                    id_token:
+                      data.id_token,
+                  }),
+                }
+              );
+
+            const result =
+              await response.json();
+
+            console.log(
+              '[TG VERIFY]',
+              result
+            );
 
             if (!result.ok) {
               return;
@@ -937,19 +959,27 @@ export function TelegramLoginButton() {
 
             localStorage.setItem(
               'telegram_user',
-              JSON.stringify(result.user)
+
+              JSON.stringify(
+                result.user
+              )
             );
 
             window.location.reload();
-          } catch (err) {
-            console.error('[TG FETCH ERROR]', err);
+          } catch (error) {
+            console.error(
+              '[TG FETCH ERROR]',
+              error
+            );
           }
         }
       );
     };
 
     script.onerror = () => {
-      console.error('[TG] Failed to load SDK');
+      console.error(
+        '[TG] Failed to load SDK'
+      );
     };
 
     document.body.appendChild(script);
@@ -960,19 +990,38 @@ export function TelegramLoginButton() {
   }, []);
 
   const handleLogin = () => {
-    if (!window.Telegram?.Login) {
-      console.error('[TG] SDK not initialized');
+    const login =
+      window.Telegram?.Login;
+
+    if (!login) {
+      console.error(
+        '[TG] SDK not initialized'
+      );
+
       return;
     }
 
-    window.Telegram.Login.open();
+    login.open();
   };
 
   return (
     <button
       type="button"
       onClick={handleLogin}
-      className="rounded-lg border-2 border-[var(--neon-purple)] bg-[rgba(176,38,255,0.1)] px-4 py-2 text-sm font-semibold text-[var(--neon-purple)]"
+      className="
+        rounded-xl
+        border
+        border-[var(--neon-purple)]
+        bg-[rgba(176,38,255,0.12)]
+        px-4
+        py-2
+        text-sm
+        font-semibold
+        text-[var(--neon-purple)]
+        transition
+        hover:border-[var(--neon-pink)]
+        hover:text-[var(--neon-pink)]
+      "
     >
       Login with Telegram
     </button>
@@ -1160,6 +1209,10 @@ export const dictionaries = {
       currency: 'Р’Р°Р»СЋС‚Р°',
       change: 'РР·РјРµРЅРёС‚СЊ',
     },
+    language: {
+      russian: "Р СѓСЃСЃРєРёР№",
+      english: 'РђРЅРіР»РёР№СЃРєРёР№'
+    }
   },
 
   en: {
@@ -1178,6 +1231,10 @@ export const dictionaries = {
       currency: 'Currency',
       change: 'Change',
     },
+    language: {
+      russian: "Russian",
+      english: 'English'
+    }
   },
 } as const;
 
@@ -1221,6 +1278,14 @@ export type CatalogResponse = {
 ─────────────────────────────────────────
 FILE: types\telegram.ts
 ─────────────────────────────────────────
+export type TelegramUser = {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+};
+
 export type TelegramLoginCallback = {
   id_token?: string;
   user?: TelegramUser;
@@ -1235,11 +1300,49 @@ export type TelegramLogin = {
       lang?: string;
       nonce?: string;
     },
-    callback: (data: TelegramLoginCallback) => void
+
+    callback: (
+      data: TelegramLoginCallback
+    ) => void
   ) => void;
 
   open: () => void;
 };
+
+export type TelegramWebApp = {
+  initDataUnsafe?: {
+    user?: TelegramUser;
+  };
+
+  expand: () => void;
+
+  setHeaderColor: (
+    color: string
+  ) => void;
+
+  setBackgroundColor: (
+    color: string
+  ) => void;
+
+  isVersionAtLeast?: (
+    version: string
+  ) => boolean;
+};
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: TelegramWebApp;
+      Login?: TelegramLogin;
+    };
+  }
+}
+
+export type AppTab =
+  | 'home'
+  | 'catalog'
+  | 'cart'
+  | 'profile';
 
 
 ─────────────────────────────────────────
@@ -1328,6 +1431,16 @@ export default async function CatalogPage() {
     </>
   );
 }
+
+
+─────────────────────────────────────────
+FILE: [locale]\contact\page.tsx
+─────────────────────────────────────────
+// РЎС‚СЂР°РЅРёС†Р° РєРѕРЅС‚Р°РєС‚РѕРІ, РґРёР·Р°Р№РЅ С‚РѕС‚ Р¶Рµ С‡С‚Рѕ Рё РЅР° РѕСЃС‚Р°Р»СЊРЅС‹С…, Рё РґРѕР±Р°РІР»СЏРµРј РєРЅРѕРїРєРё СЃ РєРѕРЅС‚Р°РєС‚Р°РјРё
+'use client'
+
+import { useEffect, useState } from 'react';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 
 ─────────────────────────────────────────
