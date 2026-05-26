@@ -2,6 +2,7 @@ export const dictionaries = {
   ru: {
     home: {
       welcome: 'Добро пожаловать',
+      featured_title: 'Рекомендуем',
     },
     nav: {
       home: 'Главная',
@@ -42,6 +43,7 @@ export const dictionaries = {
   en: {
     home: {
       welcome: 'Welcome',
+      featured_title: 'Featured',
     },
     nav: {
       home: 'Home',

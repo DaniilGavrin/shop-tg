@@ -25,3 +25,21 @@ export async function getCatalog(): Promise<CatalogResponse> {
     };
   }
 }
+
+export async function getFeaturedCatalog(): Promise<CatalogResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/catalog/featured`, {
+      // 🕒 Кэш на 6 часов (6 * 60 * 60 = 21600 секунд)
+      next: { revalidate: 21600 },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API ERROR ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('FEATURED FETCH ERROR:', error);
+    return { items: [] };
+  }
+}

@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 26.05.2026 15:28:46
+Дата: 26.05.2026 19:16:56
 
 =============================================
 
@@ -362,6 +362,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${base}/en/catalog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${base}/ru/contact`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${base}/en/contact`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${base}/ru/legal`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${base}/en/legal`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
@@ -1202,16 +1226,34 @@ export const dictionaries = {
       catalog: 'РљР°С‚Р°Р»РѕРі',
       cart: 'РљРѕСЂР·РёРЅР°',
       profile: 'РџСЂРѕС„РёР»СЊ',
+      contact: 'РљРѕРЅС‚Р°РєС‚С‹'
     },
     profile: {
       account: 'РђРєРєР°СѓРЅС‚',
       language: 'РЇР·С‹Рє',
       currency: 'Р’Р°Р»СЋС‚Р°',
       change: 'РР·РјРµРЅРёС‚СЊ',
+      contacts_hint: 'Р’СЃРµ СЃРїРѕСЃРѕР±С‹ СЃРІСЏР·Рё',
+      legal: 'Р”РѕРєСѓРјРµРЅС‚С‹',
+      legal_hint: 'РћС„РµСЂС‚Р°, РїРѕР»РёС‚РёРєР°, СЂРµРєРІРёР·РёС‚С‹'
     },
-    language: {
-      russian: "Р СѓСЃСЃРєРёР№",
-      english: 'РђРЅРіР»РёР№СЃРєРёР№'
+    legal: {
+      title: 'Р”РѕРєСѓРјРµРЅС‚С‹',
+      privacy: 'РџРѕР»РёС‚РёРєР° РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё',
+      terms: 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРѕРµ СЃРѕРіР»Р°С€РµРЅРёРµ',
+      license: 'Р›РёС†РµРЅР·РёРѕРЅРЅРѕРµ СЃРѕРіР»Р°С€РµРЅРёРµ',
+      requisites: 'Р РµРєРІРёР·РёС‚С‹ РРџ',
+      refund: 'Р’РѕР·РІСЂР°С‚ Рё РѕС‚РјРµРЅР°',
+      open_in_cloud: 'РћС‚РєСЂС‹С‚СЊ РІ РїСЂРѕСЃРјРѕС‚СЂС‰РёРєРµ',
+      updated: 'РћР±РЅРѕРІР»РµРЅРѕ:',
+    },
+    contact: {
+      email_label: 'РџРѕС‡С‚Р°', // 'Email' РґР»СЏ en
+      telegram_label: 'Telegram',
+      vk_label: "Р’РљРѕРЅС‚Р°РєС‚Рµ",
+      wechat_label: "WeChat",
+      discord_label: 'Discord',
+      hint: 'РќР°Р¶РјРёС‚Рµ РЅР° РєР°СЂС‚РѕС‡РєСѓ, С‡С‚РѕР±С‹ СЃРІСЏР·Р°С‚СЊСЃСЏ', // 'Tap a card to contact us' РґР»СЏ en
     }
   },
 
@@ -1224,16 +1266,34 @@ export const dictionaries = {
       catalog: 'Catalog',
       cart: 'Cart',
       profile: 'Profile',
+      contact: 'Contact'
     },
     profile: {
       account: 'Account',
       language: 'Language',
       currency: 'Currency',
       change: 'Change',
+      contacts_hint: 'All ways to connect',
+      legal: 'Legal',
+      legal_hint: 'Terms, privacy, requisites'
     },
-    language: {
-      russian: "Russian",
-      english: 'English'
+    legal: {
+      title: 'Legal',
+      privacy: 'Privacy Policy',
+      terms: 'Terms of Service',
+      license: 'Software License',
+      requisites: 'Business Details',
+      refund: 'Refund Policy',
+      open_in_cloud: 'Open in viewer',
+      updated: 'Updated:',
+    },
+    contact: {
+      email_label: 'Email',
+      telegram_label: 'Telegram',
+      vk_label: 'VK',
+      wechat_label: "WeChat",
+      discord_label: 'Discord',
+      hint: 'Tap a card to contact us',
     }
   },
 } as const;
@@ -1436,11 +1496,157 @@ export default async function CatalogPage() {
 ─────────────────────────────────────────
 FILE: [locale]\contact\page.tsx
 ─────────────────────────────────────────
-// РЎС‚СЂР°РЅРёС†Р° РєРѕРЅС‚Р°РєС‚РѕРІ, РґРёР·Р°Р№РЅ С‚РѕС‚ Р¶Рµ С‡С‚Рѕ Рё РЅР° РѕСЃС‚Р°Р»СЊРЅС‹С…, Рё РґРѕР±Р°РІР»СЏРµРј РєРЅРѕРїРєРё СЃ РєРѕРЅС‚Р°РєС‚Р°РјРё
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
+import { ScreenTitle } from '../../components/ScreenTitle';
+
+export default function ContactPage() {
+  const { t } = useTranslation();
+
+  // рџ“ќ Р—РђРњР•РќР Р—РќРђР§Р•РќРРЇ РќРђ РЎР’РћР Р Р•РђР›Р¬РќР«Р• Р”РђРќРќР«Р•
+  const CONTACTS = [
+    { label: t.contact.email_label, value: 'daniilgavrin@bytewizard.ru', href: 'mailto:daniilgavrin@bytewizard.ru' },
+    { label: t.contact.telegram_label, value: '@danya_gavrin', href: 'https://t.me/danya_gavrin', external: true },
+    { label: t.contact.vk_label, value: 'vk.com/danya_gavrin', href: 'https://vk.com/danya_gavrin', external: true },
+    //{ label: t.contact.wechat_label, value: 'your_wechat_id', href: '#' }, // WeChat РЅРµ РёРјРµРµС‚ РїСЂСЏРјРѕР№ РІРµР±-СЃСЃС‹Р»РєРё, Р»СѓС‡С€Рµ РєРѕРїРёСЂРѕРІР°С‚СЊ ID
+    //{ label: t.contact.discord_label, value: 'your_username#0000', href: '#' }, // Discord Р»СѓС‡С€Рµ РєРѕРїРёСЂРѕРІР°С‚СЊ РёР»Рё РґР°С‚СЊ invite-СЃСЃС‹Р»РєСѓ
+  ];
+
+  return (
+    <>
+      <ScreenTitle>{t.nav.contact}</ScreenTitle>
+
+      {CONTACTS.map((contact) => {
+        const isExternal = contact.external || contact.href.startsWith('http');
+        const isPlaceholder = contact.href === '#';
+
+        const cardStyle = "block mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]";
+
+        if (isPlaceholder) {
+          return (
+            <button
+              key={contact.label}
+              type="button"
+              onClick={() => navigator.clipboard.writeText(contact.value)}
+              className={`${cardStyle} w-full text-left`}
+            >
+              <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+              <div className="flex items-center justify-between px-5 py-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">{contact.label}</p>
+                  <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">{contact.value}</h3>
+                </div>
+                <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+              </div>
+            </button>
+          );
+        }
+
+        return (
+          <a
+            key={contact.label}
+            href={contact.href}
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noreferrer' : undefined}
+            className={cardStyle}
+          >
+            <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+            <div className="flex items-center justify-between px-5 py-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">{contact.label}</p>
+                <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">{contact.value}</h3>
+              </div>
+              <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+        );
+      })}
+
+      <p className="mt-6 text-center text-xs text-[var(--text-dim)]">{t.contact.hint}</p>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\legal\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useTranslation } from '../../lib/i18n/useTranslation';
+import { ScreenTitle } from '../../components/ScreenTitle';
+
+export default function LegalPage() {
+  const { t } = useTranslation();
+
+  // Р’РЎРўРђР’Р¬ РЎР®Р”Рђ РџРЈР‘Р›РР§РќР«Р• РЎРЎР«Р›РљР РќРђ РћР‘Р›РђРљРћ
+  const docs = [
+    {
+      label: t.legal.privacy,
+      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview', // РёР»Рё РЇРЅРґРµРєСЃ.Р”РёСЃРє
+      icon: 'рџ›ЎпёЏ',
+    },
+    {
+      label: t.legal.terms,
+      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      icon: 'рџ“њ',
+    },
+    {
+      label: t.legal.license,
+      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      icon: 'вљ™пёЏ',
+    },
+    {
+      label: t.legal.requisites,
+      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      icon: 'рџЏ¦',
+    },
+    {
+      label: t.legal.refund,
+      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      icon: 'в†©пёЏ',
+    },
+  ];
+
+  return (
+    <>
+      <ScreenTitle>{t.legal.title}</ScreenTitle>
+
+      <div className="mt-6 flex flex-col gap-4">
+        {docs.map((doc) => (
+          <a
+            key={doc.label}
+            href={doc.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+          >
+            <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+            <div className="flex items-center gap-4 px-5 py-4">
+              <span className="text-2xl">{doc.icon}</span>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-[var(--text-main)]">{doc.label}</h3>
+                <p className="mt-0.5 text-xs text-[var(--text-dim)]">{t.legal.open_in_cloud}</p>
+              </div>
+              <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <p className="mt-6 text-center text-xs text-[var(--text-dim)]">
+        {t.legal.updated} {new Date().toLocaleDateString('ru-RU')}
+      </p>
+    </>
+  );
+}
 
 
 ─────────────────────────────────────────
@@ -1454,6 +1660,10 @@ import type { TelegramUser } from '../../types/telegram';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { getDisplayTelegramUser } from '../../lib/telegram';
 import { TelegramLoginButton } from '../../components/TelegramLoginButton';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+
 
 function getFullName(user: TelegramUser) {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
@@ -1463,6 +1673,9 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] || 'ru';
 
   useEffect(() => {
     setUser(getDisplayTelegramUser());
@@ -1563,51 +1776,45 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
+      <Link
+        href={`/${locale}/contact`}
+        className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+      >
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
-
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.profile.language}
+              {t.nav.contact}
             </p>
-
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              {t.profile.currency}
+              {t.profile.contacts_hint}
             </h3>
           </div>
-
-          <button
-            type="button"
-            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
-          >
-            {t.profile.change}
-          </button>
+          <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </div>
-      </section>
-
-      <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)]">
+      </Link>
+      
+      <Link
+        href={`/${locale}/legal`}
+        className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+      >
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
-
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.profile.currency}
+              {t.profile.legal}
             </p>
-
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              TON
+              {t.profile.legal_hint}
             </h3>
           </div>
-
-          <button
-            type="button"
-            className="rounded-xl border border-[rgba(176,38,255,0.3)] px-3 py-1 text-sm text-[var(--neon-purple)] transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]"
-          >
-            {t.profile.change}
-          </button>
+          <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </div>
-      </section>
+      </Link>
     </>
   );
 }
