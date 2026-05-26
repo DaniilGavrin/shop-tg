@@ -6,7 +6,7 @@ import { ScreenTitle } from '../../components/ScreenTitle';
 export default function LegalPage() {
   const { t } = useTranslation();
 
-  // 📝 ВСТАВЬ СЮДА ПУБЛИЧНЫЕ ССЫЛКИ НА ОБЛАКО
+  // ВСТАВЬ СЮДА ПУБЛИЧНЫЕ ССЫЛКИ НА ОБЛАКО
   const docs = [
     {
       label: t.legal.privacy,
