@@ -83,6 +83,8 @@ export async function POST(req: Request) {
               user.username,
             id_token:
               data.id_token,
+            phone:
+              data.phone,
           }),
         }
       );
