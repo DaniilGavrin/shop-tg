@@ -122,21 +122,6 @@ export function TelegramLoginButton() {
               )
             );
 
-            await fetch('https://api.shop.bytewizard.ru/auth/session', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                tg_id: result.user.id,
-                first_name: result.user.first_name,
-                last_name: result.user.last_name,
-                username: result.user.username,
-                photo_url: result.user.photo_url,
-                phone: result.user.phone,
-              }),
-            });
-
             window.location.reload();
           } catch (error) {
             console.error(

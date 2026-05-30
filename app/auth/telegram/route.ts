@@ -81,8 +81,6 @@ export async function POST(req: Request) {
               user.last_name,
             username:
               user.username,
-            photo_url:
-              user.photo_url,
             id_token:
               data.id_token,
           }),
