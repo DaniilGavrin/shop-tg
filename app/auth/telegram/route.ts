@@ -43,6 +43,58 @@ export async function POST(req: Request) {
       );
     }
 
+    const user = {
+      id:
+        decoded.id ||
+        decoded.telegram_id,
+
+      first_name:
+        decoded.given_name ||
+        decoded.name ||
+        'User',
+
+      last_name:
+        decoded.family_name || '',
+
+      username:
+        decoded.preferred_username ||
+        '',
+
+      photo_url:
+        decoded.picture || '',
+    };
+
+    try {
+      await fetch(
+        'https://api.shop.bytewizard.ru/users/verify',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            tg_id: Number(user.id),
+            first_name:
+              user.first_name,
+            last_name:
+              user.last_name,
+            username:
+              user.username,
+            photo_url:
+              user.photo_url,
+            id_token:
+              data.id_token,
+          }),
+        }
+      );
+    } catch (error) {
+      console.error(
+        '[VERIFY ERROR]',
+        error
+      );
+    }
+
     console.log(
       '[Telegram JWT]',
       decoded
@@ -50,30 +102,7 @@ export async function POST(req: Request) {
 
     return Response.json({
       ok: true,
-
-      user: {
-        id:
-          decoded.id ||
-          decoded.telegram_id,
-
-        first_name:
-          decoded.given_name ||
-          decoded.name ||
-          'User',
-
-        last_name:
-          decoded.family_name || '',
-
-        username:
-          decoded.preferred_username ||
-          '',
-
-        photo_url:
-          decoded.picture || '',
-
-        phone:
-          decoded.phone || '',
-      },
+      user,
     });
   } catch (err) {
     console.error(err);
