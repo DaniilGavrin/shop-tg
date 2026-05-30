@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 30.05.2026 17:09:38
+Дата: 30.05.2026 18:32:21
 
 =============================================
 
@@ -518,6 +518,7 @@ FILE: components\BottomNavigation.module.css
   background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-purple), transparent);
   opacity: 0.8;
 }
+
 
 .home {
   --active-x: 12.5%;
@@ -1487,6 +1488,7 @@ export type TelegramUser = {
   first_name: string;
   last_name?: string;
   username?: string;
+  phone?: string;
   photo_url?: string;
 };
 

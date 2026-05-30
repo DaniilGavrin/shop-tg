@@ -70,6 +70,9 @@ export async function POST(req: Request) {
 
         photo_url:
           decoded.picture || '',
+
+        phone:
+          decoded.phone || '',
       },
     });
   } catch (err) {
