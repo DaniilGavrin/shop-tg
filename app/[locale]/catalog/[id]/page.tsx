@@ -113,23 +113,20 @@ export default function ProductPage() {
   return (
     <>
       {/* Хедер с кнопкой "Назад" + название */}
-      <header className="sticky top-0 z-40 flex items-center gap-3 py-3 bg-[var(--bg-deep)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-deep)]/80">
+      <header className="sticky top-0 z-40 relative flex items-center h-14 px-4 bg-transparent">
         <button
-          type="button"
-          onClick={() => router.back()}
-          className="
-            shrink-0 p-2 rounded-xl border border-[rgba(176,38,255,0.3)]
-            text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]
-            active:scale-[0.98] transition
-          "
-          aria-label={t.back}
+            type="button"
+            onClick={() => router.back()}
+            className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition"
+            aria-label={t.back}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+            </svg>
         </button>
-        <h1 className="text-xl md:text-2xl font-bold text-gradient-neon truncate">
-          {product.name}
+
+        <h1 className="mx-auto text-center text-xl md:text-2xl font-bold text-gradient-neon truncate max-w-[75%] px-2">
+            {product.name}
         </h1>
       </header>
 
