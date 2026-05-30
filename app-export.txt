@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 30.05.2026 19:05:06
+Дата: 30.05.2026 19:46:29
 
 =============================================
 
@@ -461,7 +461,12 @@ export async function POST(req: Request) {
 
       photo_url:
         decoded.picture || '',
+
+      phone:
+        decoded.phone || '',
     };
+
+    console.log(user)
 
     try {
       await fetch(
@@ -480,10 +485,10 @@ export async function POST(req: Request) {
               user.last_name,
             username:
               user.username,
-            photo_url:
-              user.photo_url,
             id_token:
               data.id_token,
+            phone:
+              data.phone,
           }),
         }
       );
