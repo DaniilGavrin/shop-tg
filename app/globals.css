@@ -149,3 +149,17 @@ select {
   }
 }
 
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--neon-purple);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  opacity: 1;
+}

@@ -25,6 +25,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
 
   const locale = pathname.split('/')[1] || 'ru';
 
+  const showBottomNav = !pathname.match(/\/catalog\/\d+$/)
+
   const getActiveTab = (): AppTab => {
     if (pathname === `/${locale}`) return 'home';
     if (pathname.includes('/catalog')) return 'catalog';
@@ -63,10 +65,14 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         {children}
       </section>
 
-      <BottomNavigation
-        activeTab={getActiveTab()}
-        onTabChange={handleTabChange}
-      />
+      {showBottomNav ? (
+        <BottomNavigation
+          activeTab={getActiveTab()}
+          onTabChange={handleTabChange}
+        />
+      ) : (
+        <div className="safe-area-pb" /> // отступ под safe-area, если нужен
+      )}
     </main>
   );
 }
