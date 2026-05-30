@@ -67,6 +67,8 @@ export async function POST(req: Request) {
         decoded.phone || '',
     };
 
+    console.log(user)
+
     try {
       await fetch(
         'https://api.shop.bytewizard.ru/users/verify',
