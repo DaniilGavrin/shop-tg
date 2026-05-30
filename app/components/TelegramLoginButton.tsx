@@ -182,3 +182,42 @@ export function TelegramLoginButton() {
     </button>
   );
 }
+
+
+async (data: TelegramLoginCallback) => {
+  if (data.error) { /* ... */ return; }
+  if (!data.id_token || !data.user?.id) return;
+
+  // 🔹 Собираем полный пакет данных для бэка
+  const payload = {
+    tg_id: data.user.id,                // REQUIRED (NOT NULL)
+    first_name: data.user.first_name,   // REQUIRED (NOT NULL)
+    username: data.user.username ?? null,
+    last_name: data.user.last_name ?? null,
+    phone: data.user.phone ?? null,     // Придет, если юзер разрешил
+    photo_url: data.user.photo_url ?? null,
+    // id_token оставляем, если бэк захочет проверить подпись (опционально)
+    id_token: data.id_token, 
+  };
+
+  try {
+    // 🔹 Шлём НАПРЯМУЮ на твой FastAPI бэк
+    const response = await fetch('https://api.shop.bytewizard.ru/users/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    if (result.ok) {
+      // Сохраняем юзера локально и перезагружаем страницу
+      localStorage.setItem('telegram_user', JSON.stringify(result.user));
+      window.location.reload();
+    } else {
+      console.error('[BACKEND ERROR]', result.error);
+    }
+  } catch (err) {
+    console.error('[FETCH ERROR]', err);
+  }
+}

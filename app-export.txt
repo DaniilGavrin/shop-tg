@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 26.05.2026 19:16:56
+Дата: 30.05.2026 17:09:38
 
 =============================================
 
@@ -751,22 +751,146 @@ export function CatalogGrid({ items }: Props) {
 
 
 ─────────────────────────────────────────
-FILE: components\HomeIntro.tsx
+FILE: components\FeaturedProducts.tsx
 ─────────────────────────────────────────
+'use client';
+
+import { useEffect, useState } from 'react';
+import { ProductCard } from './ProductCard';
+import type { CatalogItem } from '../types/catalog';
 import { useTranslation } from '../lib/i18n/useTranslation';
-import type { TelegramUser } from '../types/telegram';
 
-type HomeIntroProps = {
-  user: TelegramUser;
-};
+// рџ”Ґ Р’С‹РЅРѕСЃРёРј Р±Р°Р·РѕРІС‹Р№ URL РІ РєРѕРЅСЃС‚Р°РЅС‚Сѓ (РёР»Рё РёРјРїРѕСЂС‚РёСЂСѓР№ РёР· lib/api)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
 
-export function HomeIntro({ user }: HomeIntroProps) {
+export function FeaturedProducts() {
   const { t } = useTranslation();
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFeatured = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/catalog/featured`, {
+          // вњ… Р”Р»СЏ РєР»РёРµРЅС‚СЃРєРѕРіРѕ С„РµС‚С‡Р°: РєСЌС€ Р±СЂР°СѓР·РµСЂР° РЅР° 6 С‡Р°СЃРѕРІ
+          cache: 'force-cache',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) throw new Error(`API ERROR ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (!cancelled) {
+          setItems(data.items || []);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Featured load error:', error);
+        if (!cancelled) setLoading(false); // Р§С‚РѕР±С‹ СѓР±СЂР°С‚СЊ СЃРєРµР»РµС‚РѕРЅ РїСЂРё РѕС€РёР±РєРµ
+      }
+    };
+
+    loadFeatured();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <FeaturedSkeleton />;
+  }
+
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
-    <header className="text-center">
-      <h1 className="text-3xl font-bold text-gradient-neon">ByteWizard Shop</h1>
-      <p className="mt-8 rounded-2xl border border-[rgba(176,38,255,0.28)] bg-[var(--bg-surface-glass)] px-5 py-5 text-lg font-medium shadow-[0_0_22px_rgba(176,38,255,0.22)] backdrop-blur-md">
+    <section className="mt-8">
+      <h2 className="mb-4 text-xl font-bold text-[var(--text-main)]">
+        {t.home.featured_title}
+      </h2>
+      
+      <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
+        {items.map((item) => (
+          <ProductCard key={item.id} item={item} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeaturedSkeleton() {
+  return (
+    <section className="mt-8 animate-pulse">
+      <div className="mb-4 h-7 w-40 rounded bg-[var(--bg-surface)]" />
+      <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-64 rounded-3xl bg-[var(--bg-surface)]" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: components\HomeIntro.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useTranslation } from '../lib/i18n/useTranslation';
+import type { TelegramUser } from '../types/telegram';
+import { getDisplayTelegramUser } from '../lib/telegram';
+
+type HomeIntroProps = {
+  // РџСЂРѕРїСЃС‹ Р±РѕР»СЊС€Рµ РЅРµ РЅСѓР¶РЅС‹ вЂ” РґР°РЅРЅС‹Рµ РіСЂСѓР·СЏС‚СЃСЏ РѕС‚РґРµР»СЊРЅРѕ
+};
+
+export function HomeIntro({}: HomeIntroProps) {
+  const { t } = useTranslation();
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [currency] = useState('RUB');
+
+  useEffect(() => {
+    setUser(getDisplayTelegramUser());
+  }, []);
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-[var(--text-dim)]">Р—Р°РіСЂСѓР·РєР°...</p>
+      </div>
+    );
+  }
+
+  return (
+    <header>
+      {/* рџ”ќ Р’РµСЂС…РЅСЏСЏ СЃС‚СЂРѕРєР°: Р—Р°РіРѕР»РѕРІРѕРє + Р’Р°Р»СЋС‚Р° */}
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold text-gradient-neon">ByteWizard Shop</h1>
+        
+        <button
+          type="button"
+          className="
+            shrink-0 rounded-xl border border-[rgba(176,38,255,0.3)]
+            px-3 py-2 text-sm font-semibold text-[var(--neon-purple)]
+            transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]
+            active:scale-[0.98]
+          "
+        >
+          {currency} <span className="ml-1 text-xs opacity-70">в–ј</span>
+        </button>
+      </div>
+
+      {/* рџ‘‹ РљР°СЂС‚РѕС‡РєР° РїСЂРёРІРµС‚СЃС‚РІРёСЏ */}
+      <p className="mt-4 rounded-2xl border border-[rgba(176,38,255,0.28)] bg-[var(--bg-surface-glass)] px-5 py-4 text-center text-lg font-medium shadow-[0_0_22px_rgba(176,38,255,0.22)] backdrop-blur-md">
         {t.home.welcome},{' '}
         <span className="font-bold text-[var(--neon-purple)]">{user.first_name}</span>!
       </p>
@@ -1084,6 +1208,24 @@ export async function getCatalog(): Promise<CatalogResponse> {
   }
 }
 
+export async function getFeaturedCatalog(): Promise<CatalogResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/catalog/featured`, {
+      // рџ•’ РљСЌС€ РЅР° 6 С‡Р°СЃРѕРІ (6 * 60 * 60 = 21600 СЃРµРєСѓРЅРґ)
+      next: { revalidate: 21600 },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API ERROR ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('FEATURED FETCH ERROR:', error);
+    return { items: [] };
+  }
+}
+
 
 ─────────────────────────────────────────
 FILE: lib\telegram.ts
@@ -1220,6 +1362,7 @@ export const dictionaries = {
   ru: {
     home: {
       welcome: 'Р”РѕР±СЂРѕ РїРѕР¶Р°Р»РѕРІР°С‚СЊ',
+      featured_title: 'Р РµРєРѕРјРµРЅРґСѓРµРј',
     },
     nav: {
       home: 'Р“Р»Р°РІРЅР°СЏ',
@@ -1260,6 +1403,7 @@ export const dictionaries = {
   en: {
     home: {
       welcome: 'Welcome',
+      featured_title: 'Featured',
     },
     nav: {
       home: 'Home',
@@ -1429,34 +1573,22 @@ export default function LocaleLayout({
 ─────────────────────────────────────────
 FILE: [locale]\page.tsx
 ─────────────────────────────────────────
-'use client';
-
-import { useEffect, useState } from 'react';
-
+import { Suspense } from 'react';
 import { HomeIntro } from '../components/HomeIntro';
+import { FeaturedProducts } from '../components/FeaturedProducts';
 
-import { getDisplayTelegramUser } from '../lib/telegram';
-
-import type { TelegramUser } from '../types/telegram';
-
-export default function Home() {
-  const [user, setUser] = useState<TelegramUser | null>(null);
-
-  useEffect(() => {
-    const resolvedUser = getDisplayTelegramUser();
-
-    setUser(resolvedUser);
-  }, []);
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    );
-  }
-
-  return <HomeIntro user={user} />;
+export default function HomePage() {
+  return (
+    <>
+      {/* рџљЂ РњРіРЅРѕРІРµРЅРЅС‹Р№ СЂРµРЅРґРµСЂ С…РµРґРµСЂР° */}
+      <HomeIntro />
+      
+      {/* рџ”„ Lazy-РїРѕРґРіСЂСѓР·РєР° featured-С‚РѕРІР°СЂРѕРІ */}
+      <Suspense fallback={null}>
+        <FeaturedProducts />
+      </Suspense>
+    </>
+  );
 }
 
 
