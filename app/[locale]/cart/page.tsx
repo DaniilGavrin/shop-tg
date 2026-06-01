@@ -16,6 +16,7 @@ type CartItem = {
 
 const STORAGE_KEY = 'bw_cart';
 const SELECTION_KEY = 'bw_cart_selections';
+const AUTH_KEY = 'telegram_user';
 
 function formatSelectionValue(key: string, value: any): string {
   if (value === true) return '✓';
@@ -41,6 +42,7 @@ export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null); // 🔹 Добавлено состояние для тостов
 
   const c = {
     empty: isRu ? 'Корзина пуста' : 'Cart is empty',
@@ -53,6 +55,7 @@ export default function CartPage() {
     checkout_btn: isRu ? 'Оформить заказ' : 'Checkout',
     total: isRu ? 'Итого:' : 'Total:',
     selected_count: isRu ? 'выбрано' : 'selected',
+    auth_required: isRu ? 'Пожалуйста, войдите в аккаунт перед оформлением заказа' : 'Please log in before placing an order',
   };
 
   useEffect(() => {
@@ -108,9 +111,32 @@ export default function CartPage() {
     setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
   };
 
-  // 🔹 Генерация временного заказа и переход на оформление
+  // 🔹 Проверка авторизации перед оформлением
   const handleCheckout = () => {
     if (selectedCount === 0) return;
+
+    // Проверяем наличие пользователя в localStorage
+    try {
+      const rawUser = localStorage.getItem(AUTH_KEY);
+      if (!rawUser) {
+        setToast(c.auth_required);
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+      // Опционально: можно распарсить и проверить, что id существует
+      const user = JSON.parse(rawUser);
+      if (!user?.id) {
+        setToast(c.auth_required);
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+    } catch {
+      setToast(c.auth_required);
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    // ✅ Авторизован — продолжаем оформление
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const tempOrder = {
       id: orderId,
@@ -135,6 +161,13 @@ export default function CartPage() {
 
   return (
     <>
+      {/* 🔹 Toast уведомление */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-pink)] text-[var(--neon-pink)] text-sm font-medium backdrop-blur-md shadow-[0_0_20px_rgba(255,0,127,0.3)] animate-pulse">
+          {toast}
+        </div>
+      )}
+
       <ScreenTitle>{t.nav.cart}</ScreenTitle>
       <div className="mt-4 flex items-center justify-between px-2">
         <button type="button" onClick={toggleSelectAll} className="flex items-center gap-2 text-sm font-medium text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
