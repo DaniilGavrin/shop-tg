@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import type { CatalogItem, ConfigField } from '../../../types/catalog'; // путь к твоему файлу типов
+import type { CatalogItem, ConfigField } from '../../../types/catalog';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
 
@@ -18,6 +18,48 @@ async function fetchProduct(id: string): Promise<CatalogItem | null> {
   } catch {
     return null;
   }
+}
+
+// 🔹 НОВАЯ ФУНКЦИЯ: Валидация обязательных полей
+function validateRequiredFields(
+  schema: Record<string, ConfigField>,
+  selections: Selections
+): { isValid: boolean; missing: string[] } {
+  const missing: string[] = [];
+  
+  for (const [fieldId, field] of Object.entries(schema)) {
+    // Пропускаем необязательные поля
+    if (!field.required) continue;
+    
+    const val = selections[fieldId];
+    let isEmpty = false;
+
+    // Проверяем пустоту в зависимости от типа поля
+    switch (field.type) {
+      case 'textarea':
+      case 'select':
+        isEmpty = typeof val !== 'string' || val.trim() === '';
+        break;
+      case 'checkbox':
+        // Для чекбоксов "обязательно" обычно значит "должен быть отмечен"
+        isEmpty = val !== true;
+        break;
+      case 'number':
+        isEmpty = typeof val !== 'number' || isNaN(val);
+        break;
+      case 'multiselect':
+        isEmpty = !Array.isArray(val) || val.length === 0;
+        break;
+      default:
+        isEmpty = val === undefined || val === null || val === '';
+    }
+
+    if (isEmpty) {
+      missing.push(field.label);
+    }
+  }
+  
+  return { isValid: missing.length === 0, missing };
 }
 
 function calculateDynamicPrice(
@@ -86,7 +128,6 @@ function calculateDynamicDelivery(
     ultra_fast: 0.70,
   };
   
-
   const multiplier = URGENCY_MULTIPLIERS[urgency ?? 'normal'] ?? 1.0;
   totalDays = Math.floor(totalDays * multiplier);
 
@@ -138,16 +179,29 @@ export default function ProductPage() {
     : 0;
 
   const displayDeliveryDays = product
-  ? calculateDynamicDelivery(
-      product.metadata.delivery.base_days,
-      selections,
-      product.metadata.config_schema,
-      product.metadata.delivery
-    )
-  : 0;
+    ? calculateDynamicDelivery(
+        product.metadata.delivery.base_days,
+        selections,
+        product.metadata.config_schema,
+        product.metadata.delivery
+      )
+    : 0;
 
+  // 🔹 ОБНОВЛЕННАЯ ФУНКЦИЯ: Добавление в корзину с валидацией
   const handleAddToCart = () => {
     if (!product) return;
+    
+    // 1. Запускаем валидацию
+    const { isValid, missing } = validateRequiredFields(product.metadata.config_schema, selections);
+    
+    // 2. Если есть ошибки — блокируем добавление и показываем тост
+    if (!isValid) {
+      setToast(`⚠️ Заполните: ${missing.join(', ')}`);
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    // 3. Если всё ок — добавляем в корзину
     const cart = JSON.parse(localStorage.getItem('bw_cart') || '[]');
     cart.push({
       productId: product.id,
@@ -158,6 +212,7 @@ export default function ProductPage() {
       addedAt: new Date().toISOString()
     });
     localStorage.setItem('bw_cart', JSON.stringify(cart));
+    
     setToast(isRu ? '✅ Добавлено в корзину!' : '✅ Added to cart!');
     setTimeout(() => setToast(null), 2000);
   };
@@ -305,9 +360,9 @@ export default function ProductPage() {
 
   return (
     <>
-      {/* Toast */}
+      {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-purple)] text-[var(--neon-purple)] text-sm font-medium backdrop-blur-md animate-pulse">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-purple)] text-[var(--neon-purple)] text-sm font-medium backdrop-blur-md animate-pulse shadow-[0_0_20px_rgba(176,38,255,0.3)]">
           {toast}
         </div>
       )}
