@@ -21,12 +21,13 @@ type PaymentMethod = {
 };
 
 const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 'card', name: 'Банковская карта', icon: '💳', desc: 'Visa, MasterCard, МИР' },
+  { id: 'card', name: 'Банковская карта', icon: '💳', desc: 'Visa, MC, МИР' },
+  { id: 'sbp', name: 'СБП', icon: '🏦', desc: 'Система быстрых платежей' },
   { id: 'crypto', name: 'Крипто', icon: '₿', desc: 'USDT, TON, BTC' },
   { id: 'invoice', name: 'Для юр. лиц', icon: '📄', desc: 'Безнал с НДС' },
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
+const PAY_API_BASE = 'https://pay.bytewizard.ru';
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -38,8 +39,11 @@ export default function CreateOrderPage() {
   const [loading, setLoading] = useState(true);
   const [contact, setContact] = useState({ phone: '', email: '', comment: '' });
   const [selectedPayment, setSelectedPayment] = useState<string>(PAYMENT_METHODS[0].id);
+  
+  // 🔹 Новые состояния для процесса оплаты
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -66,7 +70,7 @@ export default function CreateOrderPage() {
   const handleSubmit = async () => {
     if (!order) return;
     
-    // 🔹 Валидация EMAIL (строго обязательно)
+    // Валидация EMAIL
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!contact.email.trim() || !emailRegex.test(contact.email.trim())) {
       setError(isRu ? 'Укажите корректный Email для связи' : 'Valid email is required for contact');
@@ -75,12 +79,14 @@ export default function CreateOrderPage() {
 
     setError(null);
     setSubmitting(true);
+    setPaymentUrl(null);
 
     try {
       const payload = {
         order_id: order.id,
         items: order.items.map(i => ({
           product_id: i.productId,
+          product_name: i.name,
           config: i.selections,
           price_rub: i.price,
           delivery_days: i.deliveryDays,
@@ -93,27 +99,70 @@ export default function CreateOrderPage() {
         locale,
       };
 
-      const res = await fetch(`${API_BASE}/orders`, {
+      const res = await fetch(`${PAY_API_BASE}/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        localStorage.removeItem('bw_pending_order');
-        router.push(`/${locale}/profile?order=success`);
+        const data = await res.json();
+        //  Ищем ссылку в разных возможных полях ответа
+        const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
+        
+        if (url) {
+          localStorage.removeItem('bw_pending_order');
+          setPaymentUrl(url);
+          
+          // 🚀 Авто-открытие (работает в 95% случаев)
+          window.location.href = url;
+        } else {
+          throw new Error(isRu ? 'Не получен адрес для оплаты' : 'No payment link received');
+        }
       } else {
-        setError(isRu ? 'Ошибка сервера. Попробуйте позже.' : 'Server error. Try again later.');
+        const errData = await res.json().catch(() => ({ message: 'Server error' }));
+        throw new Error(errData.message || (isRu ? 'Ошибка сервера оплаты' : 'Payment server error'));
       }
-    } catch {
-      setError(isRu ? 'Нет соединения с сетью' : 'Network error');
-    } finally {
+    } catch (e: any) {
+      setError(e.message || (isRu ? 'Нет соединения с сетью' : 'Network error'));
       setSubmitting(false);
     }
   };
 
+  // 🔹 ЭКРАН ЗАГРУЗКИ
+  if (submitting) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+        <div className="space-y-4">
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-[var(--neon-purple)] border-t-transparent shadow-[0_0_30px_rgba(176,38,255,0.5)]" />
+          <h2 className="text-xl font-bold text-gradient-neon">Создание заказа и оплата...</h2>
+          <p className="text-sm text-[var(--text-dim)]">{isRu ? 'Перенаправляем на безопасную страницу' : 'Redirecting to secure payment'}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
   if (!order) return null;
+
+  // 🔹 FALLBACK ЕСЛИ АВТО-РЕДИРЕКТ НЕ СРАБОТАЛ
+  if (paymentUrl) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+        <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
+          <div className="text-4xl">💳</div>
+          <h2 className="text-lg font-bold text-[var(--text-main)]">{isRu ? 'Страница оплаты не открылась автоматически' : 'Payment page did not open'}</h2>
+          <p className="text-xs text-[var(--text-dim)]">{isRu ? 'Нажмите кнопку ниже для перехода' : 'Tap the button below to proceed'}</p>
+          <button
+            onClick={() => window.open(paymentUrl, '_blank')}
+            className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)]"
+          >
+            {isRu ? 'Открыть оплату вручную' : 'Open Payment Manually'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const c = {
     title: isRu ? 'Оформление заказа' : 'Checkout',
@@ -135,13 +184,11 @@ export default function CreateOrderPage() {
     <>
       <ScreenTitle>{c.title}</ScreenTitle>
 
-      {/* 1. Инфо о заказе */}
       <div className="mt-4 rounded-2xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface-glass)] p-4 flex items-center justify-between text-sm">
         <span className="text-[var(--text-dim)]">{c.items_count} <span className="text-[var(--neon-purple)] font-bold">{order.items.length}</span></span>
         <span className="text-[var(--text-dim)]">{c.expires} <span className="text-[var(--neon-blue)] font-medium">{expireTime}</span></span>
       </div>
 
-      {/* 2. Список товаров */}
       <div className="mt-4 space-y-3">
         {order.items.map((item, i) => (
           <div key={i} className="rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface)] p-4 flex items-center justify-between">
@@ -154,10 +201,8 @@ export default function CreateOrderPage() {
         ))}
       </div>
 
-      {/* 3. 🔹 БЛОК ОПЛАТЫ */}
       <div className="mt-6 rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
         <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">{c.payment}</h3>
-        
         <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar -mx-2 px-2">
           {PAYMENT_METHODS.map((method) => {
             const isActive = selectedPayment === method.id;
@@ -174,17 +219,10 @@ export default function CreateOrderPage() {
                   }
                 `}
               >
-                {/* Иконка */}
                 <div className="text-3xl mb-2 text-center">{method.icon}</div>
-                
-                {/* Название + Описание */}
                 <div className="text-center">
-                  <p className={`text-xs font-bold leading-tight mb-1 ${isActive ? 'text-[var(--neon-purple)]' : 'text-[var(--text-main)]'}`}>
-                    {method.name}
-                  </p>
-                  <p className="text-[10px] text-[var(--text-dim)] leading-tight">
-                    {method.desc}
-                  </p>
+                  <p className={`text-xs font-bold leading-tight mb-1 ${isActive ? 'text-[var(--neon-purple)]' : 'text-[var(--text-main)]'}`}>{method.name}</p>
+                  <p className="text-[10px] text-[var(--text-dim)] leading-tight">{method.desc}</p>
                 </div>
               </button>
             );
@@ -192,48 +230,25 @@ export default function CreateOrderPage() {
         </div>
       </div>
 
-      {/* 4. 🔹 КОНТАКТНЫЕ ДАННЫЕ */}
       <div className="mt-6 rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
         <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">📝 Контакты</h3>
         <div className="space-y-4">
-          {/* Email — ОБЯЗАТЕЛЬНО */}
           <div>
-            <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
-              {c.email} <span className="text-[var(--neon-pink)]">{c.required}</span>
-            </label>
-            <input
-              type="email"
-              value={contact.email}
-              onChange={e => setContact(p => ({ ...p, email: e.target.value }))}
-              placeholder="name@example.com"
-              className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none"
-            />
+            <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">{c.email} <span className="text-[var(--neon-pink)]">{c.required}</span></label>
+            <input type="email" value={contact.email} onChange={e => setContact(p => ({ ...p, email: e.target.value }))} placeholder="name@example.com" className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
           </div>
-          {/* Телефон — ОПЦИОНАЛЬНО */}
           <div>
             <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">{c.phone}</label>
-            <input
-              type="tel"
-              value={contact.phone}
-              onChange={e => setContact(p => ({ ...p, phone: e.target.value }))}
-              placeholder="+7 (___) ___-__-__"
-              className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none"
-            />
+            <input type="tel" value={contact.phone} onChange={e => setContact(p => ({ ...p, phone: e.target.value }))} placeholder="+7 (___) ___-__-__" className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">{c.comment}</label>
-            <textarea
-              value={contact.comment}
-              onChange={e => setContact(p => ({ ...p, comment: e.target.value }))}
-              rows={3}
-              className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none"
-            />
+            <textarea value={contact.comment} onChange={e => setContact(p => ({ ...p, comment: e.target.value }))} rows={3} className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
           </div>
           {error && <p className="text-sm text-[var(--neon-pink)] bg-[rgba(255,0,127,0.1)] px-3 py-2 rounded-lg">{error}</p>}
         </div>
       </div>
 
-      {/* 5. Итого + Кнопки */}
       <div className="mt-8 pb-8 space-y-4">
         <div className="flex items-center justify-between px-2">
           <span className="text-sm text-[var(--text-dim)]">{c.total}</span>
@@ -245,11 +260,9 @@ export default function CreateOrderPage() {
             type="button"
             disabled={submitting}
             onClick={handleSubmit}
-            className={`flex-[2] py-4 rounded-xl font-bold text-white shadow-[var(--glow-purple)] transition active:scale-[0.98] ${
-              submitting ? 'opacity-50 cursor-wait' : 'bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] hover:opacity-95'
-            }`}
+            className={`flex-[2] py-4 rounded-xl font-bold text-white shadow-[var(--glow-purple)] transition active:scale-[0.98] ${submitting ? 'opacity-50 cursor-wait' : 'bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] hover:opacity-95'}`}
           >
-            {submitting ? (isRu ? 'Обработка...' : 'Processing...') : c.confirm}
+            {c.confirm}
           </button>
         </div>
       </div>
