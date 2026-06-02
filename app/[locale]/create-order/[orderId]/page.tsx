@@ -70,7 +70,7 @@ export default function CreateOrderPage() {
   const handleSubmit = async () => {
     if (!order) return;
     
-    // Валидация EMAIL
+    // 1. Валидация EMAIL
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!contact.email.trim() || !emailRegex.test(contact.email.trim())) {
       setError(isRu ? 'Укажите корректный Email для связи' : 'Valid email is required for contact');
@@ -81,7 +81,25 @@ export default function CreateOrderPage() {
     setSubmitting(true);
     setPaymentUrl(null);
 
+    // 2. 🔹 Забираем данные пользователя из localStorage
+    let telegramData = {};
     try {
+      const rawUser = localStorage.getItem('telegram_user');
+      if (rawUser) {
+        const user = JSON.parse(rawUser);
+        telegramData = {
+          telegram_id: user.id ? String(user.id) : null,
+          telegram_username: user.username || null,
+          telegram_first_name: user.first_name || null,
+          telegram_last_name: user.last_name || null,
+        };
+      }
+    } catch (e) {
+      console.error('Ошибка парсинга telegram_user:', e);
+    }
+
+    try {
+      // 3. Формируем payload с новыми полями
       const payload = {
         order_id: order.id,
         items: order.items.map(i => ({
@@ -97,6 +115,8 @@ export default function CreateOrderPage() {
         client_comment: contact.comment.trim() || null,
         payment_method: selectedPayment,
         locale,
+        // 🔹 Добавляем данные Telegram
+        ...telegramData,
       };
 
       const res = await fetch(`${PAY_API_BASE}/orders/create`, {
@@ -107,14 +127,11 @@ export default function CreateOrderPage() {
 
       if (res.ok) {
         const data = await res.json();
-        //  Ищем ссылку в разных возможных полях ответа
         const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
         
         if (url) {
           localStorage.removeItem('bw_pending_order');
           setPaymentUrl(url);
-          
-          // 🚀 Авто-открытие (работает в 95% случаев)
           window.location.href = url;
         } else {
           throw new Error(isRu ? 'Не получен адрес для оплаты' : 'No payment link received');
