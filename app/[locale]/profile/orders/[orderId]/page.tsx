@@ -166,14 +166,21 @@ export default function OrderDetailPage() {
                 {/* Сетка конфигурации */}
                 {Object.keys(item.config).length > 0 && (
                   <div className="grid grid-cols-1 gap-2 bg-[rgba(0,0,0,0.2)] rounded-xl p-3">
-                    {Object.entries(item.config).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-xs">
-                        <span className="text-[var(--text-dim)]">{formatLabel(key)}:</span>
-                        <span className="text-[var(--text-main)] font-medium text-right max-w-[60%] break-words">
-                          {renderConfigValue(key, value)}
-                        </span>
-                      </div>
-                    ))}
+                    {(() => {
+                      // 🔹 ФИКС: Если config пришел строкой, парсим его в объект
+                      const parsedConfig = typeof item.config === 'string' 
+                        ? JSON.parse(item.config) 
+                        : item.config;
+                        
+                      return Object.entries(parsedConfig).map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-xs">
+                          <span className="text-[var(--text-dim)]">{formatLabel(key)}:</span>
+                          <span className="text-[var(--text-main)] font-medium text-right max-w-[60%] break-words">
+                            {renderConfigValue(key, value)}
+                          </span>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 )}
               </div>
