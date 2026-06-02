@@ -115,7 +115,7 @@ export default function ProfilePage() {
       {/* 🔹 НОВАЯ ПЛАШКА: ЗАКАЗЫ */}
       {!isGuest && (
         <Link
-          href={`/${locale}/orders`}
+          href={`/${locale}/profile/orders`}
           className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
         >
           <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
