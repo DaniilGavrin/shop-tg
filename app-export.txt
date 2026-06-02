@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 01.06.2026 11:38:01
+Дата: 02.06.2026 17:31:00
 
 =============================================
 
@@ -907,14 +907,9 @@ import { useTranslation } from '../lib/i18n/useTranslation';
 import type { TelegramUser } from '../types/telegram';
 import { getDisplayTelegramUser } from '../lib/telegram';
 
-type HomeIntroProps = {
-  // РџСЂРѕРїСЃС‹ Р±РѕР»СЊС€Рµ РЅРµ РЅСѓР¶РЅС‹ вЂ” РґР°РЅРЅС‹Рµ РіСЂСѓР·СЏС‚СЃСЏ РѕС‚РґРµР»СЊРЅРѕ
-};
-
-export function HomeIntro({}: HomeIntroProps) {
+export function HomeIntro() {
   const { t } = useTranslation();
   const [user, setUser] = useState<TelegramUser | null>(null);
-  const [currency] = useState('RUB');
 
   useEffect(() => {
     setUser(getDisplayTelegramUser());
@@ -929,26 +924,10 @@ export function HomeIntro({}: HomeIntroProps) {
   }
 
   return (
-    <header>
-      {/* рџ”ќ Р’РµСЂС…РЅСЏСЏ СЃС‚СЂРѕРєР°: Р—Р°РіРѕР»РѕРІРѕРє + Р’Р°Р»СЋС‚Р° */}
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gradient-neon">ByteWizard Shop</h1>
-        
-        <button
-          type="button"
-          className="
-            shrink-0 rounded-xl border border-[rgba(176,38,255,0.3)]
-            px-3 py-2 text-sm font-semibold text-[var(--neon-purple)]
-            transition hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)]
-            active:scale-[0.98]
-          "
-        >
-          {currency} <span className="ml-1 text-xs opacity-70">в–ј</span>
-        </button>
-      </div>
+    <header className="text-center">
+      <h1 className="text-3xl font-bold text-gradient-neon">ByteWizard Shop</h1>
 
-      {/* рџ‘‹ РљР°СЂС‚РѕС‡РєР° РїСЂРёРІРµС‚СЃС‚РІРёСЏ */}
-      <p className="mt-4 rounded-2xl border border-[rgba(176,38,255,0.28)] bg-[var(--bg-surface-glass)] px-5 py-4 text-center text-lg font-medium shadow-[0_0_22px_rgba(176,38,255,0.22)] backdrop-blur-md">
+      <p className="mt-4 rounded-2xl border border-[rgba(176,38,255,0.28)] bg-[var(--bg-surface-glass)] px-5 py-4 text-lg font-medium shadow-[0_0_22px_rgba(176,38,255,0.22)] backdrop-blur-md">
         {t.home.welcome},{' '}
         <span className="font-bold text-[var(--neon-purple)]">{user.first_name}</span>!
       </p>
@@ -1525,13 +1504,70 @@ export function useTranslation() {
 ─────────────────────────────────────────
 FILE: types\catalog.ts
 ─────────────────────────────────────────
+export type DeliveryInfo = {
+  base_days: number;
+  min_days: number;
+  avg_days: number;
+  max_days: number;
+  complex_days: number | null;
+};
+
+export type PricingInfo = {
+  currency: 'RUB' | 'USD' | 'EUR';
+  base_price: number;
+  hourly_rate: number | null;
+  hourly_support_rate: number | null;
+  setup_fee: number;
+};
+
+export type ConfigFieldOption = {
+  label: string;
+  value: string;
+  price_modifier?: number;
+  delivery_days_modifier?: number;
+  description?: string;
+};
+
+export type ConfigField = {
+  type: 'select' | 'multiselect' | 'checkbox' | 'textarea' | 'number';
+  label: string;
+  description?: string;
+  default?: string | number | boolean | string[];
+  required?: boolean;
+  options?: ConfigFieldOption[];
+  min?: number;
+  max?: number;
+  price_per_unit?: number;
+  price_modifier?: number;
+  delivery_days_modifier?: number; 
+};
+
+export type ProductMetadata = {
+  stack: string[];
+  pricing: PricingInfo;
+  delivery: DeliveryInfo;
+  features: string[];
+  config_schema: Record<string, ConfigField>;
+};
+
 export type CatalogItem = {
   id: number;
   name: string;
+  short_description: string;
+  description: string;
   base_price_rub: number;
-  slug: string;
   category: string;
   preview_image: string | null;
+  is_configurable: boolean;
+  is_active: boolean;
+  is_featured: boolean;
+  is_hidden: boolean;
+  sort_order: number;
+  slug: string;
+  type: string;
+  metadata: ProductMetadata;
+  created_at: string;
+  updated_at: string;
 };
 
 export type CatalogResponse = {
@@ -1658,12 +1694,248 @@ FILE: [locale]\cart\page.tsx
 ─────────────────────────────────────────
 'use client';
 
-import { ScreenTitle } from '../../components/ScreenTitle';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { useTranslation } from '../../lib/i18n/useTranslation';
+import { ScreenTitle } from '../../components/ScreenTitle';
+
+type CartItem = {
+  productId: number;
+  name: string;
+  selections: Record<string, string | string[] | number | boolean>;
+  price: number;
+  deliveryDays: number;
+  addedAt: string;
+};
+
+const STORAGE_KEY = 'bw_cart';
+const SELECTION_KEY = 'bw_cart_selections';
+const AUTH_KEY = 'telegram_user';
+
+function formatSelectionValue(key: string, value: any): string {
+  if (value === true) return 'вњ“';
+  if (value === false || value === null || value === undefined) return 'вЂ”';
+  if (Array.isArray(value)) return value.join(', ');
+  if (key === 'technical_task') return 'Р—Р°РїРѕР»РЅРµРЅРѕ';
+  return String(value);
+}
+
+function formatLabel(key: string): string {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (l) => l.toUpperCase())
+    .replace('Technical Task', 'РўР—');
+}
 
 export default function CartPage() {
+  const router = useRouter();
+  const { locale } = useParams<{ locale: string }>();
   const { t } = useTranslation();
-  return <ScreenTitle>{t.nav.cart}</ScreenTitle>;
+  const isRu = locale !== 'en';
+
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null); // рџ”№ Р”РѕР±Р°РІР»РµРЅРѕ СЃРѕСЃС‚РѕСЏРЅРёРµ РґР»СЏ С‚РѕСЃС‚РѕРІ
+
+  const c = {
+    empty: isRu ? 'РљРѕСЂР·РёРЅР° РїСѓСЃС‚Р°' : 'Cart is empty',
+    back_to_catalog: isRu ? 'в†ђ Р’ РєР°С‚Р°Р»РѕРі' : 'в†ђ Back to catalog',
+    select_all: isRu ? 'Р’С‹Р±СЂР°С‚СЊ РІСЃРµ' : 'Select all',
+    delivery: isRu ? 'РЎСЂРѕРє:' : 'Delivery:',
+    days: isRu ? 'РґРЅ.' : 'days',
+    options: isRu ? 'РћРїС†РёРё:' : 'Options:',
+    remove: isRu ? 'РЈРґР°Р»РёС‚СЊ' : 'Remove',
+    checkout_btn: isRu ? 'РћС„РѕСЂРјРёС‚СЊ Р·Р°РєР°Р·' : 'Checkout',
+    total: isRu ? 'РС‚РѕРіРѕ:' : 'Total:',
+    selected_count: isRu ? 'РІС‹Р±СЂР°РЅРѕ' : 'selected',
+    auth_required: isRu ? 'РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІРѕР№РґРёС‚Рµ РІ Р°РєРєР°СѓРЅС‚ РїРµСЂРµРґ РѕС„РѕСЂРјР»РµРЅРёРµРј Р·Р°РєР°Р·Р°' : 'Please log in before placing an order',
+  };
+
+  useEffect(() => {
+    try {
+      const rawCart = localStorage.getItem(STORAGE_KEY);
+      const rawSel = localStorage.getItem(SELECTION_KEY);
+      const loadedCart: CartItem[] = rawCart ? JSON.parse(rawCart) : [];
+      setCart(loadedCart);
+
+      if (rawSel) {
+        const saved = new Set(JSON.parse(rawSel));
+        const productIds = new Set(loadedCart.map((i: CartItem) => i.productId));
+        const valid = new Set<number>(
+          Array.from(saved).map(Number).filter((id: number) => productIds.has(id))
+        );
+        setSelectedIds(valid);
+      } else {
+        setSelectedIds(new Set(loadedCart.map((i: CartItem) => i.productId)));
+      }
+    } catch {
+      setCart([]);
+      setSelectedIds(new Set());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(SELECTION_KEY, JSON.stringify(Array.from(selectedIds)));
+    }
+  }, [selectedIds, loading]);
+
+  const selectedTotal = useMemo(() => 
+    cart.filter(i => selectedIds.has(i.productId)).reduce((s, i) => s + i.price, 0),
+    [cart, selectedIds]
+  );
+
+  const selectedCount = selectedIds.size;
+  const allSelected = cart.length > 0 && selectedCount === cart.length;
+
+  const toggleSelectAll = () => setSelectedIds(allSelected ? new Set() : new Set(cart.map(i => i.productId)));
+  const toggleSelect = (id: number) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const handleRemove = (id: number) => {
+    const updated = cart.filter(i => i.productId !== id);
+    setCart(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+  };
+
+  // рџ”№ РџСЂРѕРІРµСЂРєР° Р°РІС‚РѕСЂРёР·Р°С†РёРё РїРµСЂРµРґ РѕС„РѕСЂРјР»РµРЅРёРµРј
+  const handleCheckout = () => {
+    if (selectedCount === 0) return;
+
+    // РџСЂРѕРІРµСЂСЏРµРј РЅР°Р»РёС‡РёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ localStorage
+    try {
+      const rawUser = localStorage.getItem(AUTH_KEY);
+      if (!rawUser) {
+        setToast(c.auth_required);
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+      // РћРїС†РёРѕРЅР°Р»СЊРЅРѕ: РјРѕР¶РЅРѕ СЂР°СЃРїР°СЂСЃРёС‚СЊ Рё РїСЂРѕРІРµСЂРёС‚СЊ, С‡С‚Рѕ id СЃСѓС‰РµСЃС‚РІСѓРµС‚
+      const user = JSON.parse(rawUser);
+      if (!user?.id) {
+        setToast(c.auth_required);
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+    } catch {
+      setToast(c.auth_required);
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    // вњ… РђРІС‚РѕСЂРёР·РѕРІР°РЅ вЂ” РїСЂРѕРґРѕР»Р¶Р°РµРј РѕС„РѕСЂРјР»РµРЅРёРµ
+    const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const tempOrder = {
+      id: orderId,
+      items: cart.filter(i => selectedIds.has(i.productId)),
+      total: selectedTotal,
+      createdAt: Date.now(),
+      ttl: 3600000, // 1 С‡Р°СЃ
+    };
+    localStorage.setItem('bw_pending_order', JSON.stringify(tempOrder));
+    router.push(`/${locale}/create-order/${orderId}`);
+  };
+
+  if (loading) return <div className="min-h-[50vh] grid place-items-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
+  if (cart.length === 0) {
+    return (
+      <div className="min-h-[50vh] grid place-items-center text-center px-6">
+        <h2 className="text-xl font-bold text-[var(--text-dim)] mb-4">{c.empty}</h2>
+        <button onClick={() => router.push(`/${locale}/catalog`)} className="text-[var(--neon-purple)] underline hover:text-[var(--neon-pink)] transition">{c.back_to_catalog}</button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* рџ”№ Toast СѓРІРµРґРѕРјР»РµРЅРёРµ */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-pink)] text-[var(--neon-pink)] text-sm font-medium backdrop-blur-md shadow-[0_0_20px_rgba(255,0,127,0.3)] animate-pulse">
+          {toast}
+        </div>
+      )}
+
+      <ScreenTitle>{t.nav.cart}</ScreenTitle>
+      <div className="mt-4 flex items-center justify-between px-2">
+        <button type="button" onClick={toggleSelectAll} className="flex items-center gap-2 text-sm font-medium text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
+          <span className={`w-5 h-5 rounded border flex items-center justify-center transition ${allSelected ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)] hover:border-[var(--neon-purple)]'}`}>
+            {allSelected && <span className="text-[10px] text-white">вњ“</span>}
+          </span>
+          {c.select_all}
+        </button>
+        {selectedCount > 0 && <span className="text-xs text-[var(--text-dim)]">{selectedCount} {c.selected_count}</span>}
+      </div>
+
+      <div className="mt-2 space-y-3 pb-6">
+        {cart.map((item) => {
+          const isSelected = selectedIds.has(item.productId);
+          const priceFormatted = item.price.toLocaleString('ru-RU');
+          const displayOptions = Object.entries(item.selections)
+            .filter(([k, v]) => k !== 'technical_task' && v !== false && v !== '' && v !== null && !(Array.isArray(v) && v.length === 0))
+            .map(([k, v]) => ({ label: formatLabel(k), value: formatSelectionValue(k, v) }));
+
+          return (
+            <div key={item.productId} className={`relative rounded-2xl border p-4 transition-all ${isSelected ? 'border-[var(--neon-purple)] bg-[rgba(176,38,255,0.08)]' : 'border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)]'}`}>
+              <button type="button" onClick={() => toggleSelect(item.productId)} className={`absolute top-3 left-3 w-6 h-6 rounded-lg border flex items-center justify-center transition ${isSelected ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)] bg-[var(--bg-surface)]'}`} aria-label="Select">
+                {isSelected && <span className="text-white text-sm font-bold">вњ“</span>}
+              </button>
+              <button type="button" onClick={() => handleRemove(item.productId)} className="absolute top-3 right-3 p-2 rounded-lg text-[var(--text-dim)] hover:text-[var(--neon-pink)]" aria-label="Remove">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+              <div className="pl-8 pr-8">
+                <h3 className={`font-bold text-[var(--text-main)] text-lg ${!isSelected && 'opacity-70'}`}>{item.name}</h3>
+                <p className="mt-1 text-xs text-[var(--neon-blue)]">{c.delivery} <span className="text-[var(--text-main)]">{item.deliveryDays}</span> {c.days}</p>
+                {displayOptions.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-1.5">{c.options}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {displayOptions.map((opt, i) => (
+                        <span key={i} className="px-2 py-1 text-[11px] rounded-md border bg-[rgba(176,38,255,0.1)] text-[var(--text-main)] border-[rgba(176,38,255,0.25)]">
+                          {opt.label}: <span className="text-[var(--neon-purple)]">{opt.value}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-4 pt-3 border-t border-[rgba(176,38,255,0.15)]">
+                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-[var(--bg-surface)] border-[rgba(176,38,255,0.2)]">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-dim)]">{c.total}</span>
+                    <span className="text-xl font-bold text-[var(--neon-purple)]">{priceFormatted} в‚Ѕ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* рџ”№ РљРЅРѕРїРєР° РѕС„РѕСЂРјР»РµРЅРёСЏ РїРѕРґ РІСЃРµРјРё Р±Р»РѕРєР°РјРё */}
+        <div className="mt-6 pb-8">
+          <button
+            type="button"
+            disabled={selectedCount === 0}
+            onClick={handleCheckout}
+            className={`w-full py-4 rounded-2xl font-bold text-white shadow-[var(--glow-purple)] transition active:scale-[0.98] ${
+              selectedCount > 0
+                ? 'bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] hover:opacity-95'
+                : 'bg-[var(--bg-surface)] border border-[rgba(176,38,255,0.3)] text-[var(--text-dim)] cursor-not-allowed'
+            }`}
+          >
+            {c.checkout_btn} ({selectedCount})
+          </button>
+          <p className="mt-2 text-center text-xs text-[var(--text-dim)]">
+            {isRu ? 'РџРµСЂРµС…РѕРґ Рє РѕС„РѕСЂРјР»РµРЅРёСЋ вЂў Р—Р°РєР°Р· С…СЂР°РЅРёС‚СЃСЏ 1 С‡Р°СЃ' : 'Proceed to checkout вЂў Order valid for 1 hour'}
+          </p>
+        </div>
+      </div>
+    </>
+  );
 }
 
 
@@ -1692,98 +1964,220 @@ FILE: [locale]\catalog\[id]\page.tsx
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-
-type ConfigSelection = Record<string, string | string[] | boolean>;
-
-type ProductItem = {
-  id: number;
-  name: string;
-  short_description: string;
-  description: string;
-  base_price_rub: number;
-  category: string;
-  preview_image: string | null;
-  metadata: {
-    stack: string[];
-    delivery: { days: number; base_days: number };
-    features: string[];
-    config_schema?: {
-      fields: Array<{
-        id: string;
-        type: 'select' | 'multiselect' | 'checkbox' | 'textarea';
-        label: string;
-        options?: Array<{ value: string; label: string; price_modifier?: number; delivery_modifier?: number }>;
-      }>;
-    };
-  };
-  is_configurable: boolean;
-  is_active: boolean;
-};
+import { useEffect, useState, useCallback } from 'react';
+import type { CatalogItem, ConfigField } from '../../../types/catalog';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
 
-async function fetchProduct(id: string): Promise<ProductItem | null> {
+type Selections = Record<string, string | string[] | number | boolean>;
+
+async function fetchProduct(id: string): Promise<CatalogItem | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/catalog/${id}`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`API ${res.status}`);
-    
-    const data: { item: ProductItem } = await res.json();
+    const data: { item: CatalogItem } = await res.json();
     return data.item.is_active ? data.item : null;
   } catch {
     return null;
   }
 }
 
-// рџ”№ Р—Р°РіР»СѓС€РєРё РґР»СЏ Р±СѓРґСѓС‰РµР№ Р»РѕРіРёРєРё РєРѕРЅС„РёРіСѓСЂР°С‚РѕСЂР°
-function calculateDynamicPrice(basePrice: number, _sel: ConfigSelection, _schema?: ProductItem['metadata']['config_schema']): number {
-  return basePrice;
+// рџ”№ РќРћР’РђРЇ Р¤РЈРќРљР¦РРЇ: Р’Р°Р»РёРґР°С†РёСЏ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С… РїРѕР»РµР№
+function validateRequiredFields(
+  schema: Record<string, ConfigField>,
+  selections: Selections
+): { isValid: boolean; missing: string[] } {
+  const missing: string[] = [];
+  
+  for (const [fieldId, field] of Object.entries(schema)) {
+    // РџСЂРѕРїСѓСЃРєР°РµРј РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РїРѕР»СЏ
+    if (!field.required) continue;
+    
+    const val = selections[fieldId];
+    let isEmpty = false;
+
+    // РџСЂРѕРІРµСЂСЏРµРј РїСѓСЃС‚РѕС‚Сѓ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° РїРѕР»СЏ
+    switch (field.type) {
+      case 'textarea':
+      case 'select':
+        isEmpty = typeof val !== 'string' || val.trim() === '';
+        break;
+      case 'checkbox':
+        // Р”Р»СЏ С‡РµРєР±РѕРєСЃРѕРІ "РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ" РѕР±С‹С‡РЅРѕ Р·РЅР°С‡РёС‚ "РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РѕС‚РјРµС‡РµРЅ"
+        isEmpty = val !== true;
+        break;
+      case 'number':
+        isEmpty = typeof val !== 'number' || isNaN(val);
+        break;
+      case 'multiselect':
+        isEmpty = !Array.isArray(val) || val.length === 0;
+        break;
+      default:
+        isEmpty = val === undefined || val === null || val === '';
+    }
+
+    if (isEmpty) {
+      missing.push(field.label);
+    }
+  }
+  
+  return { isValid: missing.length === 0, missing };
 }
 
-function calculateDynamicDelivery(baseDays: number, _sel: ConfigSelection, _schema?: ProductItem['metadata']['config_schema']): number {
-  return baseDays;
+function calculateDynamicPrice(
+  basePrice: number,
+  selections: Selections,
+  schema: Record<string, ConfigField>
+): number {
+  let total = basePrice;
+  for (const [fieldId, field] of Object.entries(schema)) {
+    const val = selections[fieldId];
+    if (val === undefined) continue;
+
+    if (field.type === 'checkbox' && val === true) {
+      total += field.price_modifier ?? 0;
+    } else if (field.type === 'select' && typeof val === 'string') {
+      const opt = field.options?.find(o => o.value === val);
+      total += opt?.price_modifier ?? 0;
+    } else if (field.type === 'number' && typeof val === 'number' && field.price_per_unit) {
+      const baseCount = (field.default ?? field.min ?? 0) as number;
+      const extra = Math.max(0, val - baseCount);
+      total += extra * field.price_per_unit;
+    } else if (field.type === 'multiselect' && Array.isArray(val)) {
+      for (const v of val) {
+        const opt = field.options?.find(o => o.value === v);
+        total += opt?.price_modifier ?? 0;
+      }
+    }
+  }
+  return Math.round(total);
+}
+
+function calculateDynamicDelivery(
+  baseDays: number,
+  selections: Selections,
+  schema: Record<string, ConfigField>,
+  deliveryMeta: { min_days: number; max_days: number }
+): number {
+  let optionDays = 0;
+  for (const [fieldId, field] of Object.entries(schema)) {
+    if (fieldId === 'urgency') continue;
+    const val = selections[fieldId];
+    if (val === undefined) continue;
+    
+    const getDays = (mod?: number, price?: number) => 
+      mod ?? Math.max(0, Math.floor((price ?? 0) / 8000));
+
+    if (field.type === 'checkbox' && val === true) {
+      optionDays += getDays(field.delivery_days_modifier, field.price_modifier);
+    } else if (field.type === 'select' && typeof val === 'string') {
+      const opt = field.options?.find(o => o.value === val);
+      optionDays += getDays(opt?.delivery_days_modifier, opt?.price_modifier);
+    } else if (field.type === 'multiselect' && Array.isArray(val)) {
+      for (const v of val) {
+        const opt = field.options?.find(o => o.value === v);
+        optionDays += getDays(opt?.delivery_days_modifier, opt?.price_modifier);
+      }
+    }
+  }
+
+  let totalDays = baseDays + optionDays;
+
+  const urgency = selections['urgency'] as string | undefined;
+  const URGENCY_MULTIPLIERS: Record<string, number> = {
+    normal: 1.0,
+    fast: 0.85,
+    ultra_fast: 0.70,
+  };
+  
+  const multiplier = URGENCY_MULTIPLIERS[urgency ?? 'normal'] ?? 1.0;
+  totalDays = Math.floor(totalDays * multiplier);
+
+  const min = deliveryMeta.min_days || Math.floor(baseDays * 0.4);
+  return Math.max(min, Math.ceil(totalDays));
 }
 
 export default function ProductPage() {
   const router = useRouter();
   const { locale, id } = useParams<{ locale: string; id: string }>();
-  
-  const [product, setProduct] = useState<ProductItem | null>(null);
+
+  const [product, setProduct] = useState<CatalogItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selections, setSelections] = useState<ConfigSelection>({});
+  const [selections, setSelections] = useState<Selections>({});
+  const [toast, setToast] = useState<string | null>(null);
 
   const isRu = locale !== 'en';
 
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-
     const load = async () => {
       const data = await fetchProduct(id);
       if (!cancelled) {
         setProduct(data);
         setLoading(false);
+        if (data?.metadata.config_schema) {
+          const defaults: Selections = {};
+          for (const [key, field] of Object.entries(data.metadata.config_schema)) {
+            if (field.type === 'number') defaults[key] = field.default ?? field.min ?? 0;
+            else if (field.type === 'checkbox') defaults[key] = false;
+            else if (field.type === 'select') defaults[key] = field.default ?? '';
+            else if (field.type === 'multiselect') defaults[key] = [];
+          }
+          setSelections(defaults);
+        }
       }
     };
-
     load();
     return () => { cancelled = true; };
   }, [id]);
 
-  // Р”РёРЅР°РјРёС‡РµСЃРєРёРµ Р·РЅР°С‡РµРЅРёСЏ (РїРѕРєР° = Р±Р°Р·РѕРІС‹Рј)
-  const displayPrice = product ? calculateDynamicPrice(product.base_price_rub, selections, product.metadata.config_schema) : 0;
-  const displayDeliveryDays = product ? calculateDynamicDelivery(product.metadata.delivery.base_days || product.metadata.delivery.days, selections, product.metadata.config_schema) : 0;
+  const handleSelectionChange = useCallback((fieldId: string, value: Selections[string]) => {
+    setSelections(prev => ({ ...prev, [fieldId]: value }));
+  }, []);
 
-  const t = {
-    back: isRu ? 'в†ђ РќР°Р·Р°Рґ' : 'в†ђ Back',
-    base_price: isRu ? 'Р‘Р°Р·РѕРІР°СЏ С†РµРЅР°:' : 'Base price:',
-    delivery: isRu ? 'РЎСЂРѕРє:' : 'Delivery:',
-    days: isRu ? 'РґРЅ.' : 'days',
-    features: isRu ? 'Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё:' : 'Features:',
-    stack: isRu ? 'РўРµС…РЅРѕР»РѕРіРёРё:' : 'Stack:',
-    add_to_cart: isRu ? 'Р’ РєРѕСЂР·РёРЅСѓ' : 'Add to cart',
-    price_prefix: isRu ? 'РС‚РѕРіРѕ:' : 'Total:',
+  const displayPrice = product
+    ? calculateDynamicPrice(product.base_price_rub, selections, product.metadata.config_schema)
+    : 0;
+
+  const displayDeliveryDays = product
+    ? calculateDynamicDelivery(
+        product.metadata.delivery.base_days,
+        selections,
+        product.metadata.config_schema,
+        product.metadata.delivery
+      )
+    : 0;
+
+  // рџ”№ РћР‘РќРћР’Р›Р•РќРќРђРЇ Р¤РЈРќРљР¦РРЇ: Р”РѕР±Р°РІР»РµРЅРёРµ РІ РєРѕСЂР·РёРЅСѓ СЃ РІР°Р»РёРґР°С†РёРµР№
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    // 1. Р—Р°РїСѓСЃРєР°РµРј РІР°Р»РёРґР°С†РёСЋ
+    const { isValid, missing } = validateRequiredFields(product.metadata.config_schema, selections);
+    
+    // 2. Р•СЃР»Рё РµСЃС‚СЊ РѕС€РёР±РєРё вЂ” Р±Р»РѕРєРёСЂСѓРµРј РґРѕР±Р°РІР»РµРЅРёРµ Рё РїРѕРєР°Р·С‹РІР°РµРј С‚РѕСЃС‚
+    if (!isValid) {
+      setToast(`вљ пёЏ Р—Р°РїРѕР»РЅРёС‚Рµ: ${missing.join(', ')}`);
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    // 3. Р•СЃР»Рё РІСЃС‘ РѕРє вЂ” РґРѕР±Р°РІР»СЏРµРј РІ РєРѕСЂР·РёРЅСѓ
+    const cart = JSON.parse(localStorage.getItem('bw_cart') || '[]');
+    cart.push({
+      productId: product.id,
+      name: product.name,
+      selections,
+      price: displayPrice,
+      deliveryDays: displayDeliveryDays,
+      addedAt: new Date().toISOString()
+    });
+    localStorage.setItem('bw_cart', JSON.stringify(cart));
+    
+    setToast(isRu ? 'вњ… Р”РѕР±Р°РІР»РµРЅРѕ РІ РєРѕСЂР·РёРЅСѓ!' : 'вњ… Added to cart!');
+    setTimeout(() => setToast(null), 2000);
   };
 
   if (loading) {
@@ -1800,32 +2194,151 @@ export default function ProductPage() {
   }
 
   const priceFormatted = new Intl.NumberFormat('ru-RU').format(displayPrice);
+  const t = {
+    back: isRu ? 'в†ђ РќР°Р·Р°Рґ' : 'в†ђ Back',
+    base_price: isRu ? 'Р‘Р°Р·РѕРІР°СЏ С†РµРЅР°:' : 'Base price:',
+    delivery: isRu ? 'РЎСЂРѕРє:' : 'Delivery:',
+    days: isRu ? 'РґРЅ.' : 'days',
+    features: isRu ? 'Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё:' : 'Features:',
+    stack: isRu ? 'РўРµС…РЅРѕР»РѕРіРёРё:' : 'Stack:',
+    add_to_cart: isRu ? 'Р’ РєРѕСЂР·РёРЅСѓ' : 'Add to cart',
+    price_prefix: isRu ? 'РС‚РѕРіРѕ:' : 'Total:',
+    required: isRu ? '* РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ' : '* required',
+  };
+
+  const renderField = (fieldId: string, field: ConfigField) => {
+    const val = selections[fieldId];
+    const commonLabel = (
+      <label className="block text-sm font-medium text-[var(--text-main)] mb-1">
+        {field.label} {field.required && <span className="text-[var(--neon-pink)]">*</span>}
+        {field.description && <span className="block text-xs text-[var(--text-dim)] font-normal mt-0.5">{field.description}</span>}
+      </label>
+    );
+
+    if (field.type === 'textarea') {
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <textarea
+            value={val as string || ''}
+            onChange={e => handleSelectionChange(fieldId, e.target.value)}
+            rows={4}
+            required={field.required}
+            className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none"
+          />
+        </div>
+      );
+    }
+
+    if (field.type === 'select' && field.options) {
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <select
+            value={val as string || ''}
+            onChange={e => handleSelectionChange(fieldId, e.target.value)}
+            className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none"
+          >
+            {field.options.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label} {opt.price_modifier ? `(+${opt.price_modifier.toLocaleString('ru-RU')} в‚Ѕ)` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    if (field.type === 'multiselect' && field.options) {
+      const selected = (val as string[]) || [];
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <div className="flex flex-wrap gap-2">
+            {field.options.map(opt => {
+              const isActive = selected.includes(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    const next = isActive ? selected.filter(v => v !== opt.value) : [...selected, opt.value];
+                    handleSelectionChange(fieldId, next);
+                  }}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition ${
+                    isActive
+                      ? 'border-[var(--neon-purple)] bg-[rgba(176,38,255,0.2)] text-[var(--neon-purple)]'
+                      : 'border-[rgba(176,38,255,0.2)] text-[var(--text-dim)] hover:border-[var(--neon-pink)]'
+                  }`}
+                >
+                  {opt.label} {opt.price_modifier ? `+${opt.price_modifier.toLocaleString('ru-RU')}` : ''}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (field.type === 'checkbox') {
+      return (
+        <div key={fieldId} className="flex items-center gap-3 py-2">
+          <button
+            type="button"
+            onClick={() => handleSelectionChange(fieldId, !val)}
+            className={`w-5 h-5 rounded border transition flex items-center justify-center ${
+              val ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)]'
+            }`}
+          >
+            {val && <span className="text-[10px] text-white">вњ“</span>}
+          </button>
+          <span className="text-sm text-[var(--text-main)]">{field.label} {field.price_modifier ? `(+${field.price_modifier.toLocaleString('ru-RU')} в‚Ѕ)` : ''}</span>
+        </div>
+      );
+    }
+
+    if (field.type === 'number') {
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={field.min}
+              max={field.max}
+              value={val as number || 0}
+              onChange={e => handleSelectionChange(fieldId, Number(e.target.value))}
+              className="w-24 rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-2 text-sm text-[var(--text-main)] text-center focus:border-[var(--neon-purple)] focus:outline-none"
+            />
+            {field.price_per_unit && (
+              <span className="text-xs text-[var(--text-dim)]">+{field.price_per_unit.toLocaleString('ru-RU')} в‚Ѕ / РµРґ.</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <>
-      {/* РҐРµРґРµСЂ СЃ РєРЅРѕРїРєРѕР№ "РќР°Р·Р°Рґ" + РЅР°Р·РІР°РЅРёРµ */}
-      <header className="sticky top-0 z-40 relative flex items-center h-14 px-4 bg-transparent">
-        <button
-            type="button"
-            onClick={() => router.back()}
-            className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition"
-            aria-label={t.back}
-        >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-        </button>
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-purple)] text-[var(--neon-purple)] text-sm font-medium backdrop-blur-md animate-pulse shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+          {toast}
+        </div>
+      )}
 
-        <h1 className="mx-auto text-center text-xl md:text-2xl font-bold text-gradient-neon truncate max-w-[75%] px-2">
-            {product.name}
-        </h1>
+      <header className="sticky top-0 z-40 relative flex items-center h-14 px-4 bg-transparent">
+        <button type="button" onClick={() => router.back()} className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition" aria-label={t.back}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <h1 className="mx-auto text-center text-xl md:text-2xl font-bold text-gradient-neon truncate max-w-[75%] px-2">{product.name}</h1>
       </header>
 
-      <p className="mt-2 text-[var(--text-dim)] text-center max-w-2xl mx-auto px-2">
-        {product.short_description}
-      </p>
+      <p className="mt-2 text-[var(--text-dim)] text-center max-w-2xl mx-auto px-2">{product.short_description}</p>
 
-      {/* РљР°СЂС‚РѕС‡РєР° С‚РѕРІР°СЂР° */}
       <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
         <div className="p-5 space-y-5">
@@ -1840,19 +2353,15 @@ export default function ProductPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="px-2 py-1 text-xs rounded bg-[rgba(176,38,255,0.15)] text-[var(--neon-purple)] border border-[rgba(176,38,255,0.25)]">
-              {product.category}
-            </span>
+            <span className="px-2 py-1 text-xs rounded bg-[rgba(176,38,255,0.15)] text-[var(--neon-purple)] border border-[rgba(176,38,255,0.25)] capitalize">{product.category}</span>
           </div>
 
           {product.metadata.stack?.length > 0 && (
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-2">{t.stack}</p>
-              <div className="flex flex-wrap gap-2">
-                {product.metadata.stack.map((tech) => (
-                  <span key={tech} className="px-2 py-1 text-xs rounded bg-[var(--bg-surface)] border border-[rgba(176,38,255,0.2)] text-[var(--text-main)]">
-                    {tech}
-                  </span>
+              <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                {product.metadata.stack.map(tech => (
+                  <span key={tech} className="px-2 py-1 text-xs rounded bg-[var(--bg-surface)] border border-[rgba(176,38,255,0.2)] text-[var(--text-main)] whitespace-nowrap">{tech}</span>
                 ))}
               </div>
             </div>
@@ -1861,7 +2370,7 @@ export default function ProductPage() {
           {product.metadata.features?.length > 0 && (
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-2">{t.features}</p>
-              <div className="max-h-48 overflow-y-auto pr-2 space-y-1.5 custom-scrollbar">
+              <div className="max-h-40 overflow-y-auto pr-2 space-y-1.5 custom-scrollbar">
                 {product.metadata.features.map((feature, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-sm text-[var(--text-main)]">
                     <span className="text-[var(--neon-pink)] mt-0.5">вњ¦</span>
@@ -1873,6 +2382,16 @@ export default function ProductPage() {
           )}
         </div>
       </section>
+
+      {/* РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂ */}
+      {product.is_configurable && Object.keys(product.metadata.config_schema).length > 0 && (
+        <section className="mt-6 p-5 rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)]">
+          <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">вљ™пёЏ РќР°СЃС‚СЂРѕР№РєР° РїСЂРѕРµРєС‚Р°</h3>
+          <div className="space-y-4">
+            {Object.entries(product.metadata.config_schema).map(([key, field]) => renderField(key, field))}
+          </div>
+        </section>
+      )}
 
       <div className="h-24" />
 
@@ -1886,14 +2405,8 @@ export default function ProductPage() {
             </div>
             <button
               type="button"
-              disabled
-              className="
-                shrink-0 px-6 py-3 rounded-xl font-semibold
-                bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))]
-                text-white shadow-[var(--glow-purple)]
-                transition hover:opacity-90 active:scale-[0.98]
-                disabled:opacity-50 disabled:cursor-not-allowed
-              "
+              onClick={handleAddToCart}
+              className="shrink-0 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)] transition hover:opacity-90 active:scale-[0.98]"
             >
               {t.add_to_cart}
             </button>
@@ -1980,6 +2493,299 @@ export default function ContactPage() {
       })}
 
       <p className="mt-6 text-center text-xs text-[var(--text-dim)]">{t.contact.hint}</p>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\create-order\[orderId]\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { ScreenTitle } from '../../../components/ScreenTitle';
+
+type TempOrder = {
+  id: string;
+  items: Array<{ productId: number; name: string; price: number; selections: Record<string, any>; deliveryDays: number }>;
+  total: number;
+  createdAt: number;
+  ttl: number;
+};
+
+type PaymentMethod = {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+};
+
+const PAYMENT_METHODS: PaymentMethod[] = [
+  { id: 'card', name: 'Р‘Р°РЅРєРѕРІСЃРєР°СЏ РєР°СЂС‚Р°', icon: 'рџ’і', desc: 'Visa, MC, РњРР ' },
+  { id: 'sbp', name: 'РЎР‘Рџ', icon: 'рџЏ¦', desc: 'РЎРёСЃС‚РµРјР° Р±С‹СЃС‚СЂС‹С… РїР»Р°С‚РµР¶РµР№' },
+  { id: 'crypto', name: 'РљСЂРёРїС‚Рѕ', icon: 'в‚ї', desc: 'USDT, TON, BTC' },
+  { id: 'invoice', name: 'Р”Р»СЏ СЋСЂ. Р»РёС†', icon: 'рџ“„', desc: 'Р‘РµР·РЅР°Р» СЃ РќР”РЎ' },
+];
+
+const PAY_API_BASE = 'https://pay.bytewizard.ru';
+
+export default function CreateOrderPage() {
+  const router = useRouter();
+  const { locale, orderId } = useParams<{ locale: string; orderId: string }>();
+  const { t } = useTranslation();
+  const isRu = locale !== 'en';
+
+  const [order, setOrder] = useState<TempOrder | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [contact, setContact] = useState({ phone: '', email: '', comment: '' });
+  const [selectedPayment, setSelectedPayment] = useState<string>(PAYMENT_METHODS[0].id);
+  
+  // рџ”№ РќРѕРІС‹Рµ СЃРѕСЃС‚РѕСЏРЅРёСЏ РґР»СЏ РїСЂРѕС†РµСЃСЃР° РѕРїР»Р°С‚С‹
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('bw_pending_order');
+      if (!raw) throw new Error('No order');
+      const parsed: TempOrder = JSON.parse(raw);
+      
+      if (parsed.id !== orderId || (Date.now() - parsed.createdAt > parsed.ttl)) {
+        throw new Error('Expired');
+      }
+      setOrder(parsed);
+    } catch {
+      router.replace(`/${locale}/cart`);
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId, locale, router]);
+
+  const handleCancel = () => {
+    localStorage.removeItem('bw_pending_order');
+    router.push(`/${locale}/cart`);
+  };
+
+  const handleSubmit = async () => {
+    if (!order) return;
+    
+    // 1. Р’Р°Р»РёРґР°С†РёСЏ EMAIL
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!contact.email.trim() || !emailRegex.test(contact.email.trim())) {
+      setError(isRu ? 'РЈРєР°Р¶РёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Р№ Email РґР»СЏ СЃРІСЏР·Рё' : 'Valid email is required for contact');
+      return;
+    }
+
+    setError(null);
+    setSubmitting(true);
+    setPaymentUrl(null);
+
+    // 2. рџ”№ Р—Р°Р±РёСЂР°РµРј РґР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· localStorage
+    let telegramData = {};
+    try {
+      const rawUser = localStorage.getItem('telegram_user');
+      if (rawUser) {
+        const user = JSON.parse(rawUser);
+        telegramData = {
+          telegram_id: user.id ? String(user.id) : null,
+          telegram_username: user.username || null,
+          telegram_first_name: user.first_name || null,
+          telegram_last_name: user.last_name || null,
+        };
+      }
+    } catch (e) {
+      console.error('РћС€РёР±РєР° РїР°СЂСЃРёРЅРіР° telegram_user:', e);
+    }
+
+    try {
+      // 3. Р¤РѕСЂРјРёСЂСѓРµРј payload СЃ РЅРѕРІС‹РјРё РїРѕР»СЏРјРё
+      const payload = {
+        order_id: order.id,
+        items: order.items.map(i => ({
+          product_id: i.productId,
+          product_name: i.name,
+          config: i.selections,
+          price_rub: i.price,
+          delivery_days: i.deliveryDays,
+        })),
+        total_rub: order.total,
+        contact_phone: contact.phone.trim() || null,
+        contact_email: contact.email.trim(),
+        client_comment: contact.comment.trim() || null,
+        payment_method: selectedPayment,
+        locale,
+        // рџ”№ Р”РѕР±Р°РІР»СЏРµРј РґР°РЅРЅС‹Рµ Telegram
+        ...telegramData,
+      };
+
+      const res = await fetch(`${PAY_API_BASE}/orders/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
+        
+        if (url) {
+          localStorage.removeItem('bw_pending_order');
+          setPaymentUrl(url);
+          window.location.href = url;
+        } else {
+          throw new Error(isRu ? 'РќРµ РїРѕР»СѓС‡РµРЅ Р°РґСЂРµСЃ РґР»СЏ РѕРїР»Р°С‚С‹' : 'No payment link received');
+        }
+      } else {
+        const errData = await res.json().catch(() => ({ message: 'Server error' }));
+        throw new Error(errData.message || (isRu ? 'РћС€РёР±РєР° СЃРµСЂРІРµСЂР° РѕРїР»Р°С‚С‹' : 'Payment server error'));
+      }
+    } catch (e: any) {
+      setError(e.message || (isRu ? 'РќРµС‚ СЃРѕРµРґРёРЅРµРЅРёСЏ СЃ СЃРµС‚СЊСЋ' : 'Network error'));
+      setSubmitting(false);
+    }
+  };
+
+  // рџ”№ Р­РљР РђРќ Р—РђР“Р РЈР—РљР
+  if (submitting) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+        <div className="space-y-4">
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-[var(--neon-purple)] border-t-transparent shadow-[0_0_30px_rgba(176,38,255,0.5)]" />
+          <h2 className="text-xl font-bold text-gradient-neon">РЎРѕР·РґР°РЅРёРµ Р·Р°РєР°Р·Р° Рё РѕРїР»Р°С‚Р°...</h2>
+          <p className="text-sm text-[var(--text-dim)]">{isRu ? 'РџРµСЂРµРЅР°РїСЂР°РІР»СЏРµРј РЅР° Р±РµР·РѕРїР°СЃРЅСѓСЋ СЃС‚СЂР°РЅРёС†Сѓ' : 'Redirecting to secure payment'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
+  if (!order) return null;
+
+  // рџ”№ FALLBACK Р•РЎР›Р РђР’РўРћ-Р Р•Р”РР Р•РљРў РќР• РЎР РђР‘РћРўРђР›
+  if (paymentUrl) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+        <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
+          <div className="text-4xl">рџ’і</div>
+          <h2 className="text-lg font-bold text-[var(--text-main)]">{isRu ? 'РЎС‚СЂР°РЅРёС†Р° РѕРїР»Р°С‚С‹ РЅРµ РѕС‚РєСЂС‹Р»Р°СЃСЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё' : 'Payment page did not open'}</h2>
+          <p className="text-xs text-[var(--text-dim)]">{isRu ? 'РќР°Р¶РјРёС‚Рµ РєРЅРѕРїРєСѓ РЅРёР¶Рµ РґР»СЏ РїРµСЂРµС…РѕРґР°' : 'Tap the button below to proceed'}</p>
+          <button
+            onClick={() => window.open(paymentUrl, '_blank')}
+            className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)]"
+          >
+            {isRu ? 'РћС‚РєСЂС‹С‚СЊ РѕРїР»Р°С‚Сѓ РІСЂСѓС‡РЅСѓСЋ' : 'Open Payment Manually'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const c = {
+    title: isRu ? 'РћС„РѕСЂРјР»РµРЅРёРµ Р·Р°РєР°Р·Р°' : 'Checkout',
+    cancel: isRu ? 'РћС‚РјРµРЅРёС‚СЊ' : 'Cancel',
+    phone: isRu ? 'РўРµР»РµС„РѕРЅ (РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)' : 'Phone (optional)',
+    email: isRu ? 'Email РґР»СЏ СЃРІСЏР·Рё' : 'Contact Email',
+    comment: isRu ? 'РљРѕРјРјРµРЅС‚Р°СЂРёР№ Рє Р·Р°РєР°Р·Сѓ' : 'Order comment',
+    confirm: isRu ? 'РџРѕРґС‚РІРµСЂРґРёС‚СЊ Р·Р°РєР°Р·' : 'Confirm Order',
+    total: isRu ? 'РС‚РѕРіРѕ Рє РѕРїР»Р°С‚Рµ:' : 'Total to pay:',
+    items_count: isRu ? 'РџРѕР·РёС†РёР№:' : 'Items:',
+    expires: isRu ? 'Р—Р°РєР°Р· Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅ РґРѕ:' : 'Order reserved until:',
+    payment: isRu ? 'РЎРїРѕСЃРѕР± РѕРїР»Р°С‚С‹' : 'Payment method',
+    required: isRu ? '* РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ' : '* required',
+  };
+
+  const expireTime = new Date(order.createdAt + order.ttl).toLocaleTimeString(isRu ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <>
+      <ScreenTitle>{c.title}</ScreenTitle>
+
+      <div className="mt-4 rounded-2xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface-glass)] p-4 flex items-center justify-between text-sm">
+        <span className="text-[var(--text-dim)]">{c.items_count} <span className="text-[var(--neon-purple)] font-bold">{order.items.length}</span></span>
+        <span className="text-[var(--text-dim)]">{c.expires} <span className="text-[var(--neon-blue)] font-medium">{expireTime}</span></span>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {order.items.map((item, i) => (
+          <div key={i} className="rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface)] p-4 flex items-center justify-between">
+            <div>
+              <p className="font-medium text-[var(--text-main)]">{item.name}</p>
+              <p className="text-xs text-[var(--text-dim)] mt-0.5">{item.deliveryDays} {isRu ? 'РґРЅ.' : 'days'}</p>
+            </div>
+            <span className="font-bold text-[var(--neon-purple)]">{item.price.toLocaleString('ru-RU')} в‚Ѕ</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+        <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">{c.payment}</h3>
+        <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar -mx-2 px-2">
+          {PAYMENT_METHODS.map((method) => {
+            const isActive = selectedPayment === method.id;
+            return (
+              <button
+                key={method.id}
+                type="button"
+                onClick={() => setSelectedPayment(method.id)}
+                className={`
+                  shrink-0 w-[150px] flex flex-col p-3 rounded-xl border transition-all duration-200
+                  ${isActive 
+                    ? 'border-[var(--neon-purple)] bg-[rgba(176,38,255,0.15)] shadow-[0_0_16px_rgba(176,38,255,0.3)]' 
+                    : 'border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface)] hover:border-[rgba(176,38,255,0.5)]'
+                  }
+                `}
+              >
+                <div className="text-3xl mb-2 text-center">{method.icon}</div>
+                <div className="text-center">
+                  <p className={`text-xs font-bold leading-tight mb-1 ${isActive ? 'text-[var(--neon-purple)]' : 'text-[var(--text-main)]'}`}>{method.name}</p>
+                  <p className="text-[10px] text-[var(--text-dim)] leading-tight">{method.desc}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+        <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">рџ“ќ РљРѕРЅС‚Р°РєС‚С‹</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">{c.email} <span className="text-[var(--neon-pink)]">{c.required}</span></label>
+            <input type="email" value={contact.email} onChange={e => setContact(p => ({ ...p, email: e.target.value }))} placeholder="name@example.com" className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">{c.phone}</label>
+            <input type="tel" value={contact.phone} onChange={e => setContact(p => ({ ...p, phone: e.target.value }))} placeholder="+7 (___) ___-__-__" className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">{c.comment}</label>
+            <textarea value={contact.comment} onChange={e => setContact(p => ({ ...p, comment: e.target.value }))} rows={3} className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
+          </div>
+          {error && <p className="text-sm text-[var(--neon-pink)] bg-[rgba(255,0,127,0.1)] px-3 py-2 rounded-lg">{error}</p>}
+        </div>
+      </div>
+
+      <div className="mt-8 pb-8 space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <span className="text-sm text-[var(--text-dim)]">{c.total}</span>
+          <span className="text-2xl font-bold text-[var(--neon-purple)]">{order.total.toLocaleString('ru-RU')} в‚Ѕ</span>
+        </div>
+        <div className="flex gap-3">
+          <button type="button" onClick={handleCancel} className="flex-1 py-4 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--text-main)] font-medium hover:bg-[rgba(176,38,255,0.1)] transition">{c.cancel}</button>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={handleSubmit}
+            className={`flex-[2] py-4 rounded-xl font-bold text-white shadow-[var(--glow-purple)] transition active:scale-[0.98] ${submitting ? 'opacity-50 cursor-wait' : 'bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] hover:opacity-95'}`}
+          >
+            {c.confirm}
+          </button>
+        </div>
+      </div>
     </>
   );
 }
@@ -2075,8 +2881,6 @@ import { TelegramLoginButton } from '../../components/TelegramLoginButton';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-
-
 function getFullName(user: TelegramUser) {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
 }
@@ -2099,18 +2903,13 @@ export default function ProfilePage() {
 
   const currentUser = user;
   const isGuest = currentUser.id === 0;
-
   const fullName = getFullName(currentUser);
 
   async function copyId() {
     try {
       await navigator.clipboard.writeText(String(currentUser.id));
-
       setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 1800);
+      setTimeout(() => setCopied(false), 1800);
     } catch (error) {
       console.error('РћС€РёР±РєР° РєРѕРїРёСЂРѕРІР°РЅРёСЏ ID', error);
     }
@@ -2120,6 +2919,7 @@ export default function ProfilePage() {
     <>
       <ScreenTitle>{t.nav.profile}</ScreenTitle>
 
+      {/* РљР°СЂС‚РѕС‡РєР° РїСЂРѕС„РёР»СЏ */}
       <section className="mt-6 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
 
@@ -2144,9 +2944,8 @@ export default function ProfilePage() {
 
             <div className="flex min-w-0 flex-col justify-center text-left">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-                {t.profile.account}
+                {t.profile.account || 'РђРєРєР°СѓРЅС‚'}
               </p>
-
               <h2 className="truncate text-lg font-bold text-[var(--text-main)]">
                 {fullName}
               </h2>
@@ -2155,9 +2954,7 @@ export default function ProfilePage() {
 
           <div className="mt-4 flex flex-col items-start">
             {isGuest ? (
-              <>
-                <TelegramLoginButton />
-              </>
+              <TelegramLoginButton />
             ) : (
               <>
                 <button
@@ -2166,7 +2963,6 @@ export default function ProfilePage() {
                   className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
                 >
                   <span>ID: {user.id}</span>
-
                   <span className="ml-2 text-xs opacity-70">
                     {copied ? 'РЎРєРѕРїРёСЂРѕРІР°РЅРѕ вњ“' : 'РќР°Р¶РјРё С‡С‚РѕР±С‹ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ'}
                   </span>
@@ -2188,6 +2984,30 @@ export default function ProfilePage() {
         </div>
       </section>
 
+      {/* рџ”№ РќРћР’РђРЇ РџР›РђРЁРљРђ: Р—РђРљРђР—Р« */}
+      {!isGuest && (
+        <Link
+          href={`/${locale}/profile/orders`}
+          className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+        >
+          <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+          <div className="flex items-center justify-between px-5 py-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+                РСЃС‚РѕСЂРёСЏ
+              </p>
+              <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
+                Р’СЃРµ РІР°С€Рё Р·Р°РєР°Р·С‹ Рё РёС… СЃС‚Р°С‚СѓСЃС‹
+              </h3>
+            </div>
+            <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+      )}
+
+      {/* РџР»Р°С€РєР°: РљРѕРЅС‚Р°РєС‚С‹ */}
       <Link
         href={`/${locale}/contact`}
         className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
@@ -2196,10 +3016,10 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.nav.contact}
+              {t.nav.contact || 'РљРѕРЅС‚Р°РєС‚С‹'}
             </p>
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              {t.profile.contacts_hint}
+              {t.profile.contacts_hint || 'РЎРІСЏР·Р°С‚СЊСЃСЏ СЃ РїРѕРґРґРµСЂР¶РєРѕР№'}
             </h3>
           </div>
           <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2208,6 +3028,7 @@ export default function ProfilePage() {
         </div>
       </Link>
       
+      {/* РџР»Р°С€РєР°: Р®СЂРёРґРёС‡РµСЃРєР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ */}
       <Link
         href={`/${locale}/legal`}
         className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
@@ -2216,10 +3037,10 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.profile.legal}
+              {t.profile.legal || 'Р”РѕРєСѓРјРµРЅС‚С‹'}
             </p>
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              {t.profile.legal_hint}
+              {t.profile.legal_hint || 'РџРѕР»РёС‚РёРєР°, РѕС„РµСЂС‚Р° Рё СЂРµРєРІРёР·РёС‚С‹'}
             </h3>
           </div>
           <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2227,6 +3048,404 @@ export default function ProfilePage() {
           </svg>
         </div>
       </Link>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\profile\orders\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { ScreenTitle } from '../../../components/ScreenTitle';
+import type { TelegramUser } from '../../../types/telegram';
+import { getDisplayTelegramUser } from '../../../lib/telegram';
+import Link from 'next/link';
+
+type Order = {
+  order_code: string;
+  total_rub: number;
+  status: string;
+  payment_method: string;
+  created_at: string;
+};
+
+const PAY_API_BASE = 'https://pay.bytewizard.ru';
+
+export default function OrdersPage() {
+  const router = useRouter();
+  const { locale } = useParams<{ locale: string }>();
+  const isRu = locale !== 'en';
+
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const c = {
+    title: isRu ? 'РњРѕРё Р·Р°РєР°Р·С‹' : 'My Orders',
+    no_orders: isRu ? 'РЈ РІР°СЃ РїРѕРєР° РЅРµС‚ Р·Р°РєР°Р·РѕРІ' : 'No orders yet',
+    no_orders_sub: isRu ? 'РџРѕСЃРµС‚РёС‚Рµ РєР°С‚Р°Р»РѕРі, С‡С‚РѕР±С‹ СЃРґРµР»Р°С‚СЊ РїРµСЂРІС‹Р№ Р·Р°РєР°Р·' : 'Visit catalog to make your first order',
+    to_catalog: isRu ? 'РџРµСЂРµР№С‚Рё РІ РєР°С‚Р°Р»РѕРі' : 'Go to catalog',
+    login_required: isRu ? 'Р’РѕР№РґРёС‚Рµ С‡РµСЂРµР· Telegram' : 'Login via Telegram',
+    order_label: isRu ? 'Р—Р°РєР°Р·' : 'Order',
+    sum: isRu ? 'РЎСѓРјРјР°' : 'Total',
+    date: isRu ? 'Р”Р°С‚Р°' : 'Date',
+    pending: isRu ? 'РћР¶РёРґР°РµС‚ РѕРїР»Р°С‚С‹' : 'Pending payment',
+    paid: isRu ? 'РћРїР»Р°С‡РµРЅ' : 'Paid',
+    failed: isRu ? 'РћС‚РєР»РѕРЅС‘РЅ' : 'Failed',
+    cancelled: isRu ? 'РћС‚РјРµРЅС‘РЅ' : 'Cancelled',
+    refunded: isRu ? 'Р’РѕР·РІСЂР°С‰С‘РЅ' : 'Refunded',
+    in_progress: isRu ? 'Р’ СЂР°Р±РѕС‚Рµ' : 'In progress',
+  };
+
+  const getStatusInfo = (status: string) => {
+    const map: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+      pending: { label: c.pending, color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/30', icon: 'вЏі' },
+      paid: { label: c.paid, color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/30', icon: 'вњ…' },
+      failed: { label: c.failed, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', icon: 'вќЊ' },
+      cancelled: { label: c.cancelled, color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/30', icon: 'рџљ«' },
+      refunded: { label: c.refunded, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', icon: 'в†©пёЏ' },
+      in_progress: { label: c.in_progress, color: 'text-[var(--neon-purple)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.4)]', icon: 'вљ™пёЏ' },
+    };
+    return map[status] || { label: status, color: 'text-[var(--text-dim)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.2)]', icon: 'рџ“¦' };
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  };
+
+  useEffect(() => {
+    const currentUser = getDisplayTelegramUser();
+    if (!currentUser || currentUser.id === 0) {
+      setLoading(false);
+      return;
+    }
+    setUser(currentUser);
+
+    const loadOrders = async () => {
+      try {
+        const res = await fetch(`${PAY_API_BASE}/orders?tg_id=${currentUser.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data.orders || []);
+        }
+      } catch (e) {
+        console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·РѕРІ:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOrders();
+  }, []);
+
+  if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
+
+  if (!user || user.id === 0) {
+    return (
+      <div className="min-h-[60vh] grid place-items-center text-center px-6">
+        <div className="text-5xl mb-4">рџ”ђ</div>
+        <h2 className="text-xl font-bold text-[var(--text-main)] mb-2">{c.login_required}</h2>
+        <button onClick={() => router.push(`/${locale}/`)} className="mt-4 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
+          {c.to_catalog}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <ScreenTitle>{c.title}</ScreenTitle>
+
+      {orders.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)] p-8 text-center">
+          <div className="text-5xl mb-3">рџ“­</div>
+          <p className="text-[var(--text-main)] font-medium mb-1">{c.no_orders}</p>
+          <p className="text-xs text-[var(--text-dim)] mb-4">{c.no_orders_sub}</p>
+          <button onClick={() => router.push(`/${locale}/catalog`)} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)]">
+            {c.to_catalog}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4 space-y-4 pb-8">
+          {orders.map((order) => {
+            const statusInfo = getStatusInfo(order.status);
+            return (
+              <Link 
+                key={order.order_code} 
+                href={`/${locale}/profile/orders/${order.order_code}`}
+                className="group block rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)] p-4 transition-all duration-300 hover:border-[var(--neon-purple)] hover:shadow-[0_0_24px_rgba(176,38,255,0.15)] hover:-translate-y-0.5"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.order_label}</p>
+                    <p className="text-sm font-mono text-[var(--text-main)] truncate group-hover:text-[var(--neon-purple)] transition-colors">
+                      {order.order_code}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border flex items-center gap-1.5 ${statusInfo.bg} ${statusInfo.color}`}>
+                    <span>{statusInfo.icon}</span>
+                    <span>{statusInfo.label}</span>
+                  </span>
+                </div>
+
+                <div className="flex items-end justify-between pt-3 border-t border-[rgba(176,38,255,0.15)]">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.sum}</p>
+                    <p className="text-lg font-bold text-[var(--neon-purple)]">{order.total_rub.toLocaleString('ru-RU')} в‚Ѕ</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.date}</p>
+                    <p className="text-xs text-[var(--text-dim)]">{formatDate(order.created_at)}</p>
+                  </div>
+                </div>
+                
+                {/* РЎС‚СЂРµР»РѕС‡РєР° СЃРїСЂР°РІР°, РїРѕСЏРІР»СЏСЋС‰Р°СЏСЃСЏ РїСЂРё РЅР°РІРµРґРµРЅРёРё */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--neon-purple)]">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\profile\orders\[orderId]\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { ScreenTitle } from '../../../../components/ScreenTitle';
+import type { TelegramUser } from '../../../../types/telegram';
+import { getDisplayTelegramUser } from '../../../../lib/telegram';
+
+type OrderDetail = {
+  order_code: string;
+  total_rub: number;
+  status: string;
+  payment_method: string;
+  created_at: string;
+  client_email: string;
+  client_phone: string | null;
+  client_comment: string | null;
+  items: Array<{
+    product_name: string;
+    config: Record<string, any>;
+    price_rub: number;
+    delivery_days: number;
+  }>;
+};
+
+const PAY_API_BASE = 'https://pay.bytewizard.ru';
+
+export default function OrderDetailPage() {
+  const router = useRouter();
+  const { locale, orderId } = useParams<{ locale: string; orderId: string }>();
+  const isRu = locale !== 'en';
+
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const c = {
+    back: isRu ? 'в†ђ Рљ СЃРїРёСЃРєСѓ Р·Р°РєР°Р·РѕРІ' : 'в†ђ Back to orders',
+    order_details: isRu ? 'Р”РµС‚Р°Р»Рё Р·Р°РєР°Р·Р°' : 'Order Details',
+    status: isRu ? 'РЎС‚Р°С‚СѓСЃ' : 'Status',
+    items: isRu ? 'РЎРѕСЃС‚Р°РІ Р·Р°РєР°Р·Р°' : 'Order Items',
+    contacts: isRu ? 'РљРѕРЅС‚Р°РєС‚РЅС‹Рµ РґР°РЅРЅС‹Рµ' : 'Contact Info',
+    email: isRu ? 'Email' : 'Email',
+    phone: isRu ? 'РўРµР»РµС„РѕРЅ' : 'Phone',
+    comment: isRu ? 'РљРѕРјРјРµРЅС‚Р°СЂРёР№' : 'Comment',
+    total: isRu ? 'РС‚РѕРіРѕ' : 'Total',
+    delivery: isRu ? 'РЎСЂРѕРє' : 'Delivery',
+    days: isRu ? 'РґРЅ.' : 'days',
+    pending: isRu ? 'РћР¶РёРґР°РµС‚ РѕРїР»Р°С‚С‹' : 'Pending payment',
+    paid: isRu ? 'РћРїР»Р°С‡РµРЅ' : 'Paid',
+    failed: isRu ? 'РћС‚РєР»РѕРЅС‘РЅ' : 'Failed',
+    cancelled: isRu ? 'РћС‚РјРµРЅС‘РЅ' : 'Cancelled',
+    refunded: isRu ? 'Р’РѕР·РІСЂР°С‰С‘РЅ' : 'Refunded',
+    in_progress: isRu ? 'Р’ СЂР°Р±РѕС‚Рµ' : 'In progress',
+    not_found: isRu ? 'Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ' : 'Order not found',
+  };
+
+  const getStatusInfo = (status: string) => {
+    const map: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+      pending: { label: c.pending, color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/30', icon: 'вЏі' },
+      paid: { label: c.paid, color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/30', icon: 'вњ…' },
+      failed: { label: c.failed, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', icon: 'вќЊ' },
+      cancelled: { label: c.cancelled, color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/30', icon: 'рџљ«' },
+      refunded: { label: c.refunded, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', icon: 'в†©пёЏ' },
+      in_progress: { label: c.in_progress, color: 'text-[var(--neon-purple)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.4)]', icon: 'вљ™пёЏ' },
+    };
+    return map[status] || { label: status, color: 'text-[var(--text-dim)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.2)]', icon: 'рџ“¦' };
+  };
+
+  // РҐРµР»РїРµСЂ РґР»СЏ РєСЂР°СЃРёРІРѕРіРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РєРѕРЅС„РёРіР°
+  const renderConfigValue = (key: string, value: any) => {
+    if (key === 'technical_task') return value ? 'вњ“ Р—Р°РїРѕР»РЅРµРЅРѕ' : 'вЂ”';
+    if (typeof value === 'boolean') return value ? 'вњ“ Р”Р°' : 'вњ— РќРµС‚';
+    if (Array.isArray(value)) return value.join(', ');
+    if (value === null || value === undefined || value === '') return 'вЂ”';
+    return String(value);
+  };
+
+  const formatLabel = (key: string) => {
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Technical Task', 'РўР—');
+  };
+
+  useEffect(() => {
+    const currentUser = getDisplayTelegramUser();
+    if (!currentUser || currentUser.id === 0) {
+      setLoading(false);
+      return;
+    }
+    setUser(currentUser);
+
+    const loadOrder = async () => {
+      try {
+        const res = await fetch(`${PAY_API_BASE}/orders/${orderId}?tg_id=${currentUser.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setOrder(data.order);
+        } else {
+          setOrder(null); // 404 РёР»Рё РѕС€РёР±РєР°
+        }
+      } catch (e) {
+        console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·Р°:', e);
+        setOrder(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOrder();
+  }, [orderId]);
+
+  if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
+
+  if (!order) {
+    return (
+      <div className="min-h-[60vh] grid place-items-center text-center px-6">
+        <div className="text-5xl mb-4">рџ”Ќ</div>
+        <h2 className="text-xl font-bold text-[var(--text-main)] mb-4">{c.not_found}</h2>
+        <button onClick={() => router.push(`/${locale}/profile/orders`)} className="px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
+          {c.back}
+        </button>
+      </div>
+    );
+  }
+
+  const statusInfo = getStatusInfo(order.status);
+
+  return (
+    <>
+      <ScreenTitle>{c.order_details}</ScreenTitle>
+
+      <button onClick={() => router.push(`/${locale}/profile/orders`)} className="mt-4 flex items-center gap-2 text-sm text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        {c.back}
+      </button>
+
+      <div className="mt-4 space-y-4 pb-8">
+        {/* Р—Р°РіРѕР»РѕРІРѕРє Р·Р°РєР°Р·Р° */}
+        <div className="rounded-2xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface-glass)] p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-1">ID Р—Р°РєР°Р·Р°</p>
+              <p className="text-lg font-mono font-bold text-[var(--text-main)]">{order.order_code}</p>
+              <p className="text-xs text-[var(--text-dim)] mt-1">
+                {new Date(order.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+            <span className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border flex items-center gap-2 ${statusInfo.bg} ${statusInfo.color}`}>
+              <span className="text-lg">{statusInfo.icon}</span>
+              <span>{statusInfo.label}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* РЎРѕСЃС‚Р°РІ Р·Р°РєР°Р·Р° */}
+        <div className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-4">{c.items}</h3>
+          <div className="space-y-4">
+            {order.items.map((item, idx) => (
+              <div key={idx} className="pb-4 border-b border-[rgba(176,38,255,0.15)] last:border-0 last:pb-0">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-semibold text-[var(--text-main)]">{item.product_name}</h4>
+                  <span className="font-bold text-[var(--neon-purple)]">{item.price_rub.toLocaleString('ru-RU')} в‚Ѕ</span>
+                </div>
+                <p className="text-xs text-[var(--neon-blue)] mb-3">{c.delivery}: {item.delivery_days} {c.days}</p>
+                
+                {/* РЎРµС‚РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё */}
+                {Object.keys(item.config).length > 0 && (
+                  <div className="grid grid-cols-1 gap-2 bg-[rgba(0,0,0,0.2)] rounded-xl p-3">
+                    {(() => {
+                      // рџ”№ Р¤РРљРЎ: Р•СЃР»Рё config РїСЂРёС€РµР» СЃС‚СЂРѕРєРѕР№, РїР°СЂСЃРёРј РµРіРѕ РІ РѕР±СЉРµРєС‚
+                      const parsedConfig = typeof item.config === 'string' 
+                        ? JSON.parse(item.config) 
+                        : item.config;
+                        
+                      return Object.entries(parsedConfig).map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-xs">
+                          <span className="text-[var(--text-dim)]">{formatLabel(key)}:</span>
+                          <span className="text-[var(--text-main)] font-medium text-right max-w-[60%] break-words">
+                            {renderConfigValue(key, value)}
+                          </span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* РС‚РѕРіРѕ Рё РљРѕРЅС‚Р°РєС‚С‹ */}
+        <div className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5 space-y-4">
+          <div className="flex justify-between items-center pt-2 border-t border-[rgba(176,38,255,0.15)]">
+            <span className="text-sm font-bold text-[var(--text-dim)] uppercase tracking-[0.1em]">{c.total}</span>
+            <span className="text-2xl font-bold text-[var(--neon-purple)]">{order.total_rub.toLocaleString('ru-RU')} в‚Ѕ</span>
+          </div>
+
+          <div className="pt-4 border-t border-[rgba(176,38,255,0.15)]">
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-3">{c.contacts}</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[var(--text-dim)]">{c.email}:</span>
+                <span className="text-[var(--text-main)]">{order.client_email}</span>
+              </div>
+              {order.client_phone && (
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-dim)]">{c.phone}:</span>
+                  <span className="text-[var(--text-main)]">{order.client_phone}</span>
+              </div>
+              )}
+              {order.client_comment && (
+                <div className="mt-3 pt-3 border-t border-[rgba(176,38,255,0.1)]">
+                  <p className="text-[var(--text-dim)] text-xs mb-1">{c.comment}:</p>
+                  <p className="text-[var(--text-main)] bg-[rgba(176,38,255,0.1)] p-3 rounded-xl text-sm italic">
+                    "{order.client_comment}"
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
