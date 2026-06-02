@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
 import type { TelegramUser } from '../../../types/telegram';
 import { getDisplayTelegramUser } from '../../../lib/telegram';
+import Link from 'next/link';
 
 type Order = {
   order_code: string;
@@ -24,7 +25,6 @@ export default function OrdersPage() {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const c = {
     title: isRu ? 'Мои заказы' : 'My Orders',
@@ -34,43 +34,29 @@ export default function OrdersPage() {
     login_required: isRu ? 'Войдите через Telegram' : 'Login via Telegram',
     order_label: isRu ? 'Заказ' : 'Order',
     sum: isRu ? 'Сумма' : 'Total',
-    payment: isRu ? 'Оплата' : 'Payment',
     date: isRu ? 'Дата' : 'Date',
-    status: isRu ? 'Статус' : 'Status',
     pending: isRu ? 'Ожидает оплаты' : 'Pending payment',
     paid: isRu ? 'Оплачен' : 'Paid',
     failed: isRu ? 'Отклонён' : 'Failed',
     cancelled: isRu ? 'Отменён' : 'Cancelled',
     refunded: isRu ? 'Возвращён' : 'Refunded',
     in_progress: isRu ? 'В работе' : 'In progress',
-    error_load: isRu ? 'Не удалось загрузить заказы' : 'Failed to load orders',
   };
 
   const getStatusInfo = (status: string) => {
     const map: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-      pending: { label: c.pending, color: 'text-yellow-400', bg: 'bg-yellow-500/15 border-yellow-500/30', icon: '⏳' },
-      paid: { label: c.paid, color: 'text-green-400', bg: 'bg-green-500/15 border-green-500/30', icon: '✅' },
-      failed: { label: c.failed, color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/30', icon: '❌' },
-      cancelled: { label: c.cancelled, color: 'text-gray-400', bg: 'bg-gray-500/15 border-gray-500/30', icon: '🚫' },
-      refunded: { label: c.refunded, color: 'text-blue-400', bg: 'bg-blue-500/15 border-blue-500/30', icon: '↩️' },
-      in_progress: { label: c.in_progress, color: 'text-[var(--neon-purple)]', bg: 'bg-[rgba(176,38,255,0.15)] border-[rgba(176,38,255,0.3)]', icon: '⚙️' },
+      pending: { label: c.pending, color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/30', icon: '⏳' },
+      paid: { label: c.paid, color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/30', icon: '✅' },
+      failed: { label: c.failed, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', icon: '❌' },
+      cancelled: { label: c.cancelled, color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/30', icon: '🚫' },
+      refunded: { label: c.refunded, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', icon: '↩️' },
+      in_progress: { label: c.in_progress, color: 'text-[var(--neon-purple)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.4)]', icon: '⚙️' },
     };
     return map[status] || { label: status, color: 'text-[var(--text-dim)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.2)]', icon: '📦' };
   };
 
-  const getPaymentLabel = (method: string) => {
-    const map: Record<string, string> = {
-      card: isRu ? 'Банковская карта' : 'Card',
-      sbp: 'СБП',
-      crypto: isRu ? 'Криптовалюта' : 'Crypto',
-      invoice: isRu ? 'Счёт для юр. лиц' : 'Invoice',
-    };
-    return map[method] || method;
-  };
-
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
+    return new Date(dateStr).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
     });
   };
@@ -89,12 +75,9 @@ export default function OrdersPage() {
         if (res.ok) {
           const data = await res.json();
           setOrders(data.orders || []);
-        } else {
-          setError(c.error_load);
         }
       } catch (e) {
         console.error('Ошибка загрузки заказов:', e);
-        setError(c.error_load);
       } finally {
         setLoading(false);
       }
@@ -103,26 +86,17 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] grid place-items-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
 
   if (!user || user.id === 0) {
     return (
-      <>
-        <ScreenTitle>{c.title}</ScreenTitle>
-        <div className="min-h-[60vh] grid place-items-center text-center px-6">
-          <div className="text-5xl mb-4">🔐</div>
-          <h2 className="text-xl font-bold text-[var(--text-main)] mb-2">{c.login_required}</h2>
-          <button onClick={() => router.push(`/${locale}/`)} className="mt-4 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
-            {c.to_catalog}
-          </button>
-        </div>
-      </>
+      <div className="min-h-[60vh] grid place-items-center text-center px-6">
+        <div className="text-5xl mb-4">🔐</div>
+        <h2 className="text-xl font-bold text-[var(--text-main)] mb-2">{c.login_required}</h2>
+        <button onClick={() => router.push(`/${locale}/`)} className="mt-4 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
+          {c.to_catalog}
+        </button>
+      </div>
     );
   }
 
@@ -135,53 +109,53 @@ export default function OrdersPage() {
           <div className="text-5xl mb-3">📭</div>
           <p className="text-[var(--text-main)] font-medium mb-1">{c.no_orders}</p>
           <p className="text-xs text-[var(--text-dim)] mb-4">{c.no_orders_sub}</p>
-          <button
-            onClick={() => router.push(`/${locale}/catalog`)}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)]"
-          >
+          <button onClick={() => router.push(`/${locale}/catalog`)} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)]">
             {c.to_catalog}
           </button>
         </div>
       ) : (
-        <div className="mt-4 space-y-3 pb-8">
+        <div className="mt-4 space-y-4 pb-8">
           {orders.map((order) => {
             const statusInfo = getStatusInfo(order.status);
             return (
-              <div key={order.order_code} className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-4">
+              <Link 
+                key={order.order_code} 
+                href={`/${locale}/profile/orders/${order.order_code}`}
+                className="group block rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)] p-4 transition-all duration-300 hover:border-[var(--neon-purple)] hover:shadow-[0_0_24px_rgba(176,38,255,0.15)] hover:-translate-y-0.5"
+              >
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.order_label}</p>
-                    <p className="text-sm font-mono text-[var(--text-main)] truncate">{order.order_code}</p>
+                    <p className="text-sm font-mono text-[var(--text-main)] truncate group-hover:text-[var(--neon-purple)] transition-colors">
+                      {order.order_code}
+                    </p>
                   </div>
-                  <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${statusInfo.bg} ${statusInfo.color}`}>
+                  <span className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border flex items-center gap-1.5 ${statusInfo.bg} ${statusInfo.color}`}>
                     <span>{statusInfo.icon}</span>
                     <span>{statusInfo.label}</span>
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[rgba(176,38,255,0.15)]">
+                <div className="flex items-end justify-between pt-3 border-t border-[rgba(176,38,255,0.15)]">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.sum}</p>
-                    <p className="text-sm font-bold text-[var(--neon-purple)]">{order.total_rub.toLocaleString('ru-RU')} ₽</p>
+                    <p className="text-lg font-bold text-[var(--neon-purple)]">{order.total_rub.toLocaleString('ru-RU')} ₽</p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.payment}</p>
-                    <p className="text-sm text-[var(--text-main)]">{getPaymentLabel(order.payment_method)}</p>
-                  </div>
-                  <div className="col-span-2">
+                  <div className="text-right">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.date}</p>
                     <p className="text-xs text-[var(--text-dim)]">{formatDate(order.created_at)}</p>
                   </div>
                 </div>
-              </div>
+                
+                {/* Стрелочка справа, появляющаяся при наведении */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--neon-purple)]">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </Link>
             );
           })}
-        </div>
-      )}
-
-      {error && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-pink)] text-[var(--neon-pink)] text-sm font-medium backdrop-blur-md">
-          {error}
         </div>
       )}
     </>
