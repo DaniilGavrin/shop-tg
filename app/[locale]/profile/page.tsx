@@ -9,8 +9,6 @@ import { TelegramLoginButton } from '../../components/TelegramLoginButton';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-
-
 function getFullName(user: TelegramUser) {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
 }
@@ -33,18 +31,13 @@ export default function ProfilePage() {
 
   const currentUser = user;
   const isGuest = currentUser.id === 0;
-
   const fullName = getFullName(currentUser);
 
   async function copyId() {
     try {
       await navigator.clipboard.writeText(String(currentUser.id));
-
       setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 1800);
+      setTimeout(() => setCopied(false), 1800);
     } catch (error) {
       console.error('Ошибка копирования ID', error);
     }
@@ -54,6 +47,7 @@ export default function ProfilePage() {
     <>
       <ScreenTitle>{t.nav.profile}</ScreenTitle>
 
+      {/* Карточка профиля */}
       <section className="mt-6 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
 
@@ -78,9 +72,8 @@ export default function ProfilePage() {
 
             <div className="flex min-w-0 flex-col justify-center text-left">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-                {t.profile.account}
+                {t.profile.account || 'Аккаунт'}
               </p>
-
               <h2 className="truncate text-lg font-bold text-[var(--text-main)]">
                 {fullName}
               </h2>
@@ -89,9 +82,7 @@ export default function ProfilePage() {
 
           <div className="mt-4 flex flex-col items-start">
             {isGuest ? (
-              <>
-                <TelegramLoginButton />
-              </>
+              <TelegramLoginButton />
             ) : (
               <>
                 <button
@@ -100,7 +91,6 @@ export default function ProfilePage() {
                   className="text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
                 >
                   <span>ID: {user.id}</span>
-
                   <span className="ml-2 text-xs opacity-70">
                     {copied ? 'Скопировано ✓' : 'Нажми чтобы скопировать'}
                   </span>
@@ -122,6 +112,30 @@ export default function ProfilePage() {
         </div>
       </section>
 
+      {/* 🔹 НОВАЯ ПЛАШКА: ЗАКАЗЫ */}
+      {!isGuest && (
+        <Link
+          href={`/${locale}/orders`}
+          className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+        >
+          <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+          <div className="flex items-center justify-between px-5 py-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+                История
+              </p>
+              <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
+                Все ваши заказы и их статусы
+              </h3>
+            </div>
+            <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+      )}
+
+      {/* Плашка: Контакты */}
       <Link
         href={`/${locale}/contact`}
         className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
@@ -130,10 +144,10 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.nav.contact}
+              {t.nav.contact || 'Контакты'}
             </p>
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              {t.profile.contacts_hint}
+              {t.profile.contacts_hint || 'Связаться с поддержкой'}
             </h3>
           </div>
           <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -142,6 +156,7 @@ export default function ProfilePage() {
         </div>
       </Link>
       
+      {/* Плашка: Юридическая информация */}
       <Link
         href={`/${locale}/legal`}
         className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
@@ -150,10 +165,10 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
-              {t.profile.legal}
+              {t.profile.legal || 'Документы'}
             </p>
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
-              {t.profile.legal_hint}
+              {t.profile.legal_hint || 'Политика, оферта и реквизиты'}
             </h3>
           </div>
           <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
