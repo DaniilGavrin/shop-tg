@@ -47,6 +47,16 @@ export default function CreateOrderPage() {
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [invoiceSent, setInvoiceSent] = useState(false);
 
+  const [companyData, setCompanyData] = useState({
+    company_name: '',
+    inn: '',
+    kpp: '',
+    legal_address: '',
+  });
+
+  // Показывать блок реквизитов только если выбран "invoice"
+  const showCompanyFields = selectedPayment === 'invoice';
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem('bw_pending_order');
@@ -79,6 +89,18 @@ export default function CreateOrderPage() {
       return;
     }
     
+    // 🔹 НОВОЕ: Валидация реквизитов для юр. лиц
+    if (selectedPayment === 'invoice') {
+      if (!companyData.company_name.trim()) {
+        setError(isRu ? 'Укажите название организации' : 'Company name is required');
+        return;
+      }
+      if (!companyData.inn.trim() || companyData.inn.length < 10) {
+        setError(isRu ? 'Укажите корректный ИНН (10 или 12 цифр)' : 'Valid INN is required (10 or 12 digits)');
+        return;
+      }
+    }
+    
     setError(null);
     setSubmitting(true);
     setPaymentUrl(null);
@@ -101,6 +123,7 @@ export default function CreateOrderPage() {
     }
     
     try {
+      // 3. Формируем payload
       const payload = {
         order_id: order.id,
         items: order.items.map(i => ({
@@ -116,6 +139,13 @@ export default function CreateOrderPage() {
         client_comment: contact.comment.trim() || null,
         payment_method: selectedPayment,
         locale,
+        // 🔹 НОВОЕ: Добавляем реквизиты компании (только для invoice)
+        ...(selectedPayment === 'invoice' ? {
+          company_name: companyData.company_name.trim(),
+          company_inn: companyData.inn.trim(),
+          company_kpp: companyData.kpp.trim() || null,
+          company_legal_address: companyData.legal_address.trim() || null,
+        } : {}),
         ...telegramData,
       };
       
@@ -127,19 +157,18 @@ export default function CreateOrderPage() {
       
       if (res.ok) {
         const data = await res.json();
-        const url = data.payment_url || data.link || data.redirect_url;
+        const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
         
         if (url) {
           localStorage.removeItem('bw_pending_order');
           
-          // 🔹 НОВОЕ: Если это invoice — показываем красивый экран
+          // 🔹 НОВОЕ: Если это invoice — показываем экран "Счёт отправлен"
           if (selectedPayment === 'invoice') {
             setInvoiceSent(true);
             setSubmitting(false);
             return;
           }
           
-          // Обычный редирект на оплату
           setPaymentUrl(url);
           window.location.href = url;
         } else {
@@ -315,6 +344,77 @@ export default function CreateOrderPage() {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          showCompanyFields ? 'max-h-[500px] opacity-100 mt-6' : 'max-h-0 opacity-0 mt-0'
+        }`}
+      >
+        <div className="rounded-2xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface-glass)] p-5">
+          <h3 className="text-lg font-bold text-[var(--text-main)] mb-1">
+            🏢 Реквизиты организации
+          </h3>
+          <p className="text-xs text-[var(--text-dim)] mb-4">
+            {isRu 
+              ? 'Эти данные будут указаны в счёте для оплаты' 
+              : 'This information will be included in the invoice'}
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                Название организации <span className="text-[var(--neon-pink)]">*</span>
+              </label>
+              <input
+                type="text"
+                value={companyData.company_name}
+                onChange={e => setCompanyData(p => ({ ...p, company_name: e.target.value }))}
+                placeholder="ООО «Ромашка»"
+                className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                  ИНН <span className="text-[var(--neon-pink)]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={companyData.inn}
+                  onChange={e => setCompanyData(p => ({ ...p, inn: e.target.value.replace(/\D/g, '').slice(0, 12) }))}
+                  placeholder="1234567890"
+                  maxLength={12}
+                  className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                  КПП
+                </label>
+                <input
+                  type="text"
+                  value={companyData.kpp}
+                  onChange={e => setCompanyData(p => ({ ...p, kpp: e.target.value.replace(/\D/g, '').slice(0, 9) }))}
+                  placeholder="123456789"
+                  maxLength={9}
+                  className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                Юридический адрес
+              </label>
+              <textarea
+                value={companyData.legal_address}
+                onChange={e => setCompanyData(p => ({ ...p, legal_address: e.target.value }))}
+                rows={2}
+                placeholder="г. Москва, ул. Примерная, д. 1, оф. 100"
+                className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
