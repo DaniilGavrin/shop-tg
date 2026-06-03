@@ -133,7 +133,14 @@ export default function CreateOrderPage() {
         if (url) {
           localStorage.removeItem('bw_pending_order');
           setPaymentUrl(url);
-          window.location.href = url;
+          
+          // Если это счёт (invoice), не редиректим сразу, а показываем кнопку скачивания
+          if (selectedPayment === 'invoice') {
+            // Остаёмся на странице, показываем кнопку "Скачать счёт"
+            return;
+          } else {
+            window.location.href = url;
+          }
         } else {
           throw new Error(isRu ? 'Не получен адрес для оплаты' : 'No payment link received');
         }
@@ -165,21 +172,50 @@ export default function CreateOrderPage() {
 
   // 🔹 FALLBACK ЕСЛИ АВТО-РЕДИРЕКТ НЕ СРАБОТАЛ
   if (paymentUrl) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
-        <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
-          <div className="text-4xl">💳</div>
-          <h2 className="text-lg font-bold text-[var(--text-main)]">{isRu ? 'Страница оплаты не открылась автоматически' : 'Payment page did not open'}</h2>
-          <p className="text-xs text-[var(--text-dim)]">{isRu ? 'Нажмите кнопку ниже для перехода' : 'Tap the button below to proceed'}</p>
-          <button
-            onClick={() => window.open(paymentUrl, '_blank')}
-            className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)]"
-          >
-            {isRu ? 'Открыть оплату вручную' : 'Open Payment Manually'}
-          </button>
+    if (selectedPayment === 'invoice') {
+      return (
+        <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+          <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
+            <div className="text-4xl">📄</div>
+            <h2 className="text-lg font-bold text-[var(--text-main)]">Счёт создан!</h2>
+            <p className="text-xs text-[var(--text-dim)]">
+              Счёт отправлен вам на email и в Telegram.<br/>
+              Также вы можете скачать его прямо сейчас:
+            </p>
+            <a
+              href={paymentUrl}
+              download
+              className="block w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold text-center shadow-[var(--glow-purple)]"
+            >
+              📥 Скачать счёт
+            </a>
+            <button
+              onClick={() => router.push(`/${locale}/profile/orders`)}
+              className="w-full py-2 text-sm text-[var(--neon-purple)] underline"
+            >
+              Перейти к заказам
+            </button>
+          </div>
         </div>
-      </div>
-    );
+      );
+    } else {
+      // Обычный редирект на оплату
+      return (
+        <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+          <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
+            <div className="text-4xl">💳</div>
+            <h2 className="text-lg font-bold text-[var(--text-main)]">Страница оплаты не открылась автоматически</h2>
+            <p className="text-xs text-[var(--text-dim)]">Нажмите кнопку ниже для перехода</p>
+            <button
+              onClick={() => window.open(paymentUrl, '_blank')}
+              className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)]"
+            >
+              Открыть оплату вручную
+            </button>
+          </div>
+        </div>
+      );
+    }
   }
 
   const c = {
