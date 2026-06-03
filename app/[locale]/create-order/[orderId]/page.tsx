@@ -45,6 +45,7 @@ export default function CreateOrderPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [invoiceSent, setInvoiceSent] = useState(false);
 
   useEffect(() => {
     try {
@@ -77,12 +78,12 @@ export default function CreateOrderPage() {
       setError(isRu ? 'Укажите корректный Email для связи' : 'Valid email is required for contact');
       return;
     }
-
+    
     setError(null);
     setSubmitting(true);
     setPaymentUrl(null);
-
-    // 2. 🔹 Забираем данные пользователя из localStorage
+    
+    // 2. Забираем данные пользователя
     let telegramData = {};
     try {
       const rawUser = localStorage.getItem('telegram_user');
@@ -98,9 +99,8 @@ export default function CreateOrderPage() {
     } catch (e) {
       console.error('Ошибка парсинга telegram_user:', e);
     }
-
+    
     try {
-      // 3. Формируем payload с новыми полями
       const payload = {
         order_id: order.id,
         items: order.items.map(i => ({
@@ -116,31 +116,32 @@ export default function CreateOrderPage() {
         client_comment: contact.comment.trim() || null,
         payment_method: selectedPayment,
         locale,
-        // 🔹 Добавляем данные Telegram
         ...telegramData,
       };
-
+      
       const res = await fetch(`${PAY_API_BASE}/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
+      
       if (res.ok) {
         const data = await res.json();
-        const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
+        const url = data.payment_url || data.link || data.redirect_url;
         
         if (url) {
           localStorage.removeItem('bw_pending_order');
-          setPaymentUrl(url);
           
-          // Если это счёт (invoice), не редиректим сразу, а показываем кнопку скачивания
+          // 🔹 НОВОЕ: Если это invoice — показываем красивый экран
           if (selectedPayment === 'invoice') {
-            // Остаёмся на странице, показываем кнопку "Скачать счёт"
+            setInvoiceSent(true);
+            setSubmitting(false);
             return;
-          } else {
-            window.location.href = url;
           }
+          
+          // Обычный редирект на оплату
+          setPaymentUrl(url);
+          window.location.href = url;
         } else {
           throw new Error(isRu ? 'Не получен адрес для оплаты' : 'No payment link received');
         }
@@ -153,6 +154,39 @@ export default function CreateOrderPage() {
       setSubmitting(false);
     }
   };
+
+  if (invoiceSent) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+        <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-5 max-w-sm w-full">
+          <div className="mx-auto w-20 h-20 rounded-full bg-[rgba(176,38,255,0.15)] border-2 border-[var(--neon-purple)] flex items-center justify-center text-4xl">
+            📄
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gradient-neon mb-2">
+              {isRu ? 'Счёт отправлен!' : 'Invoice sent!'}
+            </h2>
+            <p className="text-sm text-[var(--text-dim)] leading-relaxed">
+              {isRu 
+                ? 'Мы отправили счёт на ваш email и в Telegram. Проверьте почту и мессенджер для оплаты.' 
+                : 'We sent the invoice to your email and Telegram. Check your inbox to proceed with payment.'}
+            </p>
+          </div>
+          <div className="pt-2 space-y-2">
+            <button
+              onClick={() => router.push(`/${locale}/profile`)}
+              className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)] transition hover:opacity-90 active:scale-[0.98]"
+            >
+              {isRu ? 'Перейти к заказам' : 'Go to orders'}
+            </button>
+            <p className="text-[10px] text-[var(--text-dim)]">
+              {isRu ? 'ID заказа сохранён в вашем профиле' : 'Order ID saved in your profile'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 🔹 ЭКРАН ЗАГРУЗКИ
   if (submitting) {
@@ -170,7 +204,7 @@ export default function CreateOrderPage() {
   if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
   if (!order) return null;
 
-  // 🔹 FALLBACK ЕСЛИ АВТО-РЕДИРЕКТ НЕ СРАБОТАЛ
+
   if (paymentUrl) {
     if (selectedPayment === 'invoice') {
       return (
