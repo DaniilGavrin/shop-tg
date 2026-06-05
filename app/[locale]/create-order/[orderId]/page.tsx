@@ -89,7 +89,7 @@ export default function CreateOrderPage() {
       return;
     }
     
-    // 🔹 НОВОЕ: Валидация реквизитов для юр. лиц
+    // 2. Валидация реквизитов для юр. лиц
     if (selectedPayment === 'invoice') {
       if (!companyData.company_name.trim()) {
         setError(isRu ? 'Укажите название организации' : 'Company name is required');
@@ -100,30 +100,12 @@ export default function CreateOrderPage() {
         return;
       }
     }
-    
+
     setError(null);
     setSubmitting(true);
     setPaymentUrl(null);
-    
-    // 2. Забираем данные пользователя
-    let telegramData = {};
+
     try {
-      const rawUser = localStorage.getItem('telegram_user');
-      if (rawUser) {
-        const user = JSON.parse(rawUser);
-        telegramData = {
-          telegram_id: user.id ? String(user.id) : null,
-          telegram_username: user.username || null,
-          telegram_first_name: user.first_name || null,
-          telegram_last_name: user.last_name || null,
-        };
-      }
-    } catch (e) {
-      console.error('Ошибка парсинга telegram_user:', e);
-    }
-    
-    try {
-      // 3. Формируем payload
       const payload = {
         order_id: order.id,
         items: order.items.map(i => ({
@@ -139,36 +121,32 @@ export default function CreateOrderPage() {
         client_comment: contact.comment.trim() || null,
         payment_method: selectedPayment,
         locale,
-        // 🔹 НОВОЕ: Добавляем реквизиты компании (только для invoice)
         ...(selectedPayment === 'invoice' ? {
           company_name: companyData.company_name.trim(),
           company_inn: companyData.inn.trim(),
           company_kpp: companyData.kpp.trim() || null,
           company_legal_address: companyData.legal_address.trim() || null,
         } : {}),
-        ...telegramData,
       };
-      
+
       const res = await fetch(`${PAY_API_BASE}/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', 
         body: JSON.stringify(payload),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
         
         if (url) {
           localStorage.removeItem('bw_pending_order');
-          
-          // 🔹 НОВОЕ: Если это invoice — показываем экран "Счёт отправлен"
           if (selectedPayment === 'invoice') {
             setInvoiceSent(true);
             setSubmitting(false);
             return;
           }
-          
           setPaymentUrl(url);
           window.location.href = url;
         } else {

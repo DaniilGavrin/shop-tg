@@ -111,21 +111,16 @@ export default function CartPage() {
     setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
   };
 
-  // 🔹 Проверка авторизации перед оформлением
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (selectedCount === 0) return;
 
-    // Проверяем наличие пользователя в localStorage
     try {
-      const rawUser = localStorage.getItem(AUTH_KEY);
-      if (!rawUser) {
-        setToast(c.auth_required);
-        setTimeout(() => setToast(null), 3000);
-        return;
-      }
-      // Опционально: можно распарсить и проверить, что id существует
-      const user = JSON.parse(rawUser);
-      if (!user?.id) {
+      const res = await fetch('https://api.shop.bytewizard.ru/me', {
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      
+      if (!res.ok) {
         setToast(c.auth_required);
         setTimeout(() => setToast(null), 3000);
         return;
@@ -136,14 +131,14 @@ export default function CartPage() {
       return;
     }
 
-    // ✅ Авторизован — продолжаем оформление
+    
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const tempOrder = {
       id: orderId,
       items: cart.filter(i => selectedIds.has(i.productId)),
       total: selectedTotal,
       createdAt: Date.now(),
-      ttl: 3600000, // 1 час
+      ttl: 3600000,
     };
     localStorage.setItem('bw_pending_order', JSON.stringify(tempOrder));
     router.push(`/${locale}/create-order/${orderId}`);

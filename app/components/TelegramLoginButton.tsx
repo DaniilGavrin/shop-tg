@@ -82,52 +82,24 @@ export function TelegramLoginButton() {
 
             return;
           }
-          console.log("HUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUY")
           try {
-            const response =
-              await fetch(
-                '/auth/telegram',
-                {
-                  method: 'POST',
-
-                  headers: {
-                    'Content-Type':
-                      'application/json',
-                  },
-
-                  body: JSON.stringify({
-                    id_token:
-                      data.id_token,
-                  }),
-                }
-              );
-
-            const result =
-              await response.json();
-
-            console.log(
-              '[TG VERIFY]',
-              result
-            );
-
+            const response = await fetch('/auth/telegram', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id_token: data.id_token }),
+            });
+            
+            const result = await response.json();
+            console.log('[TG VERIFY]', result);
+            
             if (!result.ok) {
+              console.error('[TG] Verification failed');
               return;
             }
-
-            localStorage.setItem(
-              'telegram_user',
-
-              JSON.stringify(
-                result.user
-              )
-            );
-
             window.location.reload();
+            
           } catch (error) {
-            console.error(
-              '[TG FETCH ERROR]',
-              error
-            );
+            console.error('[TG FETCH ERROR]', error);
           }
         }
       );

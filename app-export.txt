@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 03.06.2026 16:21:19
+Дата: 05.06.2026 20:17:16
 
 =============================================
 
@@ -417,128 +417,40 @@ export default function sitemap(): MetadataRoute.Sitemap {
 ─────────────────────────────────────────
 FILE: auth\telegram\route.ts
 ─────────────────────────────────────────
-function parseJwt(token: string) {
-  try {
-    const payload = token.split('.')[1];
-
-    return JSON.parse(
-      Buffer.from(payload, 'base64')
-        .toString('utf-8')
-    );
-  } catch {
-    return null;
-  }
-}
+import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
+    const body = await req.json();
+    const { id_token, init_data } = body;
 
-    if (!data.id_token) {
-      return Response.json(
-        {
-          ok: false,
-          error: 'Missing id_token',
-        },
-        {
-          status: 400,
-        }
-      );
-    }
+    // РћРїСЂРµРґРµР»СЏРµРј, РєСѓРґР° СЃС‚СѓС‡Р°С‚СЊСЃСЏ РЅР° Р±СЌРєРµРЅРґРµ
+    const apiUrl = init_data
+      ? 'https://api.shop.bytewizard.ru/auth/telegram/webapp'
+      : 'https://api.shop.bytewizard.ru/auth/telegram/oidc';
 
-    const decoded = parseJwt(
-      data.id_token
-    );
-
-    if (!decoded) {
-      return Response.json(
-        {
-          ok: false,
-          error: 'Invalid token',
-        },
-        {
-          status: 401,
-        }
-      );
-    }
-
-    const user = {
-      id:
-        decoded.id ||
-        decoded.telegram_id,
-
-      first_name:
-        decoded.given_name ||
-        decoded.name ||
-        'User',
-
-      last_name:
-        decoded.family_name || '',
-
-      username:
-        decoded.preferred_username ||
-        '',
-
-      photo_url:
-        decoded.picture || '',
-
-      phone:
-        decoded.phone || '',
-    };
-
-    console.log(user)
-
-    try {
-      await fetch(
-        'https://api.shop.bytewizard.ru/users/verify',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-          body: JSON.stringify({
-            tg_id: Number(user.id),
-            first_name:
-              user.first_name,
-            last_name:
-              user.last_name,
-            username:
-              user.username,
-            id_token:
-              data.id_token,
-            phone:
-              data.phone,
-          }),
-        }
-      );
-    } catch (error) {
-      console.error(
-        '[VERIFY ERROR]',
-        error
-      );
-    }
-
-    console.log(
-      '[Telegram JWT]',
-      decoded
-    );
-
-    return Response.json({
-      ok: true,
-      user,
+    // РћС‚РїСЂР°РІР»СЏРµРј Р·Р°РїСЂРѕСЃ РЅР° РЅР°С€ Р·Р°С‰РёС‰РµРЅРЅС‹Р№ Р±СЌРєРµРЅРґ
+    const backendRes = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(init_data ? { init_data } : { id_token }),
     });
-  } catch (err) {
-    console.error(err);
 
-    return Response.json(
-      {
-        ok: false,
-      },
-      {
-        status: 500,
-      }
-    );
+    const data = await backendRes.json();
+    
+    // РЎРѕР·РґР°РµРј РѕС‚РІРµС‚ РґР»СЏ С„СЂРѕРЅС‚РµРЅРґР°
+    const response = NextResponse.json(data, { status: backendRes.status });
+
+    // рџ”‘ РљР РРўРР§Р•РЎРљР Р’РђР–РќРћ: РџРµСЂРµРЅРѕСЃРёРј РєСѓРєРё (Set-Cookie) СЃ Р±СЌРєРµРЅРґР° РЅР° РґРѕРјРµРЅ shop.bytewizard.ru
+    const setCookieHeaders = backendRes.headers.getSetCookie();
+    setCookieHeaders.forEach((cookie) => {
+      response.headers.append('Set-Cookie', cookie);
+    });
+
+    return response;
+  } catch (error) {
+    console.error('[AUTH PROXY ERROR]', error);
+    return NextResponse.json({ ok: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -1267,6 +1179,39 @@ export async function getFeaturedCatalog(): Promise<CatalogResponse> {
 
 
 ─────────────────────────────────────────
+FILE: lib\auth.ts
+─────────────────────────────────────────
+export async function getCurrentUser() {
+  try {
+    const res = await fetch('https://api.shop.bytewizard.ru/me', {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',      
+    });
+    
+    if (res.ok) {
+      return await res.json();
+    }
+    return null; // РќРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ
+  } catch (error) {
+    console.error('[AUTH] Failed to fetch user:', error);
+    return null;
+  }
+}
+
+export async function logout() {
+  try {
+    await fetch('https://api.shop.bytewizard.ru/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch (error) {
+    console.error('[AUTH] Logout failed:', error);
+  }
+}
+
+
+─────────────────────────────────────────
 FILE: lib\telegram.ts
 ─────────────────────────────────────────
 import type {
@@ -1805,21 +1750,16 @@ export default function CartPage() {
     setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
   };
 
-  // рџ”№ РџСЂРѕРІРµСЂРєР° Р°РІС‚РѕСЂРёР·Р°С†РёРё РїРµСЂРµРґ РѕС„РѕСЂРјР»РµРЅРёРµРј
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (selectedCount === 0) return;
 
-    // РџСЂРѕРІРµСЂСЏРµРј РЅР°Р»РёС‡РёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ localStorage
     try {
-      const rawUser = localStorage.getItem(AUTH_KEY);
-      if (!rawUser) {
-        setToast(c.auth_required);
-        setTimeout(() => setToast(null), 3000);
-        return;
-      }
-      // РћРїС†РёРѕРЅР°Р»СЊРЅРѕ: РјРѕР¶РЅРѕ СЂР°СЃРїР°СЂСЃРёС‚СЊ Рё РїСЂРѕРІРµСЂРёС‚СЊ, С‡С‚Рѕ id СЃСѓС‰РµСЃС‚РІСѓРµС‚
-      const user = JSON.parse(rawUser);
-      if (!user?.id) {
+      const res = await fetch('https://api.shop.bytewizard.ru/me', {
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      
+      if (!res.ok) {
         setToast(c.auth_required);
         setTimeout(() => setToast(null), 3000);
         return;
@@ -1830,14 +1770,14 @@ export default function CartPage() {
       return;
     }
 
-    // вњ… РђРІС‚РѕСЂРёР·РѕРІР°РЅ вЂ” РїСЂРѕРґРѕР»Р¶Р°РµРј РѕС„РѕСЂРјР»РµРЅРёРµ
+    
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const tempOrder = {
       id: orderId,
       items: cart.filter(i => selectedIds.has(i.productId)),
       total: selectedTotal,
       createdAt: Date.now(),
-      ttl: 3600000, // 1 С‡Р°СЃ
+      ttl: 3600000,
     };
     localStorage.setItem('bw_pending_order', JSON.stringify(tempOrder));
     router.push(`/${locale}/create-order/${orderId}`);
@@ -2548,6 +2488,17 @@ export default function CreateOrderPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [invoiceSent, setInvoiceSent] = useState(false);
+
+  const [companyData, setCompanyData] = useState({
+    company_name: '',
+    inn: '',
+    kpp: '',
+    legal_address: '',
+  });
+
+  // РџРѕРєР°Р·С‹РІР°С‚СЊ Р±Р»РѕРє СЂРµРєРІРёР·РёС‚РѕРІ С‚РѕР»СЊРєРѕ РµСЃР»Рё РІС‹Р±СЂР°РЅ "invoice"
+  const showCompanyFields = selectedPayment === 'invoice';
 
   useEffect(() => {
     try {
@@ -2580,12 +2531,24 @@ export default function CreateOrderPage() {
       setError(isRu ? 'РЈРєР°Р¶РёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Р№ Email РґР»СЏ СЃРІСЏР·Рё' : 'Valid email is required for contact');
       return;
     }
-
+    
+    // рџ”№ РќРћР’РћР•: Р’Р°Р»РёРґР°С†РёСЏ СЂРµРєРІРёР·РёС‚РѕРІ РґР»СЏ СЋСЂ. Р»РёС†
+    if (selectedPayment === 'invoice') {
+      if (!companyData.company_name.trim()) {
+        setError(isRu ? 'РЈРєР°Р¶РёС‚Рµ РЅР°Р·РІР°РЅРёРµ РѕСЂРіР°РЅРёР·Р°С†РёРё' : 'Company name is required');
+        return;
+      }
+      if (!companyData.inn.trim() || companyData.inn.length < 10) {
+        setError(isRu ? 'РЈРєР°Р¶РёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Р№ РРќРќ (10 РёР»Рё 12 С†РёС„СЂ)' : 'Valid INN is required (10 or 12 digits)');
+        return;
+      }
+    }
+    
     setError(null);
     setSubmitting(true);
     setPaymentUrl(null);
-
-    // 2. рџ”№ Р—Р°Р±РёСЂР°РµРј РґР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· localStorage
+    
+    // 2. Р—Р°Р±РёСЂР°РµРј РґР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
     let telegramData = {};
     try {
       const rawUser = localStorage.getItem('telegram_user');
@@ -2601,9 +2564,9 @@ export default function CreateOrderPage() {
     } catch (e) {
       console.error('РћС€РёР±РєР° РїР°СЂСЃРёРЅРіР° telegram_user:', e);
     }
-
+    
     try {
-      // 3. Р¤РѕСЂРјРёСЂСѓРµРј payload СЃ РЅРѕРІС‹РјРё РїРѕР»СЏРјРё
+      // 3. Р¤РѕСЂРјРёСЂСѓРµРј payload
       const payload = {
         order_id: order.id,
         items: order.items.map(i => ({
@@ -2619,22 +2582,36 @@ export default function CreateOrderPage() {
         client_comment: contact.comment.trim() || null,
         payment_method: selectedPayment,
         locale,
-        // рџ”№ Р”РѕР±Р°РІР»СЏРµРј РґР°РЅРЅС‹Рµ Telegram
+        // рџ”№ РќРћР’РћР•: Р”РѕР±Р°РІР»СЏРµРј СЂРµРєРІРёР·РёС‚С‹ РєРѕРјРїР°РЅРёРё (С‚РѕР»СЊРєРѕ РґР»СЏ invoice)
+        ...(selectedPayment === 'invoice' ? {
+          company_name: companyData.company_name.trim(),
+          company_inn: companyData.inn.trim(),
+          company_kpp: companyData.kpp.trim() || null,
+          company_legal_address: companyData.legal_address.trim() || null,
+        } : {}),
         ...telegramData,
       };
-
+      
       const res = await fetch(`${PAY_API_BASE}/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
+      
       if (res.ok) {
         const data = await res.json();
         const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
         
         if (url) {
           localStorage.removeItem('bw_pending_order');
+          
+          // рџ”№ РќРћР’РћР•: Р•СЃР»Рё СЌС‚Рѕ invoice вЂ” РїРѕРєР°Р·С‹РІР°РµРј СЌРєСЂР°РЅ "РЎС‡С‘С‚ РѕС‚РїСЂР°РІР»РµРЅ"
+          if (selectedPayment === 'invoice') {
+            setInvoiceSent(true);
+            setSubmitting(false);
+            return;
+          }
+          
           setPaymentUrl(url);
           window.location.href = url;
         } else {
@@ -2649,6 +2626,39 @@ export default function CreateOrderPage() {
       setSubmitting(false);
     }
   };
+
+  if (invoiceSent) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+        <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-5 max-w-sm w-full">
+          <div className="mx-auto w-20 h-20 rounded-full bg-[rgba(176,38,255,0.15)] border-2 border-[var(--neon-purple)] flex items-center justify-center text-4xl">
+            рџ“„
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gradient-neon mb-2">
+              {isRu ? 'РЎС‡С‘С‚ РѕС‚РїСЂР°РІР»РµРЅ!' : 'Invoice sent!'}
+            </h2>
+            <p className="text-sm text-[var(--text-dim)] leading-relaxed">
+              {isRu 
+                ? 'РњС‹ РѕС‚РїСЂР°РІРёР»Рё СЃС‡С‘С‚ РЅР° РІР°С€ email Рё РІ Telegram. РџСЂРѕРІРµСЂСЊС‚Рµ РїРѕС‡С‚Сѓ Рё РјРµСЃСЃРµРЅРґР¶РµСЂ РґР»СЏ РѕРїР»Р°С‚С‹.' 
+                : 'We sent the invoice to your email and Telegram. Check your inbox to proceed with payment.'}
+            </p>
+          </div>
+          <div className="pt-2 space-y-2">
+            <button
+              onClick={() => router.push(`/${locale}/profile`)}
+              className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)] transition hover:opacity-90 active:scale-[0.98]"
+            >
+              {isRu ? 'РџРµСЂРµР№С‚Рё Рє Р·Р°РєР°Р·Р°Рј' : 'Go to orders'}
+            </button>
+            <p className="text-[10px] text-[var(--text-dim)]">
+              {isRu ? 'ID Р·Р°РєР°Р·Р° СЃРѕС…СЂР°РЅС‘РЅ РІ РІР°С€РµРј РїСЂРѕС„РёР»Рµ' : 'Order ID saved in your profile'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // рџ”№ Р­РљР РђРќ Р—РђР“Р РЈР—РљР
   if (submitting) {
@@ -2666,23 +2676,52 @@ export default function CreateOrderPage() {
   if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
   if (!order) return null;
 
-  // рџ”№ FALLBACK Р•РЎР›Р РђР’РўРћ-Р Р•Р”РР Р•РљРў РќР• РЎР РђР‘РћРўРђР›
+
   if (paymentUrl) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
-        <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
-          <div className="text-4xl">рџ’і</div>
-          <h2 className="text-lg font-bold text-[var(--text-main)]">{isRu ? 'РЎС‚СЂР°РЅРёС†Р° РѕРїР»Р°С‚С‹ РЅРµ РѕС‚РєСЂС‹Р»Р°СЃСЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё' : 'Payment page did not open'}</h2>
-          <p className="text-xs text-[var(--text-dim)]">{isRu ? 'РќР°Р¶РјРёС‚Рµ РєРЅРѕРїРєСѓ РЅРёР¶Рµ РґР»СЏ РїРµСЂРµС…РѕРґР°' : 'Tap the button below to proceed'}</p>
-          <button
-            onClick={() => window.open(paymentUrl, '_blank')}
-            className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)]"
-          >
-            {isRu ? 'РћС‚РєСЂС‹С‚СЊ РѕРїР»Р°С‚Сѓ РІСЂСѓС‡РЅСѓСЋ' : 'Open Payment Manually'}
-          </button>
+    if (selectedPayment === 'invoice') {
+      return (
+        <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+          <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
+            <div className="text-4xl">рџ“„</div>
+            <h2 className="text-lg font-bold text-[var(--text-main)]">РЎС‡С‘С‚ СЃРѕР·РґР°РЅ!</h2>
+            <p className="text-xs text-[var(--text-dim)]">
+              РЎС‡С‘С‚ РѕС‚РїСЂР°РІР»РµРЅ РІР°Рј РЅР° email Рё РІ Telegram.<br/>
+              РўР°РєР¶Рµ РІС‹ РјРѕР¶РµС‚Рµ СЃРєР°С‡Р°С‚СЊ РµРіРѕ РїСЂСЏРјРѕ СЃРµР№С‡Р°СЃ:
+            </p>
+            <a
+              href={paymentUrl}
+              download
+              className="block w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold text-center shadow-[var(--glow-purple)]"
+            >
+              рџ“Ґ РЎРєР°С‡Р°С‚СЊ СЃС‡С‘С‚
+            </a>
+            <button
+              onClick={() => router.push(`/${locale}/profile/orders`)}
+              className="w-full py-2 text-sm text-[var(--neon-purple)] underline"
+            >
+              РџРµСЂРµР№С‚Рё Рє Р·Р°РєР°Р·Р°Рј
+            </button>
+          </div>
         </div>
-      </div>
-    );
+      );
+    } else {
+      // РћР±С‹С‡РЅС‹Р№ СЂРµРґРёСЂРµРєС‚ РЅР° РѕРїР»Р°С‚Сѓ
+      return (
+        <div className="min-h-screen grid place-items-center bg-[var(--bg-deep)] text-center px-6">
+          <div className="rounded-2xl border border-[var(--neon-purple)] bg-[var(--bg-surface-glass)] p-6 space-y-4 max-w-sm">
+            <div className="text-4xl">рџ’і</div>
+            <h2 className="text-lg font-bold text-[var(--text-main)]">РЎС‚СЂР°РЅРёС†Р° РѕРїР»Р°С‚С‹ РЅРµ РѕС‚РєСЂС‹Р»Р°СЃСЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё</h2>
+            <p className="text-xs text-[var(--text-dim)]">РќР°Р¶РјРёС‚Рµ РєРЅРѕРїРєСѓ РЅРёР¶Рµ РґР»СЏ РїРµСЂРµС…РѕРґР°</p>
+            <button
+              onClick={() => window.open(paymentUrl, '_blank')}
+              className="w-full py-3 rounded-xl bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white font-bold shadow-[var(--glow-purple)]"
+            >
+              РћС‚РєСЂС‹С‚СЊ РѕРїР»Р°С‚Сѓ РІСЂСѓС‡РЅСѓСЋ
+            </button>
+          </div>
+        </div>
+      );
+    }
   }
 
   const c = {
@@ -2748,6 +2787,77 @@ export default function CreateOrderPage() {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          showCompanyFields ? 'max-h-[500px] opacity-100 mt-6' : 'max-h-0 opacity-0 mt-0'
+        }`}
+      >
+        <div className="rounded-2xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface-glass)] p-5">
+          <h3 className="text-lg font-bold text-[var(--text-main)] mb-1">
+            рџЏў Р РµРєРІРёР·РёС‚С‹ РѕСЂРіР°РЅРёР·Р°С†РёРё
+          </h3>
+          <p className="text-xs text-[var(--text-dim)] mb-4">
+            {isRu 
+              ? 'Р­С‚Рё РґР°РЅРЅС‹Рµ Р±СѓРґСѓС‚ СѓРєР°Р·Р°РЅС‹ РІ СЃС‡С‘С‚Рµ РґР»СЏ РѕРїР»Р°С‚С‹' 
+              : 'This information will be included in the invoice'}
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                РќР°Р·РІР°РЅРёРµ РѕСЂРіР°РЅРёР·Р°С†РёРё <span className="text-[var(--neon-pink)]">*</span>
+              </label>
+              <input
+                type="text"
+                value={companyData.company_name}
+                onChange={e => setCompanyData(p => ({ ...p, company_name: e.target.value }))}
+                placeholder="РћРћРћ В«Р РѕРјР°С€РєР°В»"
+                className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                  РРќРќ <span className="text-[var(--neon-pink)]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={companyData.inn}
+                  onChange={e => setCompanyData(p => ({ ...p, inn: e.target.value.replace(/\D/g, '').slice(0, 12) }))}
+                  placeholder="1234567890"
+                  maxLength={12}
+                  className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                  РљРџРџ
+                </label>
+                <input
+                  type="text"
+                  value={companyData.kpp}
+                  onChange={e => setCompanyData(p => ({ ...p, kpp: e.target.value.replace(/\D/g, '').slice(0, 9) }))}
+                  placeholder="123456789"
+                  maxLength={9}
+                  className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-dim)] mb-1">
+                Р®СЂРёРґРёС‡РµСЃРєРёР№ Р°РґСЂРµСЃ
+              </label>
+              <textarea
+                value={companyData.legal_address}
+                onChange={e => setCompanyData(p => ({ ...p, legal_address: e.target.value }))}
+                rows={2}
+                placeholder="Рі. РњРѕСЃРєРІР°, СѓР». РџСЂРёРјРµСЂРЅР°СЏ, Рґ. 1, РѕС„. 100"
+                className="w-full rounded-xl border border-[rgba(0,240,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-blue)] focus:outline-none transition"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3130,10 +3240,16 @@ export default function OrdersPage() {
 
     const loadOrders = async () => {
       try {
-        const res = await fetch(`${PAY_API_BASE}/orders?tg_id=${currentUser.id}`);
+        const res = await fetch('https://pay.bytewizard.ru/orders', {
+          credentials: 'include',
+        });
+        
         if (res.ok) {
           const data = await res.json();
           setOrders(data.orders || []);
+        } else if (res.status === 401) {
+          // Р•СЃР»Рё РЅРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ, РјРѕР¶РЅРѕ СЂРµРґРёСЂРµРєС‚РёС‚СЊ РЅР° Р»РѕРіРёРЅ РёР»Рё РїРѕРєР°Р·С‹РІР°С‚СЊ РїСѓСЃС‚РѕР№ СЃРїРёСЃРѕРє
+          setOrders([]);
         }
       } catch (e) {
         console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·РѕРІ:', e);
@@ -3226,7 +3342,6 @@ export default function OrdersPage() {
 FILE: [locale]\profile\orders\[orderId]\page.tsx
 ─────────────────────────────────────────
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../../components/ScreenTitle';
@@ -3256,10 +3371,13 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const { locale, orderId } = useParams<{ locale: string; orderId: string }>();
   const isRu = locale !== 'en';
-
+  
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // рџ”№ РќРћР’РћР•: РЎРѕСЃС‚РѕСЏРЅРёРµ РґР»СЏ РїСЂРѕС†РµСЃСЃР° РѕС‚РјРµРЅС‹
+  const [canceling, setCanceling] = useState(false);
 
   const c = {
     back: isRu ? 'в†ђ Рљ СЃРїРёСЃРєСѓ Р·Р°РєР°Р·РѕРІ' : 'в†ђ Back to orders',
@@ -3280,6 +3398,11 @@ export default function OrderDetailPage() {
     refunded: isRu ? 'Р’РѕР·РІСЂР°С‰С‘РЅ' : 'Refunded',
     in_progress: isRu ? 'Р’ СЂР°Р±РѕС‚Рµ' : 'In progress',
     not_found: isRu ? 'Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ' : 'Order not found',
+    // рџ”№ РќРћР’РћР•: РўРµРєСЃС‚С‹ РґР»СЏ РєРЅРѕРїРєРё РѕС‚РјРµРЅС‹
+    cancel_btn: isRu ? 'РћС‚РјРµРЅРёС‚СЊ Р·Р°РєР°Р·' : 'Cancel Order',
+    cancel_confirm: isRu ? 'Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ РѕС‚РјРµРЅРёС‚СЊ СЌС‚РѕС‚ Р·Р°РєР°Р·? Р­С‚Рѕ РґРµР№СЃС‚РІРёРµ РЅРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ.' : 'Are you sure you want to cancel this order? This action cannot be undone.',
+    cancel_success: isRu ? 'Р—Р°РєР°Р· СѓСЃРїРµС€РЅРѕ РѕС‚РјРµРЅРµРЅ' : 'Order successfully cancelled',
+    cancel_error: isRu ? 'РћС€РёР±РєР° РїСЂРё РѕС‚РјРµРЅРµ Р·Р°РєР°Р·Р°' : 'Error cancelling order',
   };
 
   const getStatusInfo = (status: string) => {
@@ -3294,7 +3417,6 @@ export default function OrderDetailPage() {
     return map[status] || { label: status, color: 'text-[var(--text-dim)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.2)]', icon: 'рџ“¦' };
   };
 
-  // РҐРµР»РїРµСЂ РґР»СЏ РєСЂР°СЃРёРІРѕРіРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РєРѕРЅС„РёРіР°
   const renderConfigValue = (key: string, value: any) => {
     if (key === 'technical_task') return value ? 'вњ“ Р—Р°РїРѕР»РЅРµРЅРѕ' : 'вЂ”';
     if (typeof value === 'boolean') return value ? 'вњ“ Р”Р°' : 'вњ— РќРµС‚';
@@ -3307,6 +3429,32 @@ export default function OrderDetailPage() {
     return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Technical Task', 'РўР—');
   };
 
+  
+  const handleCancelOrder = async () => {
+    if (!window.confirm(c.cancel_confirm)) return;
+    setCanceling(true);
+    try {
+      const res = await fetch(`https://pay.bytewizard.ru/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // рџ”‘
+        body: JSON.stringify({}), 
+      });
+      
+      if (res.ok) {
+        setOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
+        alert(c.cancel_success);
+      } else {
+        alert(c.cancel_error);
+      }
+    } catch (e) {
+      console.error('Network error during cancellation:', e);
+      alert(c.cancel_error);
+    } finally {
+      setCanceling(false);
+    }
+  };
+
   useEffect(() => {
     const currentUser = getDisplayTelegramUser();
     if (!currentUser || currentUser.id === 0) {
@@ -3314,15 +3462,16 @@ export default function OrderDetailPage() {
       return;
     }
     setUser(currentUser);
-
     const loadOrder = async () => {
       try {
-        const res = await fetch(`${PAY_API_BASE}/orders/${orderId}?tg_id=${currentUser.id}`);
+        const res = await fetch(`https://pay.bytewizard.ru/orders/${orderId}`, {
+          credentials: 'include',
+        });
         if (res.ok) {
           const data = await res.json();
           setOrder(data.order);
         } else {
-          setOrder(null); // 404 РёР»Рё РѕС€РёР±РєР°
+          setOrder(null);
         }
       } catch (e) {
         console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·Р°:', e);
@@ -3331,12 +3480,10 @@ export default function OrderDetailPage() {
         setLoading(false);
       }
     };
-
     loadOrder();
   }, [orderId]);
 
   if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
-
   if (!order) {
     return (
       <div className="min-h-[60vh] grid place-items-center text-center px-6">
@@ -3350,16 +3497,17 @@ export default function OrderDetailPage() {
   }
 
   const statusInfo = getStatusInfo(order.status);
+  // рџ”№ РќРћР’РћР•: Р¤Р»Р°Рі Р°РєС‚РёРІРЅРѕСЃС‚Рё РєРЅРѕРїРєРё (С‚РѕР»СЊРєРѕ РµСЃР»Рё СЃС‚Р°С‚СѓСЃ 'pending' Рё РЅРµ РёРґРµС‚ РїСЂРѕС†РµСЃСЃ РѕС‚РјРµРЅС‹)
+  const canCancel = order.status === 'pending' && !canceling;
 
   return (
     <>
       <ScreenTitle>{c.order_details}</ScreenTitle>
-
       <button onClick={() => router.push(`/${locale}/profile/orders`)} className="mt-4 flex items-center gap-2 text-sm text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         {c.back}
       </button>
-
+      
       <div className="mt-4 space-y-4 pb-8">
         {/* Р—Р°РіРѕР»РѕРІРѕРє Р·Р°РєР°Р·Р° */}
         <div className="rounded-2xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface-glass)] p-5">
@@ -3389,16 +3537,10 @@ export default function OrderDetailPage() {
                   <span className="font-bold text-[var(--neon-purple)]">{item.price_rub.toLocaleString('ru-RU')} в‚Ѕ</span>
                 </div>
                 <p className="text-xs text-[var(--neon-blue)] mb-3">{c.delivery}: {item.delivery_days} {c.days}</p>
-                
-                {/* РЎРµС‚РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё */}
                 {Object.keys(item.config).length > 0 && (
                   <div className="grid grid-cols-1 gap-2 bg-[rgba(0,0,0,0.2)] rounded-xl p-3">
                     {(() => {
-                      // рџ”№ Р¤РРљРЎ: Р•СЃР»Рё config РїСЂРёС€РµР» СЃС‚СЂРѕРєРѕР№, РїР°СЂСЃРёРј РµРіРѕ РІ РѕР±СЉРµРєС‚
-                      const parsedConfig = typeof item.config === 'string' 
-                        ? JSON.parse(item.config) 
-                        : item.config;
-                        
+                      const parsedConfig = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
                       return Object.entries(parsedConfig).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-xs">
                           <span className="text-[var(--text-dim)]">{formatLabel(key)}:</span>
@@ -3421,7 +3563,6 @@ export default function OrderDetailPage() {
             <span className="text-sm font-bold text-[var(--text-dim)] uppercase tracking-[0.1em]">{c.total}</span>
             <span className="text-2xl font-bold text-[var(--neon-purple)]">{order.total_rub.toLocaleString('ru-RU')} в‚Ѕ</span>
           </div>
-
           <div className="pt-4 border-t border-[rgba(176,38,255,0.15)]">
             <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-3">{c.contacts}</h3>
             <div className="space-y-2 text-sm">
@@ -3433,7 +3574,7 @@ export default function OrderDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-[var(--text-dim)]">{c.phone}:</span>
                   <span className="text-[var(--text-main)]">{order.client_phone}</span>
-              </div>
+                </div>
               )}
               {order.client_comment && (
                 <div className="mt-3 pt-3 border-t border-[rgba(176,38,255,0.1)]">
@@ -3446,6 +3587,38 @@ export default function OrderDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* рџ”№ РќРћР’РћР•: РљРЅРѕРїРєР° РѕС‚РјРµРЅС‹ Р·Р°РєР°Р·Р° (РїРѕРґ Р±Р»РѕРєРѕРј РєРѕРЅС‚Р°РєС‚РѕРІ) */}
+        <button
+          type="button"
+          onClick={handleCancelOrder}
+          disabled={!canCancel}
+          className={`w-full py-4 rounded-2xl font-bold text-white transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
+            canCancel
+              ? 'bg-[linear-gradient(135deg,var(--neon-pink),#ff4d4d)] hover:opacity-90 shadow-[0_0_20px_rgba(255,0,127,0.3)]'
+              : 'bg-[var(--bg-surface)] border border-[rgba(176,38,255,0.2)] text-[var(--text-dim)] cursor-not-allowed opacity-60'
+          }`}
+        >
+          {canceling ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              {isRu ? 'РћР±СЂР°Р±РѕС‚РєР°...' : 'Processing...'}
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              {c.cancel_btn}
+            </>
+          )}
+        </button>
+        {!canCancel && order.status !== 'pending' && (
+          <p className="text-center text-xs text-[var(--text-dim)]">
+            {isRu ? 'РћС‚РјРµРЅР° РЅРµРІРѕР·РјРѕР¶РЅР°: Р·Р°РєР°Р· СѓР¶Рµ РѕР±СЂР°Р±Р°С‚С‹РІР°РµС‚СЃСЏ РёР»Рё РѕРїР»Р°С‡РµРЅ.' : 'Cancellation is not available: order is already processed or paid.'}
+          </p>
+        )}
+
       </div>
     </>
   );

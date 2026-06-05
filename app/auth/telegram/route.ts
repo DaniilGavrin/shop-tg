@@ -1,124 +1,36 @@
-function parseJwt(token: string) {
-  try {
-    const payload = token.split('.')[1];
-
-    return JSON.parse(
-      Buffer.from(payload, 'base64')
-        .toString('utf-8')
-    );
-  } catch {
-    return null;
-  }
-}
+import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
+    const body = await req.json();
+    const { id_token, init_data } = body;
 
-    if (!data.id_token) {
-      return Response.json(
-        {
-          ok: false,
-          error: 'Missing id_token',
-        },
-        {
-          status: 400,
-        }
-      );
-    }
+    // Определяем, куда стучаться на бэкенде
+    const apiUrl = init_data
+      ? 'https://api.shop.bytewizard.ru/auth/telegram/webapp'
+      : 'https://api.shop.bytewizard.ru/auth/telegram/oidc';
 
-    const decoded = parseJwt(
-      data.id_token
-    );
-
-    if (!decoded) {
-      return Response.json(
-        {
-          ok: false,
-          error: 'Invalid token',
-        },
-        {
-          status: 401,
-        }
-      );
-    }
-
-    const user = {
-      id:
-        decoded.id ||
-        decoded.telegram_id,
-
-      first_name:
-        decoded.given_name ||
-        decoded.name ||
-        'User',
-
-      last_name:
-        decoded.family_name || '',
-
-      username:
-        decoded.preferred_username ||
-        '',
-
-      photo_url:
-        decoded.picture || '',
-
-      phone:
-        decoded.phone || '',
-    };
-
-    console.log(user)
-
-    try {
-      await fetch(
-        'https://api.shop.bytewizard.ru/users/verify',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-          body: JSON.stringify({
-            tg_id: Number(user.id),
-            first_name:
-              user.first_name,
-            last_name:
-              user.last_name,
-            username:
-              user.username,
-            id_token:
-              data.id_token,
-            phone:
-              data.phone,
-          }),
-        }
-      );
-    } catch (error) {
-      console.error(
-        '[VERIFY ERROR]',
-        error
-      );
-    }
-
-    console.log(
-      '[Telegram JWT]',
-      decoded
-    );
-
-    return Response.json({
-      ok: true,
-      user,
+    // Отправляем запрос на наш защищенный бэкенд
+    const backendRes = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(init_data ? { init_data } : { id_token }),
     });
-  } catch (err) {
-    console.error(err);
 
-    return Response.json(
-      {
-        ok: false,
-      },
-      {
-        status: 500,
-      }
-    );
+    const data = await backendRes.json();
+    
+    // Создаем ответ для фронтенда
+    const response = NextResponse.json(data, { status: backendRes.status });
+
+    // 🔑 КРИТИЧЕСКИ ВАЖНО: Переносим куки (Set-Cookie) с бэкенда на домен shop.bytewizard.ru
+    const setCookieHeaders = backendRes.headers.getSetCookie();
+    setCookieHeaders.forEach((cookie) => {
+      response.headers.append('Set-Cookie', cookie);
+    });
+
+    return response;
+  } catch (error) {
+    console.error('[AUTH PROXY ERROR]', error);
+    return NextResponse.json({ ok: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -71,10 +71,16 @@ export default function OrdersPage() {
 
     const loadOrders = async () => {
       try {
-        const res = await fetch(`${PAY_API_BASE}/orders?tg_id=${currentUser.id}`);
+        const res = await fetch('https://pay.bytewizard.ru/orders', {
+          credentials: 'include',
+        });
+        
         if (res.ok) {
           const data = await res.json();
           setOrders(data.orders || []);
+        } else if (res.status === 401) {
+          // Если не авторизован, можно редиректить на логин или показывать пустой список
+          setOrders([]);
         }
       } catch (e) {
         console.error('Ошибка загрузки заказов:', e);

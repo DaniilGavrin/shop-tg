@@ -86,25 +86,23 @@ export default function OrderDetailPage() {
     return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Technical Task', 'ТЗ');
   };
 
-  // 🔹 НОВОЕ: Логика отмены заказа
+  
   const handleCancelOrder = async () => {
     if (!window.confirm(c.cancel_confirm)) return;
-    
     setCanceling(true);
     try {
-      const res = await fetch(`${PAY_API_BASE}/orders/${orderId}/cancel`, {
+      const res = await fetch(`https://pay.bytewizard.ru/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tg_id: user?.id }),
+        credentials: 'include', // 🔑
+        body: JSON.stringify({}), 
       });
-
+      
       if (res.ok) {
-        // Обновляем статус локально, чтобы UI мгновенно отреагировал
         setOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
         alert(c.cancel_success);
       } else {
         alert(c.cancel_error);
-        console.error('Cancel failed:', await res.text());
       }
     } catch (e) {
       console.error('Network error during cancellation:', e);
@@ -123,7 +121,9 @@ export default function OrderDetailPage() {
     setUser(currentUser);
     const loadOrder = async () => {
       try {
-        const res = await fetch(`${PAY_API_BASE}/orders/${orderId}?tg_id=${currentUser.id}`);
+        const res = await fetch(`https://pay.bytewizard.ru/orders/${orderId}`, {
+          credentials: 'include',
+        });
         if (res.ok) {
           const data = await res.json();
           setOrder(data.order);
