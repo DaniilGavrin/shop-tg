@@ -3,13 +3,13 @@ export async function getCurrentUser() {
     const res = await fetch('https://api.shop.bytewizard.ru/me', {
       method: 'GET',
       credentials: 'include',
-      cache: 'no-store',      
+      cache: 'no-store',
     });
     
     if (res.ok) {
       return await res.json();
     }
-    return null; // Не авторизован
+    return null;
   } catch (error) {
     console.error('[AUTH] Failed to fetch user:', error);
     return null;

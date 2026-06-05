@@ -1,16 +1,10 @@
 'use client';
-
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
 import { BottomNavigation } from './components/BottomNavigation';
 import { LoadingScreen } from './components/LoadingScreen';
-
-import {
-  getDisplayTelegramUser,
-  setupTelegramWebApp,
-} from './lib/telegram';
-
+import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
+import { getCurrentUser } from './lib/auth'; // ← ДОБАВЬ ЭТОТ ИМПОРТ
 import type { AppTab, TelegramUser } from './types/telegram';
 
 type ClientLayoutProps = {
@@ -19,20 +13,17 @@ type ClientLayoutProps = {
 
 export function ClientLayout({ children }: ClientLayoutProps) {
   const [user, setUser] = useState<TelegramUser | null>(null);
-
   const pathname = usePathname();
   const router = useRouter();
-
   const locale = pathname.split('/')[1] || 'ru';
 
-  const showBottomNav = !pathname.match(/\/catalog\/\d+$/)
+  const showBottomNav = !pathname.match(/\/catalog\/\d+$/);
 
   const getActiveTab = (): AppTab => {
     if (pathname === `/${locale}`) return 'home';
     if (pathname.includes('/catalog')) return 'catalog';
     if (pathname.includes('/cart')) return 'cart';
     if (pathname.includes('/profile')) return 'profile';
-
     return 'home';
   };
 
@@ -43,16 +34,46 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       cart: `/${locale}/cart`,
       profile: `/${locale}/profile`,
     };
-
     router.push(routes[tab]);
   };
 
   useEffect(() => {
     setupTelegramWebApp();
-
-    const resolvedUser = getDisplayTelegramUser();
-
-    setUser(resolvedUser);
+    
+    const checkAuth = async () => {
+      // 1. Сначала проверяем, есть ли валидная сессия (cookies)
+      const authUser = await getCurrentUser();
+      
+      if (authUser?.payload) {
+        // Пользователь авторизован через cookies
+        setUser({
+          id: Number(authUser.payload.tg_id || authUser.payload.sub),
+          first_name: authUser.payload.username || 'User',
+          last_name: '',
+          username: authUser.payload.username || '',
+          photo_url: '',
+        });
+        return;
+      }
+      
+      // 2. Если сессии нет, проверяем Mini App (initDataUnsafe)
+      const tgUser = getDisplayTelegramUser();
+      if (tgUser && tgUser.id !== 0) {
+        setUser(tgUser);
+        return;
+      }
+      
+      // 3. Иначе — Guest
+      setUser({
+        id: 0,
+        first_name: 'Guest',
+        last_name: '',
+        username: 'guest',
+        photo_url: '',
+      });
+    };
+    
+    checkAuth();
   }, []);
 
   if (!user) {
@@ -61,17 +82,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
 
   return (
     <main className="app-shell">
-      <section className="app-content">
-        {children}
-      </section>
-
+      <section className="app-content">{children}</section>
       {showBottomNav ? (
-        <BottomNavigation
-          activeTab={getActiveTab()}
-          onTabChange={handleTabChange}
-        />
+        <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
       ) : (
-        <div className="safe-area-pb" /> // отступ под safe-area, если нужен
+        <div className="safe-area-pb" />
       )}
     </main>
   );
