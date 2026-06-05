@@ -41,29 +41,26 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     setupTelegramWebApp();
     
     const checkAuth = async () => {
-      // 1. Сначала проверяем, есть ли валидная сессия (cookies)
       const authUser = await getCurrentUser();
       
-      if (authUser?.payload) {
-        // Пользователь авторизован через cookies
+      if (authUser?.user) {
         setUser({
-          id: Number(authUser.payload.tg_id || authUser.payload.sub),
-          first_name: authUser.payload.username || 'User',
+          id: Number(authUser.user.tg_id || authUser.user.sub),
+          first_name: authUser.user.username || 'User',
           last_name: '',
-          username: authUser.payload.username || '',
+          username: authUser.user.username || '',
           photo_url: '',
         });
         return;
       }
       
-      // 2. Если сессии нет, проверяем Mini App (initDataUnsafe)
+      
       const tgUser = getDisplayTelegramUser();
       if (tgUser && tgUser.id !== 0) {
         setUser(tgUser);
         return;
       }
       
-      // 3. Иначе — Guest
       setUser({
         id: 0,
         first_name: 'Guest',
