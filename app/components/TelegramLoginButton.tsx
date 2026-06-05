@@ -92,7 +92,7 @@ export function TelegramLoginButton() {
             const result = await response.json();
             console.log('[TG VERIFY]', result);
             
-            if (!result.ok) {
+            if (!result.success) {
               console.error('[TG] Verification failed');
               return;
             }
