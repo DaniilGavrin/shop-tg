@@ -1,25 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslation } from '../lib/i18n/useTranslation';
-import type { TelegramUser } from '../types/telegram';
-import { getDisplayTelegramUser } from '../lib/telegram';
+import { useUser } from '../lib/UserContext';
 
 export function HomeIntro() {
   const { t } = useTranslation();
-  const [user, setUser] = useState<TelegramUser | null>(null);
-
-  useEffect(() => {
-    setUser(getDisplayTelegramUser());
-  }, []);
-
-  if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-[var(--text-dim)]">Загрузка...</p>
-      </div>
-    );
-  }
+  const user = useUser();
 
   return (
     <header className="text-center">

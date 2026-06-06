@@ -1,33 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
-import type { TelegramUser } from '../../types/telegram';
 import { ScreenTitle } from '../../components/ScreenTitle';
-import { getDisplayTelegramUser } from '../../lib/telegram';
 import { TelegramLoginButton } from '../../components/TelegramLoginButton';
+import { useUser } from '../../lib/UserContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
-function getFullName(user: TelegramUser) {
+function getFullName(user: { first_name: string; last_name?: string }) {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
 }
 
 export default function ProfilePage() {
   const { t } = useTranslation();
-  const [user, setUser] = useState<TelegramUser | null>(null);
+  const user = useUser();
   const [copied, setCopied] = useState(false);
 
   const pathname = usePathname();
   const locale = pathname.split('/')[1] || 'ru';
-
-  useEffect(() => {
-    setUser(getDisplayTelegramUser());
-  }, []);
-
-  if (!user) {
-    return null;
-  }
 
   const currentUser = user;
   const isGuest = currentUser.id === 0;

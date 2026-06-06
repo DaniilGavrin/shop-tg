@@ -5,6 +5,7 @@ import { BottomNavigation } from './components/BottomNavigation';
 import { LoadingScreen } from './components/LoadingScreen';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
 import { getCurrentUser } from './lib/auth';
+import { UserProvider } from './lib/UserContext'; // ← ДОБАВЬ
 import type { AppTab, TelegramUser } from './types/telegram';
 
 type ClientLayoutProps = {
@@ -56,7 +57,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         return;
       }
       
-      
       console.log('[AUTH] No user from /me, trying Telegram WebApp');
       const tgUser = getDisplayTelegramUser();
       console.log('[AUTH] Telegram WebApp user:', tgUser);
@@ -84,13 +84,15 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   }
 
   return (
-    <main className="app-shell">
-      <section className="app-content">{children}</section>
-      {showBottomNav ? (
-        <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
-      ) : (
-        <div className="safe-area-pb" />
-      )}
-    </main>
+    <UserProvider user={user}> {/* ← ОБЕРНИ В UserProvider */}
+      <main className="app-shell">
+        <section className="app-content">{children}</section>
+        {showBottomNav ? (
+          <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
+        ) : (
+          <div className="safe-area-pb" />
+        )}
+      </main>
+    </UserProvider>
   );
 }
