@@ -5,12 +5,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { id_token, init_data } = body;
 
-    // Определяем, куда стучаться на бэкенде
     const apiUrl = init_data
       ? 'https://api.shop.bytewizard.ru/auth/telegram/webapp'
       : 'https://api.shop.bytewizard.ru/auth/telegram/oidc';
 
-    // Отправляем запрос на наш защищенный бэкенд
     const backendRes = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -18,15 +16,28 @@ export async function POST(req: Request) {
     });
 
     const data = await backendRes.json();
-    
-    // Создаем ответ для фронтенда
     const response = NextResponse.json(data, { status: backendRes.status });
 
-    // 🔑 КРИТИЧЕСКИ ВАЖНО: Переносим куки (Set-Cookie) с бэкенда на домен shop.bytewizard.ru
-    const setCookieHeaders = backendRes.headers.getSetCookie();
-    setCookieHeaders.forEach((cookie) => {
-      response.headers.append('Set-Cookie', cookie);
-    });
+    const setCookieHeader = backendRes.headers.get('set-cookie');
+    if (setCookieHeader) {
+      const cookies = setCookieHeader.split(/,(?=\s*[a-zA-Z0-9-_]+=)/);
+      
+      for (const cookie of cookies) {
+        const [nameValue, ...attributes] = cookie.split(';').map(s => s.trim());
+        const [name, value] = nameValue.split('=');
+        
+        if (name === 'access_token' || name === 'refresh_token') {
+          response.cookies.set(name, value, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+            domain: '.bytewizard.ru',
+            maxAge: name === 'access_token' ? 15 * 60 : 30 * 24 * 60 * 60,
+          });
+        }
+      }
+    }
 
     return response;
   } catch (error) {

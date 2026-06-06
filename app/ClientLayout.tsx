@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { BottomNavigation } from './components/BottomNavigation';
 import { LoadingScreen } from './components/LoadingScreen';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
-import { getCurrentUser } from './lib/auth'; // ← ДОБАВЬ ЭТОТ ИМПОРТ
+import { getCurrentUser } from './lib/auth';
 import type { AppTab, TelegramUser } from './types/telegram';
 
 type ClientLayoutProps = {
@@ -45,11 +45,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       
       if (authUser?.user) {
         setUser({
-          id: Number(authUser.user.tg_id || authUser.user.sub),
-          first_name: authUser.user.username || 'User',
-          last_name: '',
+          id: Number(authUser.user.tg_id),
+          first_name: authUser.user.first_name || 'User',
+          last_name: authUser.user.last_name || '',
           username: authUser.user.username || '',
-          photo_url: '',
+          photo_url: authUser.user.photo_url || '',
         });
         return;
       }
