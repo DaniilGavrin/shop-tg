@@ -42,8 +42,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     
     const checkAuth = async () => {
       const authUser = await getCurrentUser();
-      
+      console.log('[AUTH] getCurrentUser result:', authUser);
+
       if (authUser?.user) {
+        console.log('[AUTH] User found:', authUser.user);
         setUser({
           id: Number(authUser.user.tg_id),
           first_name: authUser.user.first_name || 'User',
@@ -55,12 +57,16 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       }
       
       
+      console.log('[AUTH] No user from /me, trying Telegram WebApp');
       const tgUser = getDisplayTelegramUser();
+      console.log('[AUTH] Telegram WebApp user:', tgUser);
+
       if (tgUser && tgUser.id !== 0) {
         setUser(tgUser);
         return;
       }
       
+      console.log('[AUTH] Setting Guest user');
       setUser({
         id: 0,
         first_name: 'Guest',
