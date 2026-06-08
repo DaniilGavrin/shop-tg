@@ -2,7 +2,6 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { BottomNavigation } from './components/BottomNavigation';
-import { LoadingScreen } from './components/LoadingScreen';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
 import { getCurrentUser } from './lib/auth';
 import { UserProvider } from './lib/UserContext'; // ← ДОБАВЬ
@@ -82,8 +81,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     
     checkAuth();
   }, []);
-
-  //if (!user) { return <LoadingScreen />;}
 
   return (
     <UserProvider user={user}>
