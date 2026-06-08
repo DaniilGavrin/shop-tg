@@ -83,9 +83,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     checkAuth();
   }, []);
 
-  if (!user) {
-    return <LoadingScreen />;
-  }
+  //if (!user) { return <LoadingScreen />;}
 
   return (
     <UserProvider user={user}>
