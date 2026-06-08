@@ -470,7 +470,7 @@ export default function CreateOrderPage() {
             </Link>
             {' '}{c.terms_and}{' '}
             <Link 
-              href={`/${locale}/legal`} 
+              href={`/${locale}/legal/privacy`} 
               target="_blank"
               className="text-[var(--neon-purple)] hover:text-[var(--neon-pink)] underline transition"
             >

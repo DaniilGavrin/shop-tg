@@ -10,7 +10,7 @@ export default function LegalPage() {
   const docs = [
     {
       label: t.legal.privacy,
-      href: 'https://docs.google.com/document/d/ТВОЙ_ID/preview', // или Яндекс.Диск
+      href: '/privacy', // или Яндекс.Диск
       icon: '🛡️',
     },
     {
