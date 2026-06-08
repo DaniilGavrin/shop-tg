@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
+import { useUser } from '../../../lib/UserContext';
 
 type TempOrder = {
   id: string;
@@ -35,6 +36,7 @@ export default function CreateOrderPage() {
   const { locale, orderId } = useParams<{ locale: string; orderId: string }>();
   const { t } = useTranslation();
   const isRu = locale !== 'en';
+  const user = useUser();
 
   const [order, setOrder] = useState<TempOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,6 +123,10 @@ export default function CreateOrderPage() {
         client_comment: contact.comment.trim() || null,
         payment_method: selectedPayment,
         locale,
+        telegram_id: user.id.toString(),
+        telegram_username: user.username || '',
+        telegram_first_name: user.first_name || '',
+        telegram_last_name: user.last_name || '',
         ...(selectedPayment === 'invoice' ? {
           company_name: companyData.company_name.trim(),
           company_inn: companyData.inn.trim(),
