@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 08.06.2026 16:12:09
+Дата: 08.06.2026 19:59:58
 
 =============================================
 
@@ -10,7 +10,6 @@ FILE: ClientLayout.tsx
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { BottomNavigation } from './components/BottomNavigation';
-import { LoadingScreen } from './components/LoadingScreen';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
 import { getCurrentUser } from './lib/auth';
 import { UserProvider } from './lib/UserContext'; // в†ђ Р”РћР‘РђР’Р¬
@@ -90,10 +89,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     
     checkAuth();
   }, []);
-
-  if (!user) {
-    return <LoadingScreen />;
-  }
 
   return (
     <UserProvider user={user}>
@@ -888,23 +883,6 @@ export function HomeIntro() {
 
 
 ─────────────────────────────────────────
-FILE: components\LoadingScreen.tsx
-─────────────────────────────────────────
-export function LoadingScreen() {
-  return (
-    <main className="grid min-h-screen place-items-center bg-[var(--bg-deep)] px-6 text-center">
-      <div>
-        <div className="mx-auto mb-4 h-14 w-14 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent shadow-[0_0_22px_rgba(176,38,255,0.45)]" />
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-dim)]">
-          Р—Р°РіСЂСѓР·РєР°
-        </p>
-      </div>
-    </main>
-  );
-}
-
-
-─────────────────────────────────────────
 FILE: components\ProductCard.tsx
 ─────────────────────────────────────────
 import Link from 'next/link';
@@ -1151,9 +1129,7 @@ export async function getCatalog(): Promise<CatalogResponse> {
     console.log('[CATALOG] Fetching from API...');
     
     const response = await fetch(`${API_BASE_URL}/catalog`, {
-      next: {
-        revalidate: 600, // ISR: РїРµСЂРµvalidate РєР°Р¶РґС‹Рµ 10 РјРёРЅСѓС‚ РЅР° СЃРµСЂРІРµСЂРµ
-      },
+      cache: 'no-store',
     });
 
     console.log('[CATALOG] API STATUS:', response.status);
@@ -2523,6 +2499,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
 import { useUser } from '../../../lib/UserContext';
+import Link from 'next/link';
 
 type TempOrder = {
   id: string;
@@ -2566,6 +2543,8 @@ export default function CreateOrderPage() {
   const [error, setError] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [invoiceSent, setInvoiceSent] = useState(false);
+
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [companyData, setCompanyData] = useState({
     company_name: '',
@@ -2619,6 +2598,13 @@ export default function CreateOrderPage() {
         setError(isRu ? 'РЈРєР°Р¶РёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Р№ РРќРќ (10 РёР»Рё 12 С†РёС„СЂ)' : 'Valid INN is required (10 or 12 digits)');
         return;
       }
+    }
+
+    if (!agreedToTerms) {
+      setError(isRu 
+        ? 'Р”Р»СЏ РѕС„РѕСЂРјР»РµРЅРёСЏ Р·Р°РєР°Р·Р° РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРёРЅСЏС‚СЊ СѓСЃР»РѕРІРёСЏ РѕС„РµСЂС‚С‹' 
+        : 'You must accept the terms to place an order');
+      return;
     }
 
     setError(null);
@@ -2795,6 +2781,13 @@ export default function CreateOrderPage() {
     expires: isRu ? 'Р—Р°РєР°Р· Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅ РґРѕ:' : 'Order reserved until:',
     payment: isRu ? 'РЎРїРѕСЃРѕР± РѕРїР»Р°С‚С‹' : 'Payment method',
     required: isRu ? '* РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ' : '* required',
+
+    terms_label: isRu 
+      ? 'РЇ РїСЂРёРЅРёРјР°СЋ СѓСЃР»РѕРІРёСЏ' 
+      : 'I accept the',
+    terms_offer: isRu ? 'РџСѓР±Р»РёС‡РЅРѕР№ РѕС„РµСЂС‚С‹' : 'Public Offer',
+    terms_and: isRu ? 'Рё' : 'and',
+    terms_privacy: isRu ? 'РџРѕР»РёС‚РёРєРё РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё' : 'Privacy Policy',
   };
 
   const expireTime = new Date(order.createdAt + order.ttl).toLocaleTimeString(isRu ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit' });
@@ -2939,6 +2932,48 @@ export default function CreateOrderPage() {
         </div>
       </div>
 
+      <div className="mt-6 rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative flex-shrink-0 mt-0.5">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
+              agreedToTerms 
+                ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)] shadow-[0_0_12px_rgba(176,38,255,0.5)]' 
+                : 'border-[var(--text-dim)] bg-[var(--bg-surface)] group-hover:border-[var(--neon-purple)]'
+            }`}>
+              {agreedToTerms && (
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-[var(--text-main)] leading-relaxed select-none">
+            {c.terms_label}{' '}
+            <Link 
+              href={`/${locale}/legal`} 
+              target="_blank"
+              className="text-[var(--neon-purple)] hover:text-[var(--neon-pink)] underline transition"
+            >
+              {c.terms_offer}
+            </Link>
+            {' '}{c.terms_and}{' '}
+            <Link 
+              href={`/${locale}/legal/privacy`} 
+              target="_blank"
+              className="text-[var(--neon-purple)] hover:text-[var(--neon-pink)] underline transition"
+            >
+              {c.terms_privacy}
+            </Link>
+          </span>
+        </label>
+      </div>
+
       <div className="mt-8 pb-8 space-y-4">
         <div className="flex items-center justify-between px-2">
           <span className="text-sm text-[var(--text-dim)]">{c.total}</span>
@@ -2968,35 +3003,36 @@ FILE: [locale]\legal\page.tsx
 
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../components/ScreenTitle';
+import Link from 'next/link';
 
 export default function LegalPage() {
   const { t } = useTranslation();
+  const { locale } = useTranslation();
 
-  // Р’РЎРўРђР’Р¬ РЎР®Р”Рђ РџРЈР‘Р›РР§РќР«Р• РЎРЎР«Р›РљР РќРђ РћР‘Р›РђРљРћ
   const docs = [
     {
       label: t.legal.privacy,
-      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview', // РёР»Рё РЇРЅРґРµРєСЃ.Р”РёСЃРє
+      href: `/${locale}/legal/privacy`,
       icon: 'рџ›ЎпёЏ',
     },
     {
       label: t.legal.terms,
-      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      href: `/${locale}/legal/terms`,
       icon: 'рџ“њ',
     },
     {
       label: t.legal.license,
-      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      href: `/${locale}/legal/license`,
       icon: 'вљ™пёЏ',
     },
     {
       label: t.legal.requisites,
-      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      href: `/${locale}/legal/requisites`,
       icon: 'рџЏ¦',
     },
     {
       label: t.legal.refund,
-      href: 'https://docs.google.com/document/d/РўР’РћР™_ID/preview',
+      href: `/${locale}/legal/refund`,
       icon: 'в†©пёЏ',
     },
   ];
@@ -3007,11 +3043,9 @@ export default function LegalPage() {
 
       <div className="mt-6 flex flex-col gap-4">
         {docs.map((doc) => (
-          <a
+          <Link
             key={doc.label}
             href={doc.href}
-            target="_blank"
-            rel="noopener noreferrer"
             className="overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
           >
             <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
@@ -3022,16 +3056,540 @@ export default function LegalPage() {
                 <p className="mt-0.5 text-xs text-[var(--text-dim)]">{t.legal.open_in_cloud}</p>
               </div>
               <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
 
       <p className="mt-6 text-center text-xs text-[var(--text-dim)]">
         {t.legal.updated} {new Date().toLocaleDateString('ru-RU')}
       </p>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\legal\license\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export default function LicensePage() {
+  return (
+    <>
+      <ScreenTitle>Р›РёС†РµРЅР·РёРѕРЅРЅРѕРµ СЃРѕРіР»Р°С€РµРЅРёРµ</ScreenTitle>
+      
+      <div className="mt-6 space-y-6 text-sm text-[var(--text-main)] leading-relaxed">
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">1. РћР±С‰РёРµ РїРѕР»РѕР¶РµРЅРёСЏ</h2>
+          <p className="mb-2">
+            РќР°СЃС‚РѕСЏС‰РµРµ Р›РёС†РµРЅР·РёРѕРЅРЅРѕРµ СЃРѕРіР»Р°С€РµРЅРёРµ (РґР°Р»РµРµ вЂ” В«РЎРѕРіР»Р°С€РµРЅРёРµВ») СЂРµРіСѓР»РёСЂСѓРµС‚ РѕС‚РЅРѕС€РµРЅРёСЏ РјРµР¶РґСѓ 
+            РРџ Р“Р°РІСЂРёРЅ Р”Р°РЅРёРёР» РќРёРєРёС‚РёС‡ (РґР°Р»РµРµ вЂ” В«Р›РёС†РµРЅР·РёР°СЂВ») Рё РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј (РґР°Р»РµРµ вЂ” В«Р›РёС†РµРЅР·РёР°С‚В») 
+            РїРѕ РїРѕРІРѕРґСѓ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ РѕР±РµСЃРїРµС‡РµРЅРёСЏ, СЃРѕР·РґР°РІР°РµРјРѕРіРѕ РІ СЂР°РјРєР°С… РѕРєР°Р·Р°РЅРёСЏ СѓСЃР»СѓРі.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">2. РџСЂРµРґРјРµС‚ СЃРѕРіР»Р°С€РµРЅРёСЏ</h2>
+          <p className="mb-2">
+            Р›РёС†РµРЅР·РёР°СЂ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ Р›РёС†РµРЅР·РёР°С‚Сѓ РЅРµРёСЃРєР»СЋС‡РёС‚РµР»СЊРЅСѓСЋ Р»РёС†РµРЅР·РёСЋ РЅР° РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ 
+            РѕР±РµСЃРїРµС‡РµРЅРёСЏ, СЂР°Р·СЂР°Р±РѕС‚Р°РЅРЅРѕРіРѕ РІ СЂР°РјРєР°С… РёСЃРїРѕР»РЅРµРЅРёСЏ Р·Р°РєР°Р·Р°, РЅР° СѓСЃР»РѕРІРёСЏС… РїСЂРѕСЃС‚РѕР№ (РЅРµРёСЃРєР»СЋС‡РёС‚РµР»СЊРЅРѕР№) 
+            Р»РёС†РµРЅР·РёРё.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">3. РџСЂР°РІР° Р›РёС†РµРЅР·РёР°С‚Р°</h2>
+          <p className="mb-2">Р›РёС†РµРЅР·РёР°С‚ РІРїСЂР°РІРµ:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РїСЂРѕРіСЂР°РјРјРЅРѕРµ РѕР±РµСЃРїРµС‡РµРЅРёРµ РІ СЃРІРѕРµР№ РґРµСЏС‚РµР»СЊРЅРѕСЃС‚Рё</li>
+            <li>Р’РѕСЃРїСЂРѕРёР·РІРѕРґРёС‚СЊ РїСЂРѕРіСЂР°РјРјРЅРѕРµ РѕР±РµСЃРїРµС‡РµРЅРёРµ РґР»СЏ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РЅСѓР¶Рґ</li>
+            <li>РњРѕРґРёС„РёС†РёСЂРѕРІР°С‚СЊ РїСЂРѕРіСЂР°РјРјРЅРѕРµ РѕР±РµСЃРїРµС‡РµРЅРёРµ РґР»СЏ Р°РґР°РїС‚Р°С†РёРё РїРѕРґ СЃРІРѕРё РїРѕС‚СЂРµР±РЅРѕСЃС‚Рё</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">4. РћРіСЂР°РЅРёС‡РµРЅРёСЏ</h2>
+          <p className="mb-2">Р›РёС†РµРЅР·РёР°С‚Сѓ Р·Р°РїСЂРµС‰Р°РµС‚СЃСЏ:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РџРµСЂРµРґР°РІР°С‚СЊ РїСЂР°РІР° РЅР° РїСЂРѕРіСЂР°РјРјРЅРѕРµ РѕР±РµСЃРїРµС‡РµРЅРёРµ С‚СЂРµС‚СЊРёРј Р»РёС†Р°Рј Р±РµР· РїРёСЃСЊРјРµРЅРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ Р›РёС†РµРЅР·РёР°СЂР°</li>
+            <li>РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РїСЂРѕРіСЂР°РјРјРЅРѕРµ РѕР±РµСЃРїРµС‡РµРЅРёРµ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РєРѕРЅРєСѓСЂРёСЂСѓСЋС‰РёС… РїСЂРѕРґСѓРєС‚РѕРІ</li>
+            <li>РЈРґР°Р»СЏС‚СЊ РёР»Рё РёР·РјРµРЅСЏС‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± Р°РІС‚РѕСЂСЃРєРёС… РїСЂР°РІР°С…</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">5. РРЅС‚РµР»Р»РµРєС‚СѓР°Р»СЊРЅР°СЏ СЃРѕР±СЃС‚РІРµРЅРЅРѕСЃС‚СЊ</h2>
+          <p>
+            РСЃРєР»СЋС‡РёС‚РµР»СЊРЅС‹Рµ РїСЂР°РІР° РЅР° РёСЃС…РѕРґРЅС‹Р№ РєРѕРґ, Р°Р»РіРѕСЂРёС‚РјС‹ Рё РґРѕРєСѓРјРµРЅС‚Р°С†РёСЋ, СЂР°Р·СЂР°Р±РѕС‚Р°РЅРЅС‹Рµ РІ СЂР°РјРєР°С… 
+            РёСЃРїРѕР»РЅРµРЅРёСЏ Р·Р°РєР°Р·Р°, РїСЂРёРЅР°РґР»РµР¶Р°С‚ Р›РёС†РµРЅР·РёР°СЂСѓ РґРѕ РјРѕРјРµРЅС‚Р° РїРѕР»РЅРѕР№ РѕРїР»Р°С‚С‹ СѓСЃР»СѓРі. РџРѕСЃР»Рµ РїРѕР»РЅРѕР№ 
+            РѕРїР»Р°С‚С‹ РёСЃРєР»СЋС‡РёС‚РµР»СЊРЅС‹Рµ РїСЂР°РІР° РїРµСЂРµС…РѕРґСЏС‚ Рє Р›РёС†РµРЅР·РёР°С‚Сѓ РІ РѕР±СЉС‘РјРµ, СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРј СЃС‚РѕСЂРѕРЅР°РјРё.
+          </p>
+        </section>
+
+        <div className="mt-8 pt-6 border-t border-[rgba(176,38,255,0.2)] text-center text-xs text-[var(--text-dim)]">
+          <p>Р”Р°С‚Р° РїСѓР±Р»РёРєР°С†РёРё: {new Date().toLocaleDateString('ru-RU')}</p>
+          <p className="mt-2">РРџ Р“Р°РІСЂРёРЅ Р”Р°РЅРёРёР» РќРёРєРёС‚РёС‡</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\legal\privacy\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export default function PrivacyPolicyPage() {
+  return (
+    <>
+      <ScreenTitle>РџРѕР»РёС‚РёРєР° РѕР±СЂР°Р±РѕС‚РєРё РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</ScreenTitle>
+      
+      <div className="mt-6 space-y-6 text-sm text-[var(--text-main)] leading-relaxed">
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">1. РћР±С‰РёРµ РїРѕР»РѕР¶РµРЅРёСЏ</h2>
+          <p className="mb-2">
+            РќР°СЃС‚РѕСЏС‰Р°СЏ РџРѕР»РёС‚РёРєР° РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С… (РґР°Р»РµРµ вЂ“ РџРѕР»РёС‚РёРєР°) РґРµР№СЃС‚РІСѓРµС‚ РІ РѕС‚РЅРѕС€РµРЅРёРё РІСЃРµР№ РёРЅС„РѕСЂРјР°С†РёРё, 
+            РєРѕС‚РѕСЂСѓСЋ РРџ Р“Р°РІСЂРёРЅ Р”Р°РЅРёРёР» РќРёРєРёС‚РёС‡ (РґР°Р»РµРµ вЂ“ РћРїРµСЂР°С‚РѕСЂ) РјРѕР¶РµС‚ РїРѕР»СѓС‡РёС‚СЊ Рѕ РџРѕР»СЊР·РѕРІР°С‚РµР»Рµ РІРѕ РІСЂРµРјСЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ СЃР°Р№С‚Р° 
+            shop.bytewizard.ru.
+          </p>
+          <p>
+            РСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ СЃР°Р№С‚Р° РѕР·РЅР°С‡Р°РµС‚ Р±РµР·РѕРіРѕРІРѕСЂРѕС‡РЅРѕРµ СЃРѕРіР»Р°СЃРёРµ РџРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ РЅР°СЃС‚РѕСЏС‰РµР№ РџРѕР»РёС‚РёРєРѕР№ Рё СѓРєР°Р·Р°РЅРЅС‹РјРё РІ РЅРµР№ СѓСЃР»РѕРІРёСЏРјРё 
+            РѕР±СЂР°Р±РѕС‚РєРё РµРіРѕ РїРµСЂСЃРѕРЅР°Р»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">2. РџРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ, СЃРѕР±РёСЂР°РµРјС‹Рµ СЃР°Р№С‚РѕРј</h2>
+          <p className="mb-2">РћРїРµСЂР°С‚РѕСЂ РјРѕР¶РµС‚ СЃРѕР±РёСЂР°С‚СЊ СЃР»РµРґСѓСЋС‰РёРµ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РРјСЏ Рё С„Р°РјРёР»РёСЏ</li>
+            <li>РђРґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹</li>
+            <li>РќРѕРјРµСЂ С‚РµР»РµС„РѕРЅР°</li>
+            <li>Telegram ID Рё username</li>
+            <li>IP-Р°РґСЂРµСЃ Рё РґР°РЅРЅС‹Рµ Рѕ Р±СЂР°СѓР·РµСЂРµ</li>
+            <li>РРЅС„РѕСЂРјР°С†РёСЏ Рѕ Р·Р°РєР°Р·Р°С… Рё РїР»Р°С‚РµР¶Р°С…</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">3. Р¦РµР»Рё РѕР±СЂР°Р±РѕС‚РєРё РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</h2>
+          <p className="mb-2">РџРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ РѕР±СЂР°Р±Р°С‚С‹РІР°СЋС‚СЃСЏ РІ СЃР»РµРґСѓСЋС‰РёС… С†РµР»СЏС…:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РРґРµРЅС‚РёС„РёРєР°С†РёСЏ РџРѕР»СЊР·РѕРІР°С‚РµР»СЏ РґР»СЏ РѕС„РѕСЂРјР»РµРЅРёСЏ Р·Р°РєР°Р·РѕРІ</li>
+            <li>РџСЂРµРґРѕСЃС‚Р°РІР»РµРЅРёРµ РґРѕСЃС‚СѓРїР° Рє РїРµСЂСЃРѕРЅР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹Рј СЂРµСЃСѓСЂСЃР°Рј СЃР°Р№С‚Р°</li>
+            <li>РЈСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РѕР±СЂР°С‚РЅРѕР№ СЃРІСЏР·Рё РґР»СЏ РЅР°РїСЂР°РІР»РµРЅРёСЏ СѓРІРµРґРѕРјР»РµРЅРёР№ Рё Р·Р°РїСЂРѕСЃРѕРІ</li>
+            <li>РћР±СЂР°Р±РѕС‚РєР° РїР»Р°С‚РµР¶РµР№ Рё РІС‹СЃС‚Р°РІР»РµРЅРёРµ СЃС‡РµС‚РѕРІ</li>
+            <li>РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРЅС‹С… РґР°РЅРЅС‹С…</li>
+            <li>РЈРІРµРґРѕРјР»РµРЅРёРµ Рѕ СЃС‚Р°С‚СѓСЃРµ Р·Р°РєР°Р·РѕРІ</li>
+            <li>РџСЂРµРґРѕСЃС‚Р°РІР»РµРЅРёРµ С‚РµС…РЅРёС‡РµСЃРєРѕР№ РїРѕРґРґРµСЂР¶РєРё</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">4. РЎРїРѕСЃРѕР±С‹ Рё СЃСЂРѕРєРё РѕР±СЂР°Р±РѕС‚РєРё РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</h2>
+          <p className="mb-2">
+            РћР±СЂР°Р±РѕС‚РєР° РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С… РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚СЃСЏ Р±РµР· РѕРіСЂР°РЅРёС‡РµРЅРёСЏ СЃСЂРѕРєР°, Р»СЋР±С‹Рј Р·Р°РєРѕРЅРЅС‹Рј СЃРїРѕСЃРѕР±РѕРј, РІ С‚РѕРј С‡РёСЃР»Рµ РІ 
+            РёРЅС„РѕСЂРјР°С†РёРѕРЅРЅС‹С… СЃРёСЃС‚РµРјР°С… РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С… СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј СЃСЂРµРґСЃС‚РІ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё РёР»Рё Р±РµР· РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ С‚Р°РєРёС… СЃСЂРµРґСЃС‚РІ.
+          </p>
+          <p>
+            РџРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ С…СЂР°РЅСЏС‚СЃСЏ РЅР° СЃРµСЂРІРµСЂР°С…, СЂР°СЃРїРѕР»РѕР¶РµРЅРЅС‹С… РЅР° С‚РµСЂСЂРёС‚РѕСЂРёРё Р РѕСЃСЃРёР№СЃРєРѕР№ Р¤РµРґРµСЂР°С†РёРё, Рё Р·Р°С‰РёС‰РµРЅС‹ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј 
+            СЃРѕРІСЂРµРјРµРЅРЅС‹С… РјРµС‚РѕРґРѕРІ С€РёС„СЂРѕРІР°РЅРёСЏ.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">5. РџРµСЂРµРґР°С‡Р° РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С… С‚СЂРµС‚СЊРёРј Р»РёС†Р°Рј</h2>
+          <p className="mb-2">
+            РћРїРµСЂР°С‚РѕСЂ РЅРµ РїРµСЂРµРґР°РµС‚ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёРј Р»РёС†Р°Рј, Р·Р° РёСЃРєР»СЋС‡РµРЅРёРµРј СЃР»СѓС‡Р°РµРІ:
+          </p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІС‹СЂР°Р·РёР» СЃРѕРіР»Р°СЃРёРµ РЅР° С‚Р°РєРёРµ РґРµР№СЃС‚РІРёСЏ</li>
+            <li>РџРµСЂРµРґР°С‡Р° РЅРµРѕР±С…РѕРґРёРјР° РґР»СЏ РёСЃРїРѕР»РЅРµРЅРёСЏ РґРѕРіРѕРІРѕСЂР° СЃ РџРѕР»СЊР·РѕРІР°С‚РµР»РµРј (РЅР°РїСЂРёРјРµСЂ, РїР»Р°С‚РµР¶РЅС‹Рј СЃРёСЃС‚РµРјР°Рј)</li>
+            <li>РџРµСЂРµРґР°С‡Р° РїСЂРµРґСѓСЃРјРѕС‚СЂРµРЅР° Р·Р°РєРѕРЅРѕРґР°С‚РµР»СЊСЃС‚РІРѕРј Р РѕСЃСЃРёР№СЃРєРѕР№ Р¤РµРґРµСЂР°С†РёРё</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">6. РџСЂР°РІР° РџРѕР»СЊР·РѕРІР°С‚РµР»СЏ</h2>
+          <p className="mb-2">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РёРјРµРµС‚ РїСЂР°РІРѕ:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РџРѕР»СѓС‡Р°С‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± РѕР±СЂР°Р±РѕС‚РєРµ СЃРІРѕРёС… РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</li>
+            <li>РўСЂРµР±РѕРІР°С‚СЊ СѓС‚РѕС‡РЅРµРЅРёСЏ, Р±Р»РѕРєРёСЂРѕРІР°РЅРёСЏ РёР»Рё СѓРЅРёС‡С‚РѕР¶РµРЅРёСЏ СЃРІРѕРёС… РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</li>
+            <li>РћС‚РѕР·РІР°С‚СЊ СЃРѕРіР»Р°СЃРёРµ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</li>
+            <li>РћР±Р¶Р°Р»РѕРІР°С‚СЊ РґРµР№СЃС‚РІРёСЏ РћРїРµСЂР°С‚РѕСЂР° РІ Р РѕСЃРєРѕРјРЅР°РґР·РѕСЂ РёР»Рё РІ СЃСѓРґ</li>
+          </ul>
+          <p className="mt-3">
+            Р”Р»СЏ СЂРµР°Р»РёР·Р°С†РёРё СЃРІРѕРёС… РїСЂР°РІ РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РјРѕР¶РµС‚ РЅР°РїСЂР°РІРёС‚СЊ Р·Р°РїСЂРѕСЃ РЅР° email: 
+            <a href="mailto:daniilgavrin@bytewizard.ru" className="text-[var(--neon-purple)] hover:text-[var(--neon-pink)] ml-1">
+              daniilgavrin@bytewizard.ru
+            </a>
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">7. Р—Р°С‰РёС‚Р° РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</h2>
+          <p>
+            РћРїРµСЂР°С‚РѕСЂ РїСЂРёРЅРёРјР°РµС‚ РЅРµРѕР±С…РѕРґРёРјС‹Рµ РѕСЂРіР°РЅРёР·Р°С†РёРѕРЅРЅС‹Рµ Рё С‚РµС…РЅРёС‡РµСЃРєРёРµ РјРµСЂС‹ РґР»СЏ Р·Р°С‰РёС‚С‹ РїРµСЂСЃРѕРЅР°Р»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё РѕС‚ 
+            РЅРµРїСЂР°РІРѕРјРµСЂРЅРѕРіРѕ РёР»Рё СЃР»СѓС‡Р°Р№РЅРѕРіРѕ РґРѕСЃС‚СѓРїР°, СѓРЅРёС‡С‚РѕР¶РµРЅРёСЏ, РёР·РјРµРЅРµРЅРёСЏ, Р±Р»РѕРєРёСЂРѕРІР°РЅРёСЏ, РєРѕРїРёСЂРѕРІР°РЅРёСЏ, СЂР°СЃРїСЂРѕСЃС‚СЂР°РЅРµРЅРёСЏ.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">8. РР·РјРµРЅРµРЅРёРµ РџРѕР»РёС‚РёРєРё РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё</h2>
+          <p>
+            РћРїРµСЂР°С‚РѕСЂ РёРјРµРµС‚ РїСЂР°РІРѕ РІРЅРѕСЃРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ РЅР°СЃС‚РѕСЏС‰СѓСЋ РџРѕР»РёС‚РёРєСѓ РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё. РќРѕРІР°СЏ СЂРµРґР°РєС†РёСЏ РџРѕР»РёС‚РёРєРё РІСЃС‚СѓРїР°РµС‚ 
+            РІ СЃРёР»Сѓ СЃ РјРѕРјРµРЅС‚Р° РµРµ СЂР°Р·РјРµС‰РµРЅРёСЏ РЅР° СЃР°Р№С‚Рµ, РµСЃР»Рё РёРЅРѕРµ РЅРµ РїСЂРµРґСѓСЃРјРѕС‚СЂРµРЅРѕ РЅРѕРІРѕР№ СЂРµРґР°РєС†РёРµР№ РџРѕР»РёС‚РёРєРё.
+          </p>
+        </section>
+
+        <div className="mt-8 pt-6 border-t border-[rgba(176,38,255,0.2)] text-center text-xs text-[var(--text-dim)]">
+          <p>Р”Р°С‚Р° РїРѕСЃР»РµРґРЅРµРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ: {new Date().toLocaleDateString('ru-RU')}</p>
+          <p className="mt-2">РРџ Р“Р°РІСЂРёРЅ Р”Р°РЅРёРёР» РќРёРєРёС‚РёС‡</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\legal\refund\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export default function RefundPage() {
+  return (
+    <>
+      <ScreenTitle>Р’РѕР·РІСЂР°С‚ Рё РѕС‚РјРµРЅР° Р·Р°РєР°Р·Р°</ScreenTitle>
+      
+      <div className="mt-6 space-y-6 text-sm text-[var(--text-main)] leading-relaxed">
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">1. РћС‚РјРµРЅР° Р·Р°РєР°Р·Р° РґРѕ РЅР°С‡Р°Р»Р° РёСЃРїРѕР»РЅРµРЅРёСЏ</h2>
+          <p className="mb-2">
+            1.1. Р—Р°РєР°Р·С‡РёРє РІРїСЂР°РІРµ РѕС‚РєР°Р·Р°С‚СЊСЃСЏ РѕС‚ Р·Р°РєР°Р·Р° РІ Р»СЋР±РѕРµ РІСЂРµРјСЏ РґРѕ РЅР°С‡Р°Р»Р° РµРіРѕ РёСЃРїРѕР»РЅРµРЅРёСЏ, 
+            СѓРїР»Р°С‚РёРІ РСЃРїРѕР»РЅРёС‚РµР»СЋ С„Р°РєС‚РёС‡РµСЃРєРё РїРѕРЅРµСЃС‘РЅРЅС‹Рµ СЂР°СЃС…РѕРґС‹ (СЃС‚. 32 Р—Р°РєРѕРЅР° Р Р¤ В«Рћ Р·Р°С‰РёС‚Рµ РїСЂР°РІ РїРѕС‚СЂРµР±РёС‚РµР»РµР№В»).
+          </p>
+          <p>
+            1.2. Р”Р»СЏ РѕС‚РјРµРЅС‹ Р·Р°РєР°Р·Р° РЅРµРѕР±С…РѕРґРёРјРѕ РЅР°РїСЂР°РІРёС‚СЊ СѓРІРµРґРѕРјР»РµРЅРёРµ РЅР° email РСЃРїРѕР»РЅРёС‚РµР»СЏ РёР»Рё С‡РµСЂРµР· 
+            Р»РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚ РЅР° РЎР°Р№С‚Рµ.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">2. Р’РѕР·РІСЂР°С‚ РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ</h2>
+          <p className="mb-2">2.1. Р’РѕР·РІСЂР°С‚ РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚СЃСЏ С‚РµРј Р¶Рµ СЃРїРѕСЃРѕР±РѕРј, РєРѕС‚РѕСЂС‹Рј РїСЂРѕРёР·РІРѕРґРёР»Р°СЃСЊ РѕРїР»Р°С‚Р°:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)] mb-3">
+            <li>Р‘Р°РЅРєРѕРІСЃРєР°СЏ РєР°СЂС‚Р° вЂ” РІРѕР·РІСЂР°С‚ РЅР° РєР°СЂС‚Сѓ (3-10 СЂР°Р±РѕС‡РёС… РґРЅРµР№)</li>
+            <li>РЎР‘Рџ вЂ” РІРѕР·РІСЂР°С‚ С‡РµСЂРµР· РЎР‘Рџ (1-3 СЂР°Р±РѕС‡РёС… РґРЅСЏ)</li>
+            <li>РљСЂРёРїС‚РѕРІР°Р»СЋС‚Р° вЂ” РІРѕР·РІСЂР°С‚ РІ С‚РѕР№ Р¶Рµ РєСЂРёРїС‚РѕРІР°Р»СЋС‚Рµ</li>
+            <li>Telegram Stars вЂ” РІРѕР·РІСЂР°С‚ Р·РІС‘Р·РґР°РјРё</li>
+          </ul>
+          <p>2.2. РЎСЂРѕРє РІРѕР·РІСЂР°С‚Р° СЃРѕСЃС‚Р°РІР»СЏРµС‚ РґРѕ 10 СЂР°Р±РѕС‡РёС… РґРЅРµР№ СЃ РјРѕРјРµРЅС‚Р° РїРѕР»СѓС‡РµРЅРёСЏ РїРёСЃСЊРјРµРЅРЅРѕРіРѕ Р·Р°СЏРІР»РµРЅРёСЏ РѕС‚ Р—Р°РєР°Р·С‡РёРєР°.</p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">3. РћС‚РјРµРЅР° Р·Р°РєР°Р·Р° РІ РїСЂРѕС†РµСЃСЃРµ РёСЃРїРѕР»РЅРµРЅРёСЏ</h2>
+          <p className="mb-2">
+            3.1. Р•СЃР»Рё Р·Р°РєР°Р· СѓР¶Рµ РЅР°С…РѕРґРёС‚СЃСЏ РІ СЂР°Р±РѕС‚Рµ, Р—Р°РєР°Р·С‡РёРє РѕР±СЏР·Р°РЅ РІРѕР·РјРµСЃС‚РёС‚СЊ РСЃРїРѕР»РЅРёС‚РµР»СЋ С„Р°РєС‚РёС‡РµСЃРєРё 
+            РїРѕРЅРµСЃС‘РЅРЅС‹Рµ СЂР°СЃС…РѕРґС‹, РІРєР»СЋС‡Р°СЏ:
+          </p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РћРїР»Р°С‚Сѓ С‚СЂСѓРґР° СЂР°Р·СЂР°Р±РѕС‚С‡РёРєРѕРІ Р·Р° РІС‹РїРѕР»РЅРµРЅРЅС‹Р№ РѕР±СЉС‘Рј СЂР°Р±РѕС‚</li>
+            <li>РЎС‚РѕРёРјРѕСЃС‚СЊ РёСЃРїРѕР»СЊР·РѕРІР°РЅРЅС‹С… Р»РёС†РµРЅР·РёР№ Рё СЃРµСЂРІРёСЃРѕРІ</li>
+            <li>РљРѕРјРёСЃСЃРёРё РїР»Р°С‚С‘Р¶РЅС‹С… СЃРёСЃС‚РµРј</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">4. Р’РѕР·РІСЂР°С‚ РїСЂРё РЅРµРєР°С‡РµСЃС‚РІРµРЅРЅРѕРј РёСЃРїРѕР»РЅРµРЅРёРё</h2>
+          <p className="mb-2">
+            4.1. Р•СЃР»Рё СѓСЃР»СѓРіРё РѕРєР°Р·Р°РЅС‹ СЃ СЃСѓС‰РµСЃС‚РІРµРЅРЅС‹РјРё РЅРµРґРѕСЃС‚Р°С‚РєР°РјРё, Р—Р°РєР°Р·С‡РёРє РІРїСЂР°РІРµ РїРѕС‚СЂРµР±РѕРІР°С‚СЊ:
+          </p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)] mb-3">
+            <li>Р‘РµР·РІРѕР·РјРµР·РґРЅРѕРіРѕ СѓСЃС‚СЂР°РЅРµРЅРёСЏ РЅРµРґРѕСЃС‚Р°С‚РєРѕРІ</li>
+            <li>РЎРѕСЂР°Р·РјРµСЂРЅРѕРіРѕ СѓРјРµРЅСЊС€РµРЅРёСЏ С†РµРЅС‹</li>
+            <li>РџРѕР»РЅРѕРіРѕ РІРѕР·РІСЂР°С‚Р° РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ</li>
+          </ul>
+          <p>4.2. РџСЂРµС‚РµРЅР·РёРё РїРѕ РєР°С‡РµСЃС‚РІСѓ РїСЂРёРЅРёРјР°СЋС‚СЃСЏ РІ С‚РµС‡РµРЅРёРµ 14 РґРЅРµР№ СЃ РјРѕРјРµРЅС‚Р° РїРѕР»СѓС‡РµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р°.</p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">5. РЎР»СѓС‡Р°Рё, РєРѕРіРґР° РІРѕР·РІСЂР°С‚ РЅРµ РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ</h2>
+          <p className="mb-2">Р’РѕР·РІСЂР°С‚ РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ РЅРµ РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ РІ СЃР»РµРґСѓСЋС‰РёС… СЃР»СѓС‡Р°СЏС…:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>РЈСЃР»СѓРіРё РїРѕР»РЅРѕСЃС‚СЊСЋ РёСЃРїРѕР»РЅРµРЅС‹ Рё РїСЂРёРЅСЏС‚С‹ Р—Р°РєР°Р·С‡РёРєРѕРј</li>
+            <li>Р—Р°РєР°Р·С‡РёРє РЅР°СЂСѓС€РёР» СѓСЃР»РѕРІРёСЏ РћС„РµСЂС‚С‹ (РЅРµРґРѕР±СЂРѕСЃРѕРІРµСЃС‚РЅС‹Рµ РґРµР№СЃС‚РІРёСЏ, РјР°РЅРёРїСѓР»СЏС†РёРё СЃ С†РµРЅРѕР№)</li>
+            <li>РСЃС‚С‘Рє СЃСЂРѕРє РїСЂРµРґСЉСЏРІР»РµРЅРёСЏ РїСЂРµС‚РµРЅР·РёР№</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">6. РџРѕСЂСЏРґРѕРє РїСЂРµРґСЉСЏРІР»РµРЅРёСЏ РїСЂРµС‚РµРЅР·РёР№</h2>
+          <p className="mb-2">
+            6.1. Р”Р»СЏ РѕС„РѕСЂРјР»РµРЅРёСЏ РІРѕР·РІСЂР°С‚Р° РЅРµРѕР±С…РѕРґРёРјРѕ РЅР°РїСЂР°РІРёС‚СЊ РїРёСЃСЊРјРµРЅРЅРѕРµ Р·Р°СЏРІР»РµРЅРёРµ РЅР° email РСЃРїРѕР»РЅРёС‚РµР»СЏ 
+            СЃ СѓРєР°Р·Р°РЅРёРµРј:
+          </p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)] mb-3">
+            <li>РќРѕРјРµСЂР° Р·Р°РєР°Р·Р°</li>
+            <li>РџСЂРёС‡РёРЅС‹ РІРѕР·РІСЂР°С‚Р°</li>
+            <li>Р РµРєРІРёР·РёС‚РѕРІ РґР»СЏ РІРѕР·РІСЂР°С‚Р° РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ</li>
+          </ul>
+          <p>6.2. РСЃРїРѕР»РЅРёС‚РµР»СЊ СЂР°СЃСЃРјР°С‚СЂРёРІР°РµС‚ Р·Р°СЏРІР»РµРЅРёРµ РІ С‚РµС‡РµРЅРёРµ 5 СЂР°Р±РѕС‡РёС… РґРЅРµР№ Рё СѓРІРµРґРѕРјР»СЏРµС‚ Р—Р°РєР°Р·С‡РёРєР° Рѕ РїСЂРёРЅСЏС‚РѕРј СЂРµС€РµРЅРёРё.</p>
+        </section>
+
+        <div className="mt-8 pt-6 border-t border-[rgba(176,38,255,0.2)] text-center text-xs text-[var(--text-dim)]">
+          <p>Р”Р°С‚Р° РїСѓР±Р»РёРєР°С†РёРё: {new Date().toLocaleDateString('ru-RU')}</p>
+          <p className="mt-2">РџРѕ РІРѕРїСЂРѕСЃР°Рј РІРѕР·РІСЂР°С‚Р°: daniilgavrin@bytewizard.ru</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\legal\requisites\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export default function RequisitesPage() {
+  return (
+    <>
+      <ScreenTitle>Р РµРєРІРёР·РёС‚С‹ РёСЃРїРѕР»РЅРёС‚РµР»СЏ</ScreenTitle>
+      
+      <div className="mt-6 space-y-6 text-sm text-[var(--text-main)] leading-relaxed">
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-4">РСЃРїРѕР»РЅРёС‚РµР»СЊ</h2>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">РќР°РёРјРµРЅРѕРІР°РЅРёРµ:</span>
+              <span className="font-medium text-right">РРџ Р“Р°РІСЂРёРЅ Р”Р°РЅРёРёР» РќРёРєРёС‚РёС‡</span>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">РРќРќ:</span>
+              <span className="font-medium">434584462396</span>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">РћР“Р РќРРџ:</span>
+              <span className="font-medium">323430000123456</span>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">Р РµР¶РёРј РЅР°Р»РѕРіРѕРѕР±Р»РѕР¶РµРЅРёСЏ:</span>
+              <span className="font-medium">РЈРЎРќ (РґРѕС…РѕРґС‹)</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-4">РљРѕРЅС‚Р°РєС‚РЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ</h2>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">Email:</span>
+              <a href="mailto:daniilgavrin@bytewizard.ru" className="font-medium text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
+                daniilgavrin@bytewizard.ru
+              </a>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">Telegram:</span>
+              <a href="https://t.me/danya_gavrin" target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
+                @danya_gavrin
+              </a>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">РЎР°Р№С‚:</span>
+              <a href="https://shop.bytewizard.ru" className="font-medium text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
+                shop.bytewizard.ru
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-4">Р‘Р°РЅРєРѕРІСЃРєРёРµ СЂРµРєРІРёР·РёС‚С‹</h2>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">Р‘Р°РЅРє:</span>
+              <span className="font-medium text-right">РџРђРћ РЎР±РµСЂР±Р°РЅРє</span>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">Р Р°СЃС‡С‘С‚РЅС‹Р№ СЃС‡С‘С‚:</span>
+              <span className="font-medium">40802810000000000000</span>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">Р‘РРљ:</span>
+              <span className="font-medium">044525225</span>
+            </div>
+            
+            <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
+              <span className="text-[var(--text-dim)]">РљРѕСЂСЂ. СЃС‡С‘С‚:</span>
+              <span className="font-medium">30101810400000000225</span>
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-8 pt-6 border-t border-[rgba(176,38,255,0.2)] text-center text-xs text-[var(--text-dim)]">
+          <p>РРЅС„РѕСЂРјР°С†РёСЏ Р°РєС‚СѓР°Р»СЊРЅР° РЅР°: {new Date().toLocaleDateString('ru-RU')}</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\legal\terms\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export default function TermsPage() {
+  return (
+    <>
+      <ScreenTitle>РџСѓР±Р»РёС‡РЅР°СЏ РѕС„РµСЂС‚Р°</ScreenTitle>
+      
+      <div className="mt-6 space-y-6 text-sm text-[var(--text-main)] leading-relaxed">
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">1. РћР±С‰РёРµ РїРѕР»РѕР¶РµРЅРёСЏ</h2>
+          <p className="mb-2">
+            РќР°СЃС‚РѕСЏС‰РёР№ РґРѕРєСѓРјРµРЅС‚ (РґР°Р»РµРµ вЂ” В«РћС„РµСЂС‚Р°В») СЏРІР»СЏРµС‚СЃСЏ РїСѓР±Р»РёС‡РЅРѕР№ РѕС„РµСЂС‚РѕР№ РРџ Р“Р°РІСЂРёРЅ Р”Р°РЅРёРёР» РќРёРєРёС‚РёС‡ 
+            (РРќРќ 434584462396, РґР°Р»РµРµ вЂ” В«РСЃРїРѕР»РЅРёС‚РµР»СЊВ») Рё РѕРїСЂРµРґРµР»СЏРµС‚ СѓСЃР»РѕРІРёСЏ РѕРєР°Р·Р°РЅРёСЏ СѓСЃР»СѓРі С‡РµСЂРµР· СЃР°Р№С‚ 
+            shop.bytewizard.ru (РґР°Р»РµРµ вЂ” В«РЎР°Р№С‚В»).
+          </p>
+          <p>
+            Р Р°Р·РјРµС‰С‘РЅРЅР°СЏ РЅР° РЎР°Р№С‚Рµ РёРЅС„РѕСЂРјР°С†РёСЏ Рѕ С‚РѕРІР°СЂР°С… Рё СѓСЃР»СѓРіР°С… СЏРІР»СЏРµС‚СЃСЏ РїСѓР±Р»РёС‡РЅРѕР№ РѕС„РµСЂС‚РѕР№ РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё 
+            СЃРѕ СЃС‚. 437 Р“СЂР°Р¶РґР°РЅСЃРєРѕРіРѕ РєРѕРґРµРєСЃР° Р РѕСЃСЃРёР№СЃРєРѕР№ Р¤РµРґРµСЂР°С†РёРё.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">2. РџСЂРµРґРјРµС‚ РґРѕРіРѕРІРѕСЂР°</h2>
+          <p className="mb-2">
+            РСЃРїРѕР»РЅРёС‚РµР»СЊ РѕР±СЏР·СѓРµС‚СЃСЏ РѕРєР°Р·Р°С‚СЊ Р—Р°РєР°Р·С‡РёРєСѓ СѓСЃР»СѓРіРё РїРѕ СЂР°Р·СЂР°Р±РѕС‚РєРµ РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ РѕР±РµСЃРїРµС‡РµРЅРёСЏ, 
+            СЃРѕР·РґР°РЅРёСЋ С†РёС„СЂРѕРІС‹С… РїСЂРѕРґСѓРєС‚РѕРІ Рё РёРЅС‹С… СѓСЃР»СѓРі, РїСЂРµРґСЃС‚Р°РІР»РµРЅРЅС‹С… РІ РєР°С‚Р°Р»РѕРіРµ РЎР°Р№С‚Р°, Р° Р—Р°РєР°Р·С‡РёРє 
+            РѕР±СЏР·СѓРµС‚СЃСЏ РїСЂРёРЅСЏС‚СЊ Рё РѕРїР»Р°С‚РёС‚СЊ СЌС‚Рё СѓСЃР»СѓРіРё.
+          </p>
+          <p>
+            РљРѕРЅРєСЂРµС‚РЅС‹Р№ РїРµСЂРµС‡РµРЅСЊ СѓСЃР»СѓРі, РёС… СЃС‚РѕРёРјРѕСЃС‚СЊ Рё СЃСЂРѕРєРё РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїСЂРµРґРµР»СЏСЋС‚СЃСЏ РІ Р·Р°РєР°Р·Рµ, 
+            РѕС„РѕСЂРјР»РµРЅРЅРѕРј С‡РµСЂРµР· РЎР°Р№С‚.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">3. РџРѕСЂСЏРґРѕРє РѕС„РѕСЂРјР»РµРЅРёСЏ Р·Р°РєР°Р·Р°</h2>
+          <p className="mb-2">3.1. Р—Р°РєР°Р·С‡РёРє РѕС„РѕСЂРјР»СЏРµС‚ Р·Р°РєР°Р· С‡РµСЂРµР· РЎР°Р№С‚, РІС‹Р±РёСЂР°СЏ РЅРµРѕР±С…РѕРґРёРјС‹Рµ СѓСЃР»СѓРіРё Рё СѓРєР°Р·С‹РІР°СЏ РєРѕРЅС‚Р°РєС‚РЅС‹Рµ РґР°РЅРЅС‹Рµ.</p>
+          <p className="mb-2">3.2. РџРѕСЃР»Рµ РѕС„РѕСЂРјР»РµРЅРёСЏ Р·Р°РєР°Р·Р° РСЃРїРѕР»РЅРёС‚РµР»СЊ РЅР°РїСЂР°РІР»СЏРµС‚ Р—Р°РєР°Р·С‡РёРєСѓ СЃС‡С‘С‚ РЅР° РѕРїР»Р°С‚Сѓ.</p>
+          <p className="mb-2">3.3. Р—Р°РєР°Р· СЃС‡РёС‚Р°РµС‚СЃСЏ РїСЂРёРЅСЏС‚С‹Рј РІ СЂР°Р±РѕС‚Сѓ СЃ РјРѕРјРµРЅС‚Р° РїРѕСЃС‚СѓРїР»РµРЅРёСЏ РѕРїР»Р°С‚С‹ РЅР° СЂР°СЃС‡С‘С‚РЅС‹Р№ СЃС‡С‘С‚ РСЃРїРѕР»РЅРёС‚РµР»СЏ.</p>
+          <p>3.4. РЎСЂРѕРє РёСЃРїРѕР»РЅРµРЅРёСЏ Р·Р°РєР°Р·Р° РёСЃС‡РёСЃР»СЏРµС‚СЃСЏ СЃ РјРѕРјРµРЅС‚Р° РїРѕР»СѓС‡РµРЅРёСЏ РѕРїР»Р°С‚С‹ Рё СЃРѕРіР»Р°СЃРѕРІС‹РІР°РµС‚СЃСЏ СЃ Р—Р°РєР°Р·С‡РёРєРѕРј РёРЅРґРёРІРёРґСѓР°Р»СЊРЅРѕ.</p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">4. РЎС‚РѕРёРјРѕСЃС‚СЊ Рё РїРѕСЂСЏРґРѕРє РѕРїР»Р°С‚С‹</h2>
+          <p className="mb-2">4.1. РЎС‚РѕРёРјРѕСЃС‚СЊ СѓСЃР»СѓРі РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ СЃРѕРіР»Р°СЃРЅРѕ С†РµРЅР°Рј, СѓРєР°Р·Р°РЅРЅС‹Рј РІ РєР°С‚Р°Р»РѕРіРµ РЎР°Р№С‚Р°.</p>
+          <p className="mb-2">4.2. РћРїР»Р°С‚Р° РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ РІ СЂСѓР±Р»СЏС… Р РѕСЃСЃРёР№СЃРєРѕР№ Р¤РµРґРµСЂР°С†РёРё Р»СЋР±С‹Рј СѓРґРѕР±РЅС‹Рј РґР»СЏ Р—Р°РєР°Р·С‡РёРєР° СЃРїРѕСЃРѕР±РѕРј.</p>
+          <p>4.3. РСЃРїРѕР»РЅРёС‚РµР»СЊ РІРїСЂР°РІРµ РёР·РјРµРЅСЏС‚СЊ СЃС‚РѕРёРјРѕСЃС‚СЊ СѓСЃР»СѓРі РІ РѕРґРЅРѕСЃС‚РѕСЂРѕРЅРЅРµРј РїРѕСЂСЏРґРєРµ, РѕРґРЅР°РєРѕ СЃС‚РѕРёРјРѕСЃС‚СЊ СѓР¶Рµ РѕС„РѕСЂРјР»РµРЅРЅС‹С… Рё РѕРїР»Р°С‡РµРЅРЅС‹С… Р·Р°РєР°Р·РѕРІ РёР·РјРµРЅРµРЅРёСЋ РЅРµ РїРѕРґР»РµР¶РёС‚.</p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">5. РџСЂР°РІР° Рё РѕР±СЏР·Р°РЅРЅРѕСЃС‚Рё СЃС‚РѕСЂРѕРЅ</h2>
+          <p className="mb-2"><strong>5.1. РСЃРїРѕР»РЅРёС‚РµР»СЊ РѕР±СЏР·СѓРµС‚СЃСЏ:</strong></p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)] mb-3">
+            <li>РћРєР°Р·Р°С‚СЊ СѓСЃР»СѓРіРё РєР°С‡РµСЃС‚РІРµРЅРЅРѕ Рё РІ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅС‹Рµ СЃСЂРѕРєРё</li>
+            <li>РРЅС„РѕСЂРјРёСЂРѕРІР°С‚СЊ Р—Р°РєР°Р·С‡РёРєР° Рѕ С…РѕРґРµ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РєР°Р·Р°</li>
+            <li>РЎРѕР±Р»СЋРґР°С‚СЊ РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚СЊ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С… Р—Р°РєР°Р·С‡РёРєР°</li>
+          </ul>
+          <p className="mb-2"><strong>5.2. Р—Р°РєР°Р·С‡РёРє РѕР±СЏР·СѓРµС‚СЃСЏ:</strong></p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)] mb-3">
+            <li>РџСЂРµРґРѕСЃС‚Р°РІРёС‚СЊ РґРѕСЃС‚РѕРІРµСЂРЅСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ РґР»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РєР°Р·Р°</li>
+            <li>РЎРІРѕРµРІСЂРµРјРµРЅРЅРѕ РѕРїР»Р°С‡РёРІР°С‚СЊ СѓСЃР»СѓРіРё</li>
+            <li>РџСЂРёРЅСЏС‚СЊ РІС‹РїРѕР»РЅРµРЅРЅС‹Рµ СЂР°Р±РѕС‚С‹ РІ СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹Рµ СЃСЂРѕРєРё</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">6. РћС‚РІРµС‚СЃС‚РІРµРЅРЅРѕСЃС‚СЊ СЃС‚РѕСЂРѕРЅ</h2>
+          <p className="mb-2">6.1. Р—Р° РЅРµРёСЃРїРѕР»РЅРµРЅРёРµ РёР»Рё РЅРµРЅР°РґР»РµР¶Р°С‰РµРµ РёСЃРїРѕР»РЅРµРЅРёРµ РѕР±СЏР·Р°С‚РµР»СЊСЃС‚РІ СЃС‚РѕСЂРѕРЅС‹ РЅРµСЃСѓС‚ РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕСЃС‚СЊ РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё СЃ РґРµР№СЃС‚РІСѓСЋС‰РёРј Р·Р°РєРѕРЅРѕРґР°С‚РµР»СЊСЃС‚РІРѕРј Р Р¤.</p>
+          <p className="mb-2">6.2. РСЃРїРѕР»РЅРёС‚РµР»СЊ РЅРµ РЅРµСЃС‘С‚ РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕСЃС‚Рё Р·Р° СѓР±С‹С‚РєРё, РІРѕР·РЅРёРєС€РёРµ РїРѕ РІРёРЅРµ Р—Р°РєР°Р·С‡РёРєР° РёР»Рё РІСЃР»РµРґСЃС‚РІРёРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРёСЏ РЅРµРґРѕСЃС‚РѕРІРµСЂРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё.</p>
+          <p>6.3. РСЃРїРѕР»РЅРёС‚РµР»СЊ РЅРµ РЅРµСЃС‘С‚ РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕСЃС‚Рё Р·Р° Р·Р°РґРµСЂР¶РєРё, РІС‹Р·РІР°РЅРЅС‹Рµ РѕР±СЃС‚РѕСЏС‚РµР»СЊСЃС‚РІР°РјРё РЅРµРїСЂРµРѕРґРѕР»РёРјРѕР№ СЃРёР»С‹ (С„РѕСЂСЃ-РјР°Р¶РѕСЂ).</p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">7. Р’РѕР·РІСЂР°С‚ Рё РѕС‚РјРµРЅР° Р·Р°РєР°Р·Р°</h2>
+          <p className="mb-2">7.1. Р—Р°РєР°Р·С‡РёРє РІРїСЂР°РІРµ РѕС‚РєР°Р·Р°С‚СЊСЃСЏ РѕС‚ Р·Р°РєР°Р·Р° РІ Р»СЋР±РѕРµ РІСЂРµРјСЏ РґРѕ РЅР°С‡Р°Р»Р° РµРіРѕ РёСЃРїРѕР»РЅРµРЅРёСЏ, СѓРїР»Р°С‚РёРІ РСЃРїРѕР»РЅРёС‚РµР»СЋ С„Р°РєС‚РёС‡РµСЃРєРё РїРѕРЅРµСЃС‘РЅРЅС‹Рµ СЂР°СЃС…РѕРґС‹.</p>
+          <p className="mb-2">7.2. Р’РѕР·РІСЂР°С‚ РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚СЃСЏ С‚РµРј Р¶Рµ СЃРїРѕСЃРѕР±РѕРј, РєРѕС‚РѕСЂС‹Рј РїСЂРѕРёР·РІРѕРґРёР»Р°СЃСЊ РѕРїР»Р°С‚Р°.</p>
+          <p>7.3. РџРѕРґСЂРѕР±РЅС‹Рµ СѓСЃР»РѕРІРёСЏ РІРѕР·РІСЂР°С‚Р° РѕРїРёСЃР°РЅС‹ РІ СЂР°Р·РґРµР»Рµ В«Р’РѕР·РІСЂР°С‚ Рё РѕС‚РјРµРЅР°В».</p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">8. РќРµРґРѕР±СЂРѕСЃРѕРІРµСЃС‚РЅС‹Рµ РґРµР№СЃС‚РІРёСЏ Р—Р°РєР°Р·С‡РёРєР°</h2>
+          <p className="mb-2">
+            Р—Р°РєР°Р·С‡РёРєСѓ РєР°С‚РµРіРѕСЂРёС‡РµСЃРєРё Р·Р°РїСЂРµС‰Р°РµС‚СЃСЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ СѓСЏР·РІРёРјРѕСЃС‚РµР№, РѕС€РёР±РѕРє (Р±Р°РіРѕРІ) РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ 
+            РѕР±РµСЃРїРµС‡РµРЅРёСЏ РЎР°Р№С‚Р°, Р° С‚Р°РєР¶Рµ РїРѕРїС‹С‚РєР° РјР°РЅРёРїСѓР»СЏС†РёРё СЃС‚РѕРёРјРѕСЃС‚СЊСЋ СѓСЃР»СѓРі (РІ С‚.С‡. РїСѓС‚РµРј РїРѕРґРјРµРЅС‹ РґР°РЅРЅС‹С… 
+            РЅР° СЃС‚РѕСЂРѕРЅРµ РєР»РёРµРЅС‚Р°, РїРµСЂРµС…РІР°С‚Р° Р·Р°РїСЂРѕСЃРѕРІ РёР»Рё РёРЅРѕРіРѕ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР° РІ СЂР°Р±РѕС‚Сѓ РёРЅС‚РµСЂС„РµР№СЃР°).
+          </p>
+          <p className="mb-2">Р’ СЃР»СѓС‡Р°Рµ РІС‹СЏРІР»РµРЅРёСЏ С„Р°РєС‚РѕРІ, СѓРєР°Р·Р°РЅРЅС‹С… РІС‹С€Рµ, РСЃРїРѕР»РЅРёС‚РµР»СЊ РІРїСЂР°РІРµ:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+            <li>Р’ РѕРґРЅРѕСЃС‚РѕСЂРѕРЅРЅРµРј РІРЅРµСЃСѓРґРµР±РЅРѕРј РїРѕСЂСЏРґРєРµ СЂР°СЃС‚РѕСЂРіРЅСѓС‚СЊ РЅР°СЃС‚РѕСЏС‰РёР№ Р”РѕРіРѕРІРѕСЂ Рё Р°РЅРЅСѓР»РёСЂРѕРІР°С‚СЊ Р—Р°РєР°Р·</li>
+            <li>Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ СѓС‡РµС‚РЅСѓСЋ Р·Р°РїРёСЃСЊ Р—Р°РєР°Р·С‡РёРєР° РЅР° РЎР°Р№С‚Рµ Р±РµР· РїСЂР°РІР° РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ</li>
+            <li>РЈРґРµСЂР¶Р°С‚СЊ СЃСѓРјРјСѓ С„Р°РєС‚РёС‡РµСЃРєРё РѕРїР»Р°С‡РµРЅРЅРѕРіРѕ С‚Р°РєРѕРіРѕ Р—Р°РєР°Р·Р° РІ РєР°С‡РµСЃС‚РІРµ РєРѕРјРїРµРЅСЃР°С†РёРё Р·Р° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РёРІРЅС‹Рµ РёР·РґРµСЂР¶РєРё Рё СѓР±С‹С‚РєРё</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">9. РЎРѕРіР»Р°СЃРёРµ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…</h2>
+          <p className="mb-2">
+            РћС„РѕСЂРјР»СЏСЏ Р·Р°РєР°Р· РЅР° РЎР°Р№С‚Рµ, Р—Р°РєР°Р·С‡РёРє РґР°С‘С‚ СЃРІРѕС‘ СЃРѕРіР»Р°СЃРёРµ РСЃРїРѕР»РЅРёС‚РµР»СЋ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ СЃРІРѕРёС… РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… 
+            РґР°РЅРЅС‹С… (РёРјСЏ, С„Р°РјРёР»РёСЏ, РЅРѕРјРµСЂ С‚РµР»РµС„РѕРЅР°, Р°РґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹, Telegram ID) РІ С†РµР»СЏС… РёСЃРїРѕР»РЅРµРЅРёСЏ 
+            РЅР°СЃС‚РѕСЏС‰РµРіРѕ Р”РѕРіРѕРІРѕСЂР°.
+          </p>
+          <p>
+            РЎРѕРіР»Р°СЃРёРµ РґРµР№СЃС‚РІСѓРµС‚ РІ С‚РµС‡РµРЅРёРµ СЃСЂРѕРєР° РёСЃРїРѕР»РЅРµРЅРёСЏ РѕР±СЏР·Р°С‚РµР»СЊСЃС‚РІ РЎС‚РѕСЂРѕРЅР°РјРё РїРѕ Р”РѕРіРѕРІРѕСЂСѓ Рё РјРѕР¶РµС‚ Р±С‹С‚СЊ 
+            РѕС‚РѕР·РІР°РЅРѕ Р—Р°РєР°Р·С‡РёРєРѕРј РїСѓС‚С‘Рј РЅР°РїСЂР°РІР»РµРЅРёСЏ РїРёСЃСЊРјРµРЅРЅРѕРіРѕ СѓРІРµРґРѕРјР»РµРЅРёСЏ РЅР° email РСЃРїРѕР»РЅРёС‚РµР»СЏ.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">10. Р Р°Р·СЂРµС€РµРЅРёРµ СЃРїРѕСЂРѕРІ</h2>
+          <p className="mb-2">10.1. Р’СЃРµ СЃРїРѕСЂС‹ СЂР°Р·СЂРµС€Р°СЋС‚СЃСЏ РїСѓС‚С‘Рј РїРµСЂРµРіРѕРІРѕСЂРѕРІ. РџСЂРµС‚РµРЅР·РёРё РЅР°РїСЂР°РІР»СЏСЋС‚СЃСЏ РІ РїРёСЃСЊРјРµРЅРЅРѕРј РІРёРґРµ РЅР° email РСЃРїРѕР»РЅРёС‚РµР»СЏ.</p>
+          <p>10.2. РџСЂРё РЅРµРІРѕР·РјРѕР¶РЅРѕСЃС‚Рё СѓСЂРµРіСѓР»РёСЂРѕРІР°РЅРёСЏ СЃРїРѕСЂР° РїСѓС‚С‘Рј РїРµСЂРµРіРѕРІРѕСЂРѕРІ, РѕРЅ РїРѕРґР»РµР¶РёС‚ СЂР°СЃСЃРјРѕС‚СЂРµРЅРёСЋ РІ СЃСѓРґРµ РїРѕ РјРµСЃС‚Сѓ РЅР°С…РѕР¶РґРµРЅРёСЏ РСЃРїРѕР»РЅРёС‚РµР»СЏ.</p>
+        </section>
+
+        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
+          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">11. РЎСЂРѕРє РґРµР№СЃС‚РІРёСЏ РѕС„РµСЂС‚С‹</h2>
+          <p>
+            РќР°СЃС‚РѕСЏС‰Р°СЏ РѕС„РµСЂС‚Р° РІСЃС‚СѓРїР°РµС‚ РІ СЃРёР»Сѓ СЃ РјРѕРјРµРЅС‚Р° РїСѓР±Р»РёРєР°С†РёРё РЅР° РЎР°Р№С‚Рµ Рё РґРµР№СЃС‚РІСѓРµС‚ РґРѕ РµС‘ РѕС‚РјРµРЅС‹. 
+            РСЃРїРѕР»РЅРёС‚РµР»СЊ РІРїСЂР°РІРµ РІ РѕРґРЅРѕСЃС‚РѕСЂРѕРЅРЅРµРј РїРѕСЂСЏРґРєРµ РёР·РјРµРЅСЏС‚СЊ СѓСЃР»РѕРІРёСЏ РѕС„РµСЂС‚С‹, РѕРїСѓР±Р»РёРєРѕРІР°РІ РЅРѕРІСѓСЋ СЂРµРґР°РєС†РёСЋ РЅР° РЎР°Р№С‚Рµ.
+          </p>
+        </section>
+
+        <div className="mt-8 pt-6 border-t border-[rgba(176,38,255,0.2)] text-center text-xs text-[var(--text-dim)]">
+          <p>Р”Р°С‚Р° РїСѓР±Р»РёРєР°С†РёРё: {new Date().toLocaleDateString('ru-RU')}</p>
+          <p className="mt-2">РРџ Р“Р°РІСЂРёРЅ Р”Р°РЅРёРёР» РќРёРєРёС‚РёС‡ | РРќРќ 434584462396</p>
+        </div>
+      </div>
     </>
   );
 }

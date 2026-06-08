@@ -4,15 +4,23 @@ import { useEffect, useState, useTransition } from 'react';
 import { BottomNavigation } from './components/BottomNavigation';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
 import { getCurrentUser } from './lib/auth';
-import { UserProvider } from './lib/UserContext'; // ← ДОБАВЬ
+import { UserProvider } from './lib/UserContext';
 import type { AppTab, TelegramUser } from './types/telegram';
 
 type ClientLayoutProps = {
   children: React.ReactNode;
 };
 
+const DEFAULT_USER: TelegramUser = {
+  id: 0,
+  first_name: 'Guest',
+  last_name: '',
+  username: 'guest',
+  photo_url: '',
+};
+
 export function ClientLayout({ children }: ClientLayoutProps) {
-  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [user, setUser] = useState<TelegramUser>(DEFAULT_USER);
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -35,7 +43,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       cart: `/${locale}/cart`,
       profile: `/${locale}/profile`,
     };
-
     startTransition(() => {
       router.push(routes[tab]);
     });
@@ -45,38 +52,32 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     setupTelegramWebApp();
     
     const checkAuth = async () => {
-      const authUser = await getCurrentUser();
-      console.log('[AUTH] getCurrentUser result:', authUser);
+      try {
+        const authUser = await getCurrentUser();
+        console.log('[AUTH] getCurrentUser result:', authUser);
 
-      if (authUser?.user) {
-        console.log('[AUTH] User found:', authUser.user);
-        setUser({
-          id: Number(authUser.user.tg_id),
-          first_name: authUser.user.first_name || 'User',
-          last_name: authUser.user.last_name || '',
-          username: authUser.user.username || '',
-          photo_url: authUser.user.photo_url || '',
-        });
-        return;
+        if (authUser?.user) {
+          console.log('[AUTH] User found:', authUser.user);
+          setUser({
+            id: Number(authUser.user.tg_id),
+            first_name: authUser.user.first_name || 'User',
+            last_name: authUser.user.last_name || '',
+            username: authUser.user.username || '',
+            photo_url: authUser.user.photo_url || '',
+          });
+          return;
+        }
+      } catch (error) {
+        console.log('[AUTH] Auth check failed or timed out, keeping Guest state');
       }
-      
+
       console.log('[AUTH] No user from /me, trying Telegram WebApp');
       const tgUser = getDisplayTelegramUser();
       console.log('[AUTH] Telegram WebApp user:', tgUser);
 
       if (tgUser && tgUser.id !== 0) {
         setUser(tgUser);
-        return;
       }
-      
-      console.log('[AUTH] Setting Guest user');
-      setUser({
-        id: 0,
-        first_name: 'Guest',
-        last_name: '',
-        username: 'guest',
-        photo_url: '',
-      });
     };
     
     checkAuth();
@@ -88,7 +89,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         {isPending && (
           <div className="fixed top-0 left-0 right-0 h-1 bg-[var(--neon-purple)] animate-pulse z-50" />
         )}
-        
         <section className="app-content">{children}</section>
         {showBottomNav ? (
           <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
