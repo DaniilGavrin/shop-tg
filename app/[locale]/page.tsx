@@ -8,14 +8,10 @@ export default function HomePage() {
       {/* 🚀 Мгновенный рендер хедера */}
       <HomeIntro />
       
-      {/* 🔄 Lazy-подгрузка featured-то
-      
+      {/* 🔄 Lazy-подгрузка featured-товаров */}
       <Suspense fallback={null}>
         <FeaturedProducts />
       </Suspense>
-      
-      варов */}
-      
     </>
   );
 }
