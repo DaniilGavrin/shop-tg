@@ -47,7 +47,7 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
     {
       id: 'cart',
       label: t.nav.cart,
-      href: '/${locale}/cart',
+      href: `/${locale}/cart`,
       icon: (
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M6.3 5.2 7 8h12.1c.7 0 1.2.7 1 1.4l-1.5 5.2a2 2 0 0 1-1.9 1.4H9.4a2 2 0 0 1-2-1.5L5.5 6.8H3.8a1.1 1.1 0 1 1 0-2.2h1.4c.5 0 1 .2 1.1.6ZM9.5 21a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Zm7 0a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Z" />
@@ -57,7 +57,7 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
     {
       id: 'profile',
       label: t.nav.profile,
-      href: '/${locale}/profile',
+      href: `/${locale}/profile`,
       icon: (
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm-7.2 7.3c.7-3.8 3.5-5.7 7.2-5.7s6.5 1.9 7.2 5.7c.1.8-.5 1.5-1.3 1.5H6.1c-.8 0-1.4-.7-1.3-1.5Z" />
