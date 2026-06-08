@@ -6,8 +6,8 @@ export async function POST(req: Request) {
     const { id_token, init_data } = body;
 
     const apiUrl = init_data
-      ? 'https://api.shop.bytewizard.ru/auth/telegram/webapp'
-      : 'https://api.shop.bytewizard.ru/auth/telegram/oidc';
+      ? 'https://api.bytewizard.ru/auth/telegram/webapp'
+      : 'https://api.bytewizard.ru/auth/telegram/oidc';
 
     const backendRes = await fetch(apiUrl, {
       method: 'POST',

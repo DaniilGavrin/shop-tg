@@ -6,7 +6,7 @@ import type { CatalogItem } from '../types/catalog';
 import { useTranslation } from '../lib/i18n/useTranslation';
 
 // 🔥 Выносим базовый URL в константу (или импортируй из lib/api)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
 export function FeaturedProducts() {
   const { t } = useTranslation();

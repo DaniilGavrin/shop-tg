@@ -438,8 +438,8 @@ export async function POST(req: Request) {
 
     // РћРїСЂРµРґРµР»СЏРµРј, РєСѓРґР° СЃС‚СѓС‡Р°С‚СЊСЃСЏ РЅР° Р±СЌРєРµРЅРґРµ
     const apiUrl = init_data
-      ? 'https://api.shop.bytewizard.ru/auth/telegram/webapp'
-      : 'https://api.shop.bytewizard.ru/auth/telegram/oidc';
+      ? 'https://api.bytewizard.ru/auth/telegram/webapp'
+      : 'https://api.bytewizard.ru/auth/telegram/oidc';
 
     // РћС‚РїСЂР°РІР»СЏРµРј Р·Р°РїСЂРѕСЃ РЅР° РЅР°С€ Р·Р°С‰РёС‰РµРЅРЅС‹Р№ Р±СЌРєРµРЅРґ
     const backendRes = await fetch(apiUrl, {
@@ -743,7 +743,7 @@ import type { CatalogItem } from '../types/catalog';
 import { useTranslation } from '../lib/i18n/useTranslation';
 
 // рџ”Ґ Р’С‹РЅРѕСЃРёРј Р±Р°Р·РѕРІС‹Р№ URL РІ РєРѕРЅСЃС‚Р°РЅС‚Сѓ (РёР»Рё РёРјРїРѕСЂС‚РёСЂСѓР№ РёР· lib/api)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
 export function FeaturedProducts() {
   const { t } = useTranslation();
@@ -1117,7 +1117,7 @@ FILE: lib\api.ts
 ─────────────────────────────────────────
 import type { CatalogResponse } from '../types/catalog';
 
-const API_BASE_URL = 'https://api.shop.bytewizard.ru';
+const API_BASE_URL = 'https://api.bytewizard.ru';
 
 export async function getCatalog(): Promise<CatalogResponse> {
   try {
@@ -1167,7 +1167,7 @@ FILE: lib\auth.ts
 ─────────────────────────────────────────
 export async function getCurrentUser() {
   try {
-    const res = await fetch('https://api.shop.bytewizard.ru/me', {
+    const res = await fetch('https://api.bytewizard.ru/me', {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store',
@@ -1185,7 +1185,7 @@ export async function getCurrentUser() {
 
 export async function logout() {
   try {
-    await fetch('https://api.shop.bytewizard.ru/auth/logout', {
+    await fetch('https://api.bytewizard.ru/auth/logout', {
       method: 'POST',
       credentials: 'include',
     });
@@ -1666,7 +1666,7 @@ export default function CartPage() {
     if (selectedCount === 0) return;
 
     try {
-      const res = await fetch('https://api.shop.bytewizard.ru/me', {
+      const res = await fetch('https://api.bytewizard.ru/me', {
         credentials: 'include',
         cache: 'no-store'
       });
@@ -1819,7 +1819,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import type { CatalogItem, ConfigField } from '../../../types/catalog';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
 type Selections = Record<string, string | string[] | number | boolean>;
 

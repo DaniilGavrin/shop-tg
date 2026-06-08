@@ -1,5 +1,5 @@
 const ids = [1,2,3,4,5,6,7,8,10,12,14,15,16,17,18,19,20,21,22];
-const BASE = 'https://api.shop.bytewizard.ru/catalog';
+const BASE = 'https://api.bytewizard.ru/catalog';
 
 const checkDelivery = (d) => {
   if (!d) return '❌ отсутствует';

@@ -1,6 +1,6 @@
 import type { CatalogResponse } from '../types/catalog';
 
-const API_BASE_URL = 'https://api.shop.bytewizard.ru';
+const API_BASE_URL = 'https://api.bytewizard.ru';
 
 export async function getCatalog(): Promise<CatalogResponse> {
   try {

@@ -1,4 +1,4 @@
-const API_BASE = 'https://api.shop.bytewizard.ru';
+const API_BASE = 'https://api.bytewizard.ru';
 
 async function refreshToken(): Promise<boolean> {
   try {

@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import type { CatalogItem, ConfigField } from '../../../types/catalog';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shop.bytewizard.ru';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
 type Selections = Record<string, string | string[] | number | boolean>;
 

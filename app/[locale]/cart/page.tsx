@@ -115,7 +115,7 @@ export default function CartPage() {
     if (selectedCount === 0) return;
 
     try {
-      const res = await fetch('https://api.shop.bytewizard.ru/me', {
+      const res = await fetch('https://api.bytewizard.ru/me', {
         credentials: 'include',
         cache: 'no-store'
       });
