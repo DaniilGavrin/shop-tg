@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type { AppTab } from '../types/telegram';
 import styles from './BottomNavigation.module.css';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 
 import { useTranslation } from '../lib/i18n/useTranslation';
 
@@ -12,16 +14,20 @@ type BottomNavigationProps = {
 type NavItem = {
   id: AppTab;
   label: string;
+  href: string;
   icon: ReactNode;
 };
 
 export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationProps) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { locale } = useTranslation();
 
   const items: NavItem[] = [
     {
       id: 'home',
       label: t.nav.home,
+      href: `/${locale}`,
       icon: (
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5H15v-6H9v6H3.5a.5.5 0 0 1-.5-.5v-9.7Z" />
@@ -31,6 +37,7 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
     {
       id: 'catalog',
       label: t.nav.catalog,
+      href: `/${locale}/catalog`,
       icon: (
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M4.8 4h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8H4.8a.8.8 0 0 1-.8-.8V4.8c0-.4.4-.8.8-.8Zm9 0h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8h-5.4a.8.8 0 0 1-.8-.8V4.8c0-.4.4-.8.8-.8Zm-9 9h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8H4.8a.8.8 0 0 1-.8-.8v-5.4c0-.4.4-.8.8-.8Zm9 0h5.4c.4 0 .8.4.8.8v5.4c0 .4-.4.8-.8.8h-5.4a.8.8 0 0 1-.8-.8v-5.4c0-.4.4-.8.8-.8Z" />
@@ -40,6 +47,7 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
     {
       id: 'cart',
       label: t.nav.cart,
+      href: '/${locale}/cart',
       icon: (
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M6.3 5.2 7 8h12.1c.7 0 1.2.7 1 1.4l-1.5 5.2a2 2 0 0 1-1.9 1.4H9.4a2 2 0 0 1-2-1.5L5.5 6.8H3.8a1.1 1.1 0 1 1 0-2.2h1.4c.5 0 1 .2 1.1.6ZM9.5 21a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Zm7 0a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Z" />
@@ -49,6 +57,7 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
     {
       id: 'profile',
       label: t.nav.profile,
+      href: '/${locale}/profile',
       icon: (
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm-7.2 7.3c.7-3.8 3.5-5.7 7.2-5.7s6.5 1.9 7.2 5.7c.1.8-.5 1.5-1.3 1.5H6.1c-.8 0-1.4-.7-1.3-1.5Z" />
@@ -56,6 +65,10 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
       ),
     },
   ];
+
+  const handleMouseEnter = (href: string) => {
+    router.prefetch(href);
+  };
 
   return (
     <nav
@@ -74,6 +87,7 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
               type="button"
               className={`${styles.item} ${isActive ? styles.active : ''}`}
               onClick={() => onTabChange(item.id)}
+              onMouseEnter={() => handleMouseEnter(item.href)}
               aria-current={isActive ? 'page' : undefined}
             >
               <span className={styles.icon}>{item.icon}</span>

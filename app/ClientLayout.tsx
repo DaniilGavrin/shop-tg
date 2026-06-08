@@ -1,6 +1,6 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { BottomNavigation } from './components/BottomNavigation';
 import { LoadingScreen } from './components/LoadingScreen';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
@@ -16,6 +16,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const locale = pathname.split('/')[1] || 'ru';
 
   const showBottomNav = !pathname.match(/\/catalog\/\d+$/);
@@ -35,7 +36,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       cart: `/${locale}/cart`,
       profile: `/${locale}/profile`,
     };
-    router.push(routes[tab]);
+
+    startTransition(() => {
+      router.push(routes[tab]);
+    });
   };
 
   useEffect(() => {
@@ -84,8 +88,12 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   }
 
   return (
-    <UserProvider user={user}> {/* ← ОБЕРНИ В UserProvider */}
+    <UserProvider user={user}>
       <main className="app-shell">
+        {isPending && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-[var(--neon-purple)] animate-pulse z-50" />
+        )}
+        
         <section className="app-content">{children}</section>
         {showBottomNav ? (
           <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
