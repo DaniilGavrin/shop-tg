@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../../components/ScreenTitle';
-import type { TelegramUser } from '../../../../types/telegram';
-import { getDisplayTelegramUser } from '../../../../lib/telegram';
+import { useUser } from '../../../../lib/UserContext';
 
 type OrderDetail = {
   order_code: string;
@@ -29,11 +28,9 @@ export default function OrderDetailPage() {
   const { locale, orderId } = useParams<{ locale: string; orderId: string }>();
   const isRu = locale !== 'en';
   
-  const [user, setUser] = useState<TelegramUser | null>(null);
+  const user = useUser();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // 🔹 НОВОЕ: Состояние для процесса отмены
   const [canceling, setCanceling] = useState(false);
 
   const c = {
@@ -55,11 +52,11 @@ export default function OrderDetailPage() {
     refunded: isRu ? 'Возвращён' : 'Refunded',
     in_progress: isRu ? 'В работе' : 'In progress',
     not_found: isRu ? 'Заказ не найден' : 'Order not found',
-    // 🔹 НОВОЕ: Тексты для кнопки отмены
     cancel_btn: isRu ? 'Отменить заказ' : 'Cancel Order',
     cancel_confirm: isRu ? 'Вы уверены, что хотите отменить этот заказ? Это действие нельзя отменить.' : 'Are you sure you want to cancel this order? This action cannot be undone.',
     cancel_success: isRu ? 'Заказ успешно отменен' : 'Order successfully cancelled',
     cancel_error: isRu ? 'Ошибка при отмене заказа' : 'Error cancelling order',
+    login_required: isRu ? 'Требуется вход' : 'Login required',
   };
 
   const getStatusInfo = (status: string) => {
@@ -86,15 +83,14 @@ export default function OrderDetailPage() {
     return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Technical Task', 'ТЗ');
   };
 
-  
   const handleCancelOrder = async () => {
     if (!window.confirm(c.cancel_confirm)) return;
     setCanceling(true);
     try {
-      const res = await fetch(`https://pay.bytewizard.ru/orders/${orderId}/cancel`, {
+      const res = await fetch(`${PAY_API_BASE}/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // 🔑
+        credentials: 'include',
         body: JSON.stringify({}), 
       });
       
@@ -113,21 +109,21 @@ export default function OrderDetailPage() {
   };
 
   useEffect(() => {
-    const currentUser = getDisplayTelegramUser();
-    if (!currentUser || currentUser.id === 0) {
+    if (!user || user.id === 0) {
       setLoading(false);
       return;
     }
-    setUser(currentUser);
+
     const loadOrder = async () => {
       try {
-        const res = await fetch(`https://pay.bytewizard.ru/orders/${orderId}`, {
+        const res = await fetch(`${PAY_API_BASE}/orders/${orderId}`, {
           credentials: 'include',
         });
         if (res.ok) {
           const data = await res.json();
           setOrder(data.order);
         } else {
+          console.error(`[ORDER DETAIL] Failed to load: ${res.status}`);
           setOrder(null);
         }
       } catch (e) {
@@ -138,9 +134,22 @@ export default function OrderDetailPage() {
       }
     };
     loadOrder();
-  }, [orderId]);
+  }, [orderId, user]);
 
   if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
+  
+  if (!user || user.id === 0) {
+    return (
+      <div className="min-h-[60vh] grid place-items-center text-center px-6">
+        <div className="text-5xl mb-4">🔒</div>
+        <h2 className="text-xl font-bold text-[var(--text-main)] mb-4">{c.login_required}</h2>
+        <button onClick={() => router.push(`/${locale}/profile`)} className="px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
+          {isRu ? 'Войти' : 'Login'}
+        </button>
+      </div>
+    );
+  }
+
   if (!order) {
     return (
       <div className="min-h-[60vh] grid place-items-center text-center px-6">
@@ -154,7 +163,6 @@ export default function OrderDetailPage() {
   }
 
   const statusInfo = getStatusInfo(order.status);
-  // 🔹 НОВОЕ: Флаг активности кнопки (только если статус 'pending' и не идет процесс отмены)
   const canCancel = order.status === 'pending' && !canceling;
 
   return (
@@ -245,7 +253,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* 🔹 НОВОЕ: Кнопка отмены заказа (под блоком контактов) */}
+        {/* Кнопка отмены заказа */}
         <button
           type="button"
           onClick={handleCancelOrder}

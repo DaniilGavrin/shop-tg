@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
-import type { TelegramUser } from '../../../types/telegram';
-import { getDisplayTelegramUser } from '../../../lib/telegram';
+import { useUser } from '../../../lib/UserContext';
 import Link from 'next/link';
 
 type Order = {
@@ -22,7 +21,7 @@ export default function OrdersPage() {
   const { locale } = useParams<{ locale: string }>();
   const isRu = locale !== 'en';
 
-  const [user, setUser] = useState<TelegramUser | null>(null);
+  const user = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,16 +61,14 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    const currentUser = getDisplayTelegramUser();
-    if (!currentUser || currentUser.id === 0) {
+    if (!user || user.id === 0) {
       setLoading(false);
       return;
     }
-    setUser(currentUser);
 
     const loadOrders = async () => {
       try {
-        const res = await fetch('https://pay.bytewizard.ru/orders', {
+        const res = await fetch(`${PAY_API_BASE}/orders`, {
           credentials: 'include',
         });
         
@@ -79,7 +76,7 @@ export default function OrdersPage() {
           const data = await res.json();
           setOrders(data.orders || []);
         } else if (res.status === 401) {
-          // Если не авторизован, можно редиректить на логин или показывать пустой список
+          console.log('[ORDERS] Unauthorized, user not logged in');
           setOrders([]);
         }
       } catch (e) {
@@ -90,14 +87,14 @@ export default function OrdersPage() {
     };
 
     loadOrders();
-  }, []);
+  }, [user]);
 
   if (loading) return <div className="min-h-[60vh] grid place-items-center"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" /></div>;
 
   if (!user || user.id === 0) {
     return (
       <div className="min-h-[60vh] grid place-items-center text-center px-6">
-        <div className="text-5xl mb-4">🔐</div>
+        <div className="text-5xl mb-4">🔒</div>
         <h2 className="text-xl font-bold text-[var(--text-main)] mb-2">{c.login_required}</h2>
         <button onClick={() => router.push(`/${locale}/`)} className="mt-4 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
           {c.to_catalog}
@@ -153,7 +150,6 @@ export default function OrdersPage() {
                   </div>
                 </div>
                 
-                {/* Стрелочка справа, появляющаяся при наведении */}
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--neon-purple)]">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
