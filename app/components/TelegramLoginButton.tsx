@@ -9,7 +9,6 @@ import type {
 export function TelegramLoginButton() {
   const initialized = useRef(false);
 
-  console.log(" HUY !")
 
   useEffect(() => {
     if (initialized.current) {
@@ -50,7 +49,7 @@ export function TelegramLoginButton() {
 
         return;
       }
-      console.log("LOGIN BLYA INIT")
+
       login.init(
         {
           client_id: clientId,
