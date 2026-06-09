@@ -67,22 +67,22 @@ export default function RequisitesPage() {
           <div className="space-y-3">
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">Банк:</span>
-              <span className="font-medium text-right">ПАО Сбербанк</span>
+              <span className="font-medium text-right">АО "ТБанк"</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">Расчётный счёт:</span>
-              <span className="font-medium">40802810000000000000</span>
+              <span className="font-medium">40802810200008620353</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">БИК:</span>
-              <span className="font-medium">044525225</span>
+              <span className="font-medium">044525974</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">Корр. счёт:</span>
-              <span className="font-medium">30101810400000000225</span>
+              <span className="font-medium">30101810145250000974</span>
             </div>
           </div>
         </section>
