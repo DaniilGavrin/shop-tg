@@ -37,20 +37,22 @@ export default function RootLayout({
         />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
+        <link rel="preload" href="/_next/static/css/app/layout.css" as="style" />
       </head>
 
       <body
         className={`${cyberFont.className} min-h-screen overflow-x-hidden bg-[var(--bg-deep)] text-[var(--text-main)] antialiased`}
       >
-        {/* Telegram SDK НЕ критичен */}
-        <Script
-          src="/telegram-web-app.js"
-          strategy="afterInteractive"
-        />
+        <div id="__app" className="min-h-screen w-full flex flex-col overflow-x-hidden">
+          <Script
+            src="/telegram-web-app.js"
+            strategy="afterInteractive"
+          />
 
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </div>
 
         <Analytics />
         <SpeedInsights />
