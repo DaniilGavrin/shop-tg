@@ -5,9 +5,6 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   
   const isRu = params.locale !== 'en';
   return {
-    verification: {
-      yandex: 'd89a024f898728e2',
-    },
     title: {
       default: 'ByteWizard Shop',
       template: '%s | ByteWizard Shop',
