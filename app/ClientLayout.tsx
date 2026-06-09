@@ -22,12 +22,12 @@ const DEFAULT_USER: TelegramUser = {
   photo_url: '',
 };
 
-function getLocaleFromPath(pathname: string) {
+function getLocale(pathname: string) {
   const part = pathname.split('/')[1];
   return part === 'ru' || part === 'en' ? part : 'ru';
 }
 
-function getActiveTabFromPath(pathname: string, locale: string): AppTab {
+function getActiveTab(pathname: string, locale: string): AppTab {
   if (pathname === `/${locale}`) return 'home';
   if (pathname.includes('/catalog')) return 'catalog';
   if (pathname.includes('/cart')) return 'cart';
@@ -40,41 +40,30 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const locale = useMemo(() => getLocaleFromPath(pathname), [pathname]);
+  const locale = useMemo(() => getLocale(pathname), [pathname]);
 
   const activeTab = useMemo(
-    () => getActiveTabFromPath(pathname, locale),
+    () => getActiveTab(pathname, locale),
     [pathname, locale]
   );
 
-  const showBottomNav = useMemo(() => {
-    return !/\/catalog\/\d+$/.test(pathname);
-  }, [pathname]);
+  const showBottomNav = useMemo(
+    () => !/\/catalog\/\d+$/.test(pathname),
+    [pathname]
+  );
 
   const [user, setUser] = useState<TelegramUser>(DEFAULT_USER);
-
-  /**
-   * 🔥 CRITICAL FIX:
-   * предотвращаем layout jump от "Guest → User"
-   */
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
 
   useEffect(() => {
     setupTelegramWebApp();
 
     let cancelled = false;
 
-    const checkAuth = async () => {
+    const run = async () => {
       try {
         const authUser = await getCurrentUser();
 
-        if (cancelled) return;
-
-        if (authUser?.user) {
+        if (!cancelled && authUser?.user) {
           setUser({
             id: Number(authUser.user.tg_id),
             first_name: authUser.user.first_name || 'User',
@@ -82,20 +71,21 @@ export function ClientLayout({ children }: ClientLayoutProps) {
             username: authUser.user.username || '',
             photo_url: authUser.user.photo_url || '',
           });
+
           return;
         }
       } catch {
-        // ignore
+        // ignore auth failures
       }
 
       const tgUser = getDisplayTelegramUser();
 
-      if (tgUser && tgUser.id !== 0 && !cancelled) {
+      if (!cancelled && tgUser && tgUser.id !== 0) {
         setUser(tgUser);
       }
     };
 
-    checkAuth();
+    run();
 
     return () => {
       cancelled = true;
@@ -114,29 +104,15 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       router.push(routes[tab]);
     });
   };
-
-  /**
-   * 🔥 FIX: стабилизируем initial paint
-   * пока не hydrated — не даём layout пересобираться
-   */
-  if (!hydrated) {
-    return (
-      <UserProvider user={DEFAULT_USER}>
-        <main className="app-shell">
-          <section className="app-content">{children}</section>
-        </main>
-      </UserProvider>
-    );
-  }
-
   return (
     <UserProvider user={user}>
-      <main className="app-shell min-h-screen w-full overflow-x-hidden flex flex-col">
+      <main className="app-shell min-h-screen w-full flex flex-col overflow-x-hidden">
+        
         {isPending && (
           <div className="fixed top-0 left-0 right-0 h-1 bg-[var(--neon-purple)] animate-pulse z-50" />
         )}
 
-        <section className="app-content flex-1 w-full">
+        <section className="app-content flex-1 w-full min-w-0">
           {children}
         </section>
 
@@ -148,6 +124,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         ) : (
           <div className="safe-area-pb" />
         )}
+
       </main>
     </UserProvider>
   );
