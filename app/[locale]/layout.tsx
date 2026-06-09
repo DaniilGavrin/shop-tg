@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
-  
   const isRu = params.locale !== 'en';
   return {
     title: {
@@ -10,8 +9,8 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       template: '%s | ByteWizard Shop',
     },
     description: isRu 
-      ? 'Telegram WebApp магазин цифровых услуг'
-      : 'Telegram WebApp marketplace for digital services',
+      ? 'Магазин цифровых услуг'
+      : 'Marketplace for digital services',
     openGraph: {
       title: 'ByteWizard Shop',
       description: isRu 
@@ -28,10 +27,6 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     },
   };
 }
-
-export const metadata: Metadata = {
-  
-};
 
 export default function LocaleLayout({
   children,
