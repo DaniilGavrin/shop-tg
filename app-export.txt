@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 08.06.2026 20:52:38
+Дата: 09.06.2026 14:53:32
 
 =============================================
 
@@ -7,12 +7,15 @@
 FILE: ClientLayout.tsx
 ─────────────────────────────────────────
 'use client';
+
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+
 import { BottomNavigation } from './components/BottomNavigation';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
 import { getCurrentUser } from './lib/auth';
 import { UserProvider } from './lib/UserContext';
+
 import type { AppTab, TelegramUser } from './types/telegram';
 
 type ClientLayoutProps = {
@@ -27,22 +30,75 @@ const DEFAULT_USER: TelegramUser = {
   photo_url: '',
 };
 
+function getLocale(pathname: string) {
+  const part = pathname.split('/')[1];
+  return part === 'ru' || part === 'en' ? part : 'ru';
+}
+
+function getActiveTab(pathname: string, locale: string): AppTab {
+  if (pathname === `/${locale}`) return 'home';
+  if (pathname.includes('/catalog')) return 'catalog';
+  if (pathname.includes('/cart')) return 'cart';
+  if (pathname.includes('/profile')) return 'profile';
+  return 'home';
+}
+
 export function ClientLayout({ children }: ClientLayoutProps) {
-  const [user, setUser] = useState<TelegramUser>(DEFAULT_USER);
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const locale = pathname.split('/')[1] || 'ru';
 
-  const showBottomNav = !pathname.match(/\/catalog\/\d+$/);
+  const locale = useMemo(() => getLocale(pathname), [pathname]);
 
-  const getActiveTab = (): AppTab => {
-    if (pathname === `/${locale}`) return 'home';
-    if (pathname.includes('/catalog')) return 'catalog';
-    if (pathname.includes('/cart')) return 'cart';
-    if (pathname.includes('/profile')) return 'profile';
-    return 'home';
-  };
+  const activeTab = useMemo(
+    () => getActiveTab(pathname, locale),
+    [pathname, locale]
+  );
+
+  const showBottomNav = useMemo(
+    () => !/\/catalog\/\d+$/.test(pathname),
+    [pathname]
+  );
+
+  const [user, setUser] = useState<TelegramUser>(DEFAULT_USER);
+
+  useEffect(() => {
+    setupTelegramWebApp();
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const authUser = await getCurrentUser();
+
+        if (!cancelled && authUser?.user) {
+          setUser({
+            id: Number(authUser.user.tg_id),
+            first_name: authUser.user.first_name || 'User',
+            last_name: authUser.user.last_name || '',
+            username: authUser.user.username || '',
+            photo_url: authUser.user.photo_url || '',
+          });
+
+          return;
+        }
+      } catch {
+        // ignore auth failures
+      }
+
+      const tgUser = getDisplayTelegramUser();
+
+      if (!cancelled && tgUser && tgUser.id !== 0) {
+        setUser(tgUser);
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleTabChange = (tab: AppTab) => {
     const routes: Record<AppTab, string> = {
@@ -51,58 +107,32 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       cart: `/${locale}/cart`,
       profile: `/${locale}/profile`,
     };
+
     startTransition(() => {
       router.push(routes[tab]);
     });
   };
-
-  useEffect(() => {
-    setupTelegramWebApp();
-    
-    const checkAuth = async () => {
-      try {
-        const authUser = await getCurrentUser();
-        console.log('[AUTH] getCurrentUser result:', authUser);
-
-        if (authUser?.user) {
-          console.log('[AUTH] User found:', authUser.user);
-          setUser({
-            id: Number(authUser.user.tg_id),
-            first_name: authUser.user.first_name || 'User',
-            last_name: authUser.user.last_name || '',
-            username: authUser.user.username || '',
-            photo_url: authUser.user.photo_url || '',
-          });
-          return;
-        }
-      } catch (error) {
-        console.log('[AUTH] Auth check failed or timed out, keeping Guest state');
-      }
-
-      console.log('[AUTH] No user from /me, trying Telegram WebApp');
-      const tgUser = getDisplayTelegramUser();
-      console.log('[AUTH] Telegram WebApp user:', tgUser);
-
-      if (tgUser && tgUser.id !== 0) {
-        setUser(tgUser);
-      }
-    };
-    
-    checkAuth();
-  }, []);
-
   return (
     <UserProvider user={user}>
-      <main className="app-shell">
+      <main className="app-shell min-h-screen w-full flex flex-col overflow-x-hidden">
+        
         {isPending && (
           <div className="fixed top-0 left-0 right-0 h-1 bg-[var(--neon-purple)] animate-pulse z-50" />
         )}
-        <section className="app-content">{children}</section>
+
+        <section className="app-content flex-1 w-full min-w-0">
+          {children}
+        </section>
+
         {showBottomNav ? (
-          <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
+          <BottomNavigation
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
         ) : (
           <div className="safe-area-pb" />
         )}
+
       </main>
     </UserProvider>
   );
@@ -326,15 +356,16 @@ export default function RootLayout({
       <body
         className={`${cyberFont.className} min-h-screen overflow-x-hidden bg-[var(--bg-deep)] text-[var(--text-main)] antialiased`}
       >
-        {/* Telegram SDK РќР• РєСЂРёС‚РёС‡РµРЅ */}
-        <Script
-          src="/telegram-web-app.js"
-          strategy="afterInteractive"
-        />
+        <div id="__app" className="min-h-screen w-full flex flex-col overflow-x-hidden">
+          <Script
+            src="/telegram-web-app.js"
+            strategy="afterInteractive"
+          />
 
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </div>
 
         <Analytics />
         <SpeedInsights />
@@ -769,6 +800,127 @@ export function CatalogGrid({ items }: Props) {
 
 
 ─────────────────────────────────────────
+FILE: components\DebugOverlay.tsx
+─────────────────────────────────────────
+'use client';
+import { useEffect, useState } from 'react';
+
+export function DebugOverlay() {
+  const [logs, setLogs] = useState<string[]>([]);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // РџРѕРєР°Р·С‹РІР°РµРј РѕРІРµСЂР»РµР№ РµСЃР»Рё РІ URL РµСЃС‚СЊ ?debug=1 РёР»Рё РµСЃР»Рё РЅР°РєРѕРїРёР»РёСЃСЊ РѕС€РёР±РєРё
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('debug')) setShow(true);
+
+    const addLog = (msg: string) => {
+      setLogs(prev => [...prev.slice(-5), `[${new Date().toLocaleTimeString()}] ${msg}`]);
+      setShow(true);
+      console.warn('[DebugOverlay]', msg);
+    };
+
+    const handleGlobalError = (event: ErrorEvent) => {
+      addLog(`JS Error: ${event.message} @ ${event.filename}:${event.lineno}`);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      addLog(`Promise Rejection: ${event.reason?.message || event.reason}`);
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    // РџСЂРѕРІРµСЂРєР° Р·Р°РіСЂСѓР·РєРё CSS
+    const testEl = document.getElementById('css-test-element');
+    if (testEl) {
+      const style = window.getComputedStyle(testEl);
+      if (style.display !== 'none' || style.color !== 'rgb(176, 38, 255)') {
+        addLog('вќЊ CSS/Tailwind РЅРµ Р·Р°РіСЂСѓР·РёР»СЃСЏ РёР»Рё РїРµСЂРµР·Р°РїРёСЃР°РЅ!');
+      } else {
+        addLog('вњ… CSS Р·Р°РіСЂСѓР¶РµРЅ РєРѕСЂСЂРµРєС‚РЅРѕ');
+      }
+    }
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-[200] max-w-sm w-full bg-black/95 border border-yellow-500/50 rounded-lg p-3 shadow-2xl">
+      <div className="flex justify-between items-center mb-2 border-b border-yellow-500/30 pb-2">
+        <span className="font-bold text-yellow-400 text-sm">рџђ› Debug Mode</span>
+        <button onClick={() => setShow(false)} className="text-yellow-500 hover:text-white text-xs">вњ•</button>
+      </div>
+      <div className="space-y-1 max-h-48 overflow-y-auto text-xs font-mono">
+        {logs.map((log, i) => (
+          <div key={i} className="text-yellow-200/90 break-words">{log}</div>
+        ))}
+      </div>
+    </div>
+    );
+}
+
+
+─────────────────────────────────────────
+FILE: components\ErrorBoundary.tsx
+─────────────────────────────────────────
+'use client';
+import { Component, ErrorInfo, ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+  name?: string;
+}
+
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error(`[ErrorBoundary: ${this.props.name || 'Unknown'}]`, error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="rounded-xl border border-red-500/50 bg-red-900/20 p-4 my-4">
+          <p className="text-red-400 font-bold mb-2">пёЏ РљРѕРјРїРѕРЅРµРЅС‚ СЃР»РѕРјР°Р»СЃСЏ: {this.props.name}</p>
+          <pre className="text-xs text-red-300 bg-black/40 p-3 rounded overflow-auto max-h-40">
+            {this.state.error?.message || 'РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°'}
+          </pre>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="mt-3 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-sm rounded transition"
+          >
+            РџРѕРїСЂРѕР±РѕРІР°С‚СЊ СЃРЅРѕРІР°
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+
+─────────────────────────────────────────
 FILE: components\FeaturedProducts.tsx
 ─────────────────────────────────────────
 'use client';
@@ -785,6 +937,7 @@ export function FeaturedProducts() {
   const { t } = useTranslation();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -792,8 +945,6 @@ export function FeaturedProducts() {
     const loadFeatured = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/catalog/featured`, {
-          // вњ… Р”Р»СЏ РєР»РёРµРЅС‚СЃРєРѕРіРѕ С„РµС‚С‡Р°: РєСЌС€ Р±СЂР°СѓР·РµСЂР° РЅР° 6 С‡Р°СЃРѕРІ
-          cache: 'force-cache',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -809,7 +960,7 @@ export function FeaturedProducts() {
         }
       } catch (error) {
         console.error('Featured load error:', error);
-        if (!cancelled) setLoading(false); // Р§С‚РѕР±С‹ СѓР±СЂР°С‚СЊ СЃРєРµР»РµС‚РѕРЅ РїСЂРё РѕС€РёР±РєРµ
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -822,6 +973,14 @@ export function FeaturedProducts() {
 
   if (loading) {
     return <FeaturedSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="mt-8 p-4 rounded-xl border border-red-500/30 bg-red-900/10 text-red-300 text-sm">
+        вљ пёЏ РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РІРёС‚СЂРёРЅС‹: {error}
+      </div>
+    );
   }
 
   if (items.length === 0) {
