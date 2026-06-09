@@ -24,7 +24,7 @@ export default function RequisitesPage() {
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">ОГРНИП:</span>
-              <span className="font-medium">323430000123456</span>
+              <span className="font-medium">325430000043774</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
