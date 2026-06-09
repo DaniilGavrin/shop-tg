@@ -6,6 +6,8 @@ import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
 import { getCurrentUser } from './lib/auth';
 import { UserProvider } from './lib/UserContext';
 import type { AppTab, TelegramUser } from './types/telegram';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { DebugOverlay } from './components/DebugOverlay';
 
 type ClientLayoutProps = {
   children: React.ReactNode;
@@ -89,12 +91,20 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         {isPending && (
           <div className="fixed top-0 left-0 right-0 h-1 bg-[var(--neon-purple)] animate-pulse z-50" />
         )}
+
+        <ErrorBoundary name="MainContent">
+          <section className="app-content">{children}</section>
+        </ErrorBoundary>
+
+
         <section className="app-content">{children}</section>
         {showBottomNav ? (
           <BottomNavigation activeTab={getActiveTab()} onTabChange={handleTabChange} />
         ) : (
           <div className="safe-area-pb" />
         )}
+
+        <DebugOverlay />
       </main>
     </UserProvider>
   );

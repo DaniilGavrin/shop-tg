@@ -12,6 +12,7 @@ export function FeaturedProducts() {
   const { t } = useTranslation();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,8 +20,6 @@ export function FeaturedProducts() {
     const loadFeatured = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/catalog/featured`, {
-          // ✅ Для клиентского фетча: кэш браузера на 6 часов
-          cache: 'force-cache',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -36,7 +35,7 @@ export function FeaturedProducts() {
         }
       } catch (error) {
         console.error('Featured load error:', error);
-        if (!cancelled) setLoading(false); // Чтобы убрать скелетон при ошибке
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -49,6 +48,14 @@ export function FeaturedProducts() {
 
   if (loading) {
     return <FeaturedSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="mt-8 p-4 rounded-xl border border-red-500/30 bg-red-900/10 text-red-300 text-sm">
+        ⚠️ Ошибка загрузки витрины: {error}
+      </div>
+    );
   }
 
   if (items.length === 0) {
