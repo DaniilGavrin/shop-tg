@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../components/ScreenTitle';
+import { getCurrentUser } from '../../lib/auth';
 
 type CartItem = {
   productId: number;
@@ -113,25 +114,26 @@ export default function CartPage() {
 
   const handleCheckout = async () => {
     if (selectedCount === 0) return;
-
+    
     try {
-      const res = await fetch('https://api.bytewizard.ru/me', {
-        credentials: 'include',
-        cache: 'no-store'
-      });
+      //  Используем getCurrentUser() — она сама делает refresh при 401
+      const authUser = await getCurrentUser();
       
-      if (!res.ok) {
+      if (!authUser?.user) {
+        // Refresh не удался — показываем тост
         setToast(c.auth_required);
         setTimeout(() => setToast(null), 3000);
         return;
       }
+      
+      // Если дошли сюда — авторизация OK (токен обновился автоматически)
     } catch {
       setToast(c.auth_required);
       setTimeout(() => setToast(null), 3000);
       return;
     }
 
-    
+    // Продолжаем создание заказа
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const tempOrder = {
       id: orderId,

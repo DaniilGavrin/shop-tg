@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 09.06.2026 14:53:32
+Дата: 09.06.2026 19:55:16
 
 =============================================
 
@@ -142,7 +142,13 @@ export function ClientLayout({ children }: ClientLayoutProps) {
 ─────────────────────────────────────────
 FILE: globals.css
 ─────────────────────────────────────────
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Exo 2', sans-serif;
+}
 
 :root {
   --bg-deep: #05020a;
@@ -313,7 +319,6 @@ select {
 FILE: layout.tsx
 ─────────────────────────────────────────
 import type { Metadata } from 'next';
-import { Exo_2 } from 'next/font/google';
 import Script from 'next/script';
 
 import './globals.css';
@@ -323,11 +328,11 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { ClientLayout } from './ClientLayout';
 
-const cyberFont = Exo_2({
-  subsets: ['cyrillic', 'latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
+import '@fontsource/exo-2/400.css';
+import '@fontsource/exo-2/500.css';
+import '@fontsource/exo-2/600.css';
+import '@fontsource/exo-2/700.css';
+import '@fontsource/exo-2/cyrillic.css';
 
 export const metadata: Metadata = {
   title: 'ByteWizard Shop',
@@ -353,20 +358,11 @@ export default function RootLayout({
         <meta httpEquiv="Expires" content="0" />
       </head>
 
-      <body
-        className={`${cyberFont.className} min-h-screen overflow-x-hidden bg-[var(--bg-deep)] text-[var(--text-main)] antialiased`}
-      >
+      <body className="min-h-screen overflow-x-hidden bg-[var(--bg-deep)] text-[var(--text-main)] antialiased">
         <div id="__app" className="min-h-screen w-full flex flex-col overflow-x-hidden">
-          <Script
-            src="/telegram-web-app.js"
-            strategy="afterInteractive"
-          />
-
-          <ClientLayout>
-            {children}
-          </ClientLayout>
+          <Script src="/telegram-web-app.js" strategy="afterInteractive" />
+          <ClientLayout>{children}</ClientLayout>
         </div>
-
         <Analytics />
         <SpeedInsights />
       </body>
@@ -3365,7 +3361,7 @@ export default function PrivacyPolicyPage() {
             РёРЅС„РѕСЂРјР°С†РёРѕРЅРЅС‹С… СЃРёСЃС‚РµРјР°С… РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С… СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј СЃСЂРµРґСЃС‚РІ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё РёР»Рё Р±РµР· РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ С‚Р°РєРёС… СЃСЂРµРґСЃС‚РІ.
           </p>
           <p>
-            РџРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ С…СЂР°РЅСЏС‚СЃСЏ РЅР° СЃРµСЂРІРµСЂР°С…, СЂР°СЃРїРѕР»РѕР¶РµРЅРЅС‹С… РЅР° С‚РµСЂСЂРёС‚РѕСЂРёРё Р РѕСЃСЃРёР№СЃРєРѕР№ Р¤РµРґРµСЂР°С†РёРё, Рё Р·Р°С‰РёС‰РµРЅС‹ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј 
+            РџРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ С…СЂР°РЅСЏС‚СЃСЏ РЅР° СЃРµСЂРІРµСЂР°С…, Рё Р·Р°С‰РёС‰РµРЅС‹ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј 
             СЃРѕРІСЂРµРјРµРЅРЅС‹С… РјРµС‚РѕРґРѕРІ С€РёС„СЂРѕРІР°РЅРёСЏ.
           </p>
         </section>
@@ -3551,7 +3547,7 @@ export default function RequisitesPage() {
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">РћР“Р РќРРџ:</span>
-              <span className="font-medium">323430000123456</span>
+              <span className="font-medium">325430000043774</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
@@ -3594,22 +3590,22 @@ export default function RequisitesPage() {
           <div className="space-y-3">
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">Р‘Р°РЅРє:</span>
-              <span className="font-medium text-right">РџРђРћ РЎР±РµСЂР±Р°РЅРє</span>
+              <span className="font-medium text-right">РђРћ "РўР‘Р°РЅРє"</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">Р Р°СЃС‡С‘С‚РЅС‹Р№ СЃС‡С‘С‚:</span>
-              <span className="font-medium">40802810000000000000</span>
+              <span className="font-medium">40802810200008620353</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">Р‘РРљ:</span>
-              <span className="font-medium">044525225</span>
+              <span className="font-medium">044525974</span>
             </div>
             
             <div className="flex justify-between border-b border-[rgba(176,38,255,0.15)] pb-2">
               <span className="text-[var(--text-dim)]">РљРѕСЂСЂ. СЃС‡С‘С‚:</span>
-              <span className="font-medium">30101810400000000225</span>
+              <span className="font-medium">30101810145250000974</span>
             </div>
           </div>
         </section>
