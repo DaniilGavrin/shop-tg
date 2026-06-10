@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 09.06.2026 19:55:16
+Дата: 10.06.2026 12:59:20
 
 =============================================
 
@@ -399,67 +399,48 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = 'https://shop.bytewizard.ru';
 
   return [
-    {
-      url: `${base}/ru`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
-    {
-      url: `${base}/ru/catalog`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${base}/ru/cart`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-    {
-      url: `${base}/ru/profile`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
+    // Р“Р»Р°РІРЅР°СЏ
+    { url: `${base}/ru`, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
+    { url: `${base}/en`, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
 
-    {
-      url: `${base}/en`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
-    {
-      url: `${base}/en/catalog`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${base}/ru/contact`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${base}/en/contact`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${base}/ru/legal`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${base}/en/legal`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
+    // РљР°С‚Р°Р»РѕРі
+    { url: `${base}/ru/catalog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/en/catalog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+
+    // РљРѕСЂР·РёРЅР°
+    { url: `${base}/ru/cart`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${base}/en/cart`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+
+    // РџСЂРѕС„РёР»СЊ
+    { url: `${base}/ru/profile`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${base}/en/profile`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+
+    // Р—Р°РєР°Р·С‹
+    { url: `${base}/ru/profile/orders`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${base}/en/profile/orders`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
+
+    // РљРѕРЅС‚Р°РєС‚С‹
+    { url: `${base}/ru/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/en/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
+
+    // Р®СЂРёРґРёС‡РµСЃРєРёРµ СЃС‚СЂР°РЅРёС†С‹
+    { url: `${base}/ru/legal`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${base}/en/legal`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
+
+    { url: `${base}/ru/legal/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/en/legal/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+
+    { url: `${base}/ru/legal/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/en/legal/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+
+    { url: `${base}/ru/legal/license`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/en/legal/license`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+
+    { url: `${base}/ru/legal/requisites`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/en/legal/requisites`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+
+    { url: `${base}/ru/legal/refund`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/en/legal/refund`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
   ];
 }
 
@@ -1123,7 +1104,6 @@ import type {
 export function TelegramLoginButton() {
   const initialized = useRef(false);
 
-  console.log(" HUY !")
 
   useEffect(() => {
     if (initialized.current) {
@@ -1164,7 +1144,7 @@ export function TelegramLoginButton() {
 
         return;
       }
-      console.log("LOGIN BLYA INIT")
+
       login.init(
         {
           client_id: clientId,
@@ -1737,11 +1717,32 @@ FILE: [locale]\layout.tsx
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  verification: {
-    yandex: 'd89a024f898728e2',
-  },
-};
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  const isRu = params.locale !== 'en';
+  return {
+    title: {
+      default: 'ByteWizard Shop',
+      template: '%s | ByteWizard Shop',
+    },
+    description: isRu 
+      ? 'РњР°РіР°Р·РёРЅ С†РёС„СЂРѕРІС‹С… СѓСЃР»СѓРі'
+      : 'Marketplace for digital services',
+    openGraph: {
+      title: 'ByteWizard Shop',
+      description: isRu 
+        ? 'Р Р°Р·СЂР°Р±РѕС‚РєР° РџРћ, СЃР°Р№С‚РѕРІ Рё РјРѕР±РёР»СЊРЅС‹С… РїСЂРёР»РѕР¶РµРЅРёР№'
+        : 'Software, website and mobile app development',
+      locale: params.locale === 'ru' ? 'ru_RU' : 'en_US',
+    },
+    alternates: {
+      canonical: `https://shop.bytewizard.ru/${params.locale}`,
+      languages: {
+        'ru': '/ru',
+        'en': '/en',
+      },
+    },
+  };
+}
 
 export default function LocaleLayout({
   children,
@@ -1782,6 +1783,25 @@ FILE: [locale]\page.tsx
 import { Suspense } from 'react';
 import { HomeIntro } from '../components/HomeIntro';
 import { FeaturedProducts } from '../components/FeaturedProducts';
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  const isRu = params.locale !== 'en';
+  return {
+    title: isRu ? 'ByteWizard Shop вЂ” РњР°РіР°Р·РёРЅ С†РёС„СЂРѕРІС‹С… СѓСЃР»СѓРі' : 'ByteWizard Shop вЂ” Digital Services Marketplace',
+    description: isRu 
+      ? 'РњР°РіР°Р·РёРЅ С†РёС„СЂРѕРІС‹С… СѓСЃР»СѓРі: СЂР°Р·СЂР°Р±РѕС‚РєР° РџРћ, СЃРѕР·РґР°РЅРёРµ СЃР°Р№С‚РѕРІ, РјРѕР±РёР»СЊРЅС‹С… РїСЂРёР»РѕР¶РµРЅРёР№. Р‘С‹СЃС‚СЂРѕ, РєР°С‡РµСЃС‚РІРµРЅРЅРѕ, СЃ РіР°СЂР°РЅС‚РёРµР№.'
+      : 'Marketplace for digital services: software development, websites, mobile apps. Fast, quality, guaranteed.',
+    openGraph: {
+      title: isRu ? 'ByteWizard Shop вЂ” РњР°РіР°Р·РёРЅ С†РёС„СЂРѕРІС‹С… СѓСЃР»СѓРі' : 'ByteWizard Shop вЂ” Digital Services Marketplace',
+      description: isRu 
+        ? 'Р Р°Р·СЂР°Р±РѕС‚РєР° РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ РѕР±РµСЃРїРµС‡РµРЅРёСЏ, СЃР°Р№С‚РѕРІ Рё РјРѕР±РёР»СЊРЅС‹С… РїСЂРёР»РѕР¶РµРЅРёР№'
+        : 'Software development, websites and mobile apps via Telegram',
+      type: 'website',
+      locale: params.locale === 'ru' ? 'ru_RU' : 'en_US',
+    },
+  };
+}
 
 export default function HomePage() {
   return (
@@ -1807,6 +1827,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../components/ScreenTitle';
+import { getCurrentUser } from '../../lib/auth';
 
 type CartItem = {
   productId: number;
@@ -1916,25 +1937,26 @@ export default function CartPage() {
 
   const handleCheckout = async () => {
     if (selectedCount === 0) return;
-
+    
     try {
-      const res = await fetch('https://api.bytewizard.ru/me', {
-        credentials: 'include',
-        cache: 'no-store'
-      });
+      //  РСЃРїРѕР»СЊР·СѓРµРј getCurrentUser() вЂ” РѕРЅР° СЃР°РјР° РґРµР»Р°РµС‚ refresh РїСЂРё 401
+      const authUser = await getCurrentUser();
       
-      if (!res.ok) {
+      if (!authUser?.user) {
+        // Refresh РЅРµ СѓРґР°Р»СЃСЏ вЂ” РїРѕРєР°Р·С‹РІР°РµРј С‚РѕСЃС‚
         setToast(c.auth_required);
         setTimeout(() => setToast(null), 3000);
         return;
       }
+      
+      // Р•СЃР»Рё РґРѕС€Р»Рё СЃСЋРґР° вЂ” Р°РІС‚РѕСЂРёР·Р°С†РёСЏ OK (С‚РѕРєРµРЅ РѕР±РЅРѕРІРёР»СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё)
     } catch {
       setToast(c.auth_required);
       setTimeout(() => setToast(null), 3000);
       return;
     }
 
-    
+    // РџСЂРѕРґРѕР»Р¶Р°РµРј СЃРѕР·РґР°РЅРёРµ Р·Р°РєР°Р·Р°
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const tempOrder = {
       id: orderId,
@@ -2072,6 +2094,17 @@ FILE: [locale]\catalog\page.tsx
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { getCatalog } from '../../lib/api';
 import { CatalogGrid } from '../../components/CatalogGrid';
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  const isRu = params.locale !== 'en';
+  return {
+    title: isRu ? 'РљР°С‚Р°Р»РѕРі СѓСЃР»СѓРі вЂ” ByteWizard Shop' : 'Services Catalog вЂ” ByteWizard Shop',
+    description: isRu 
+      ? 'РџРѕР»РЅС‹Р№ РєР°С‚Р°Р»РѕРі С†РёС„СЂРѕРІС‹С… СѓСЃР»СѓРі: СЂР°Р·СЂР°Р±РѕС‚РєР° СЃР°Р№С‚РѕРІ, РјРѕР±РёР»СЊРЅС‹С… РїСЂРёР»РѕР¶РµРЅРёР№, Р±РѕС‚РѕРІ, Р°РІС‚РѕРјР°С‚РёР·Р°С†РёСЏ Р±РёР·РЅРµСЃР°.'
+      : 'Full catalog of digital services: website development, mobile apps, bots, business automation.',
+  };
+}
 
 export default async function CatalogPage() {
   const data = await getCatalog();
