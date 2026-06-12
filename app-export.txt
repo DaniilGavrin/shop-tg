@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 10.06.2026 12:59:20
+Дата: 12.06.2026 16:30:56
 
 =============================================
 
@@ -1022,6 +1022,7 @@ export function HomeIntro() {
 FILE: components\ProductCard.tsx
 ─────────────────────────────────────────
 import Link from 'next/link';
+import Image from 'next/image';
 import type { CatalogItem } from '../types/catalog';
 
 type Props = {
@@ -1029,40 +1030,37 @@ type Props = {
 };
 
 export function ProductCard({ item }: Props) {
+  const hasImage = item.preview_image && item.preview_image.trim() !== '';
+  
   return (
     <Link href={`/ru/catalog/${item.id}`}>
-      <article
-        className="
-          group overflow-hidden rounded-3xl
-          border border-[rgba(176,38,255,0.18)]
-          bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.98))]
-          transition-all duration-300
-          hover:-translate-y-1
-          hover:border-[rgba(0,240,255,0.35)]
-          hover:shadow-[0_0_35px_rgba(176,38,255,0.28)]
-        "
-      >
+      <article className="group overflow-hidden rounded-3xl border border-[rgba(176,38,255,0.18)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.98))] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(0,240,255,0.35)] hover:shadow-[0_0_35px_rgba(176,38,255,0.28)]">
         {/* IMAGE */}
-        <div
-          className="
-            aspect-square
-            bg-[radial-gradient(circle_at_top,rgba(176,38,255,0.18),transparent_70%)]
-            group-hover:scale-[1.02]
-            transition-transform duration-300
-          "
-        />
-
+        <div className="aspect-square bg-[radial-gradient(circle_at_top,rgba(176,38,255,0.18),transparent_70%)] group-hover:scale-[1.02] transition-transform duration-300 relative overflow-hidden">
+          {hasImage ? (
+            <Image
+              src={`/images/products/${item.preview_image}`}
+              alt={item.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              style={{ objectFit: 'cover' }}
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-6xl opacity-30">
+              рџ“¦
+            </div>
+          )}
+        </div>
+        
         {/* INFO */}
         <div className="p-3">
           <p className="text-sm font-bold text-[var(--neon-purple)]">
             РћРў {item.base_price_rub.toLocaleString('ru-RU')} в‚Ѕ
           </p>
-
           <h3 className="mt-1 line-clamp-2 text-sm font-medium text-[var(--text-main)] min-h-[40px]">
             {item.name}
           </h3>
-
-          {/* subtle badge space (РЅР° Р±СѓРґСѓС‰РµРµ category) */}
           <div className="mt-2 h-4" />
         </div>
       </article>
@@ -1482,7 +1480,9 @@ export const dictionaries = {
       change: 'РР·РјРµРЅРёС‚СЊ',
       contacts_hint: 'Р’СЃРµ СЃРїРѕСЃРѕР±С‹ СЃРІСЏР·Рё',
       legal: 'Р”РѕРєСѓРјРµРЅС‚С‹',
-      legal_hint: 'РћС„РµСЂС‚Р°, РїРѕР»РёС‚РёРєР°, СЂРµРєРІРёР·РёС‚С‹'
+      legal_hint: 'РћС„РµСЂС‚Р°, РїРѕР»РёС‚РёРєР°, СЂРµРєРІРёР·РёС‚С‹',
+      faq: 'FAQ',
+      faq_hint: 'РЎР°РјС‹Рµ С‡Р°СЃС‚С‹Рµ РІРѕРїСЂРѕСЃС‹ Рё РѕС‚РІРµС‚С‹ РЅР° РЅРёС…'
     },
     legal: {
       title: 'Р”РѕРєСѓРјРµРЅС‚С‹',
@@ -1523,7 +1523,9 @@ export const dictionaries = {
       change: 'Change',
       contacts_hint: 'All ways to connect',
       legal: 'Legal',
-      legal_hint: 'Terms, privacy, requisites'
+      legal_hint: 'Terms, privacy, requisites',
+      faq: 'FAQ',
+      faq_hint: 'The most frequently asked questions and answers to them'
     },
     legal: {
       title: 'Legal',
@@ -2712,7 +2714,7 @@ type PaymentMethod = {
 const PAYMENT_METHODS: PaymentMethod[] = [
   { id: 'card', name: 'Р‘Р°РЅРєРѕРІСЃРєР°СЏ РєР°СЂС‚Р°', icon: 'рџ’і', desc: 'Visa, MC, РњРР ' },
   { id: 'sbp', name: 'РЎР‘Рџ', icon: 'рџЏ¦', desc: 'РЎРёСЃС‚РµРјР° Р±С‹СЃС‚СЂС‹С… РїР»Р°С‚РµР¶РµР№' },
-  { id: 'crypto', name: 'РљСЂРёРїС‚Рѕ', icon: 'в‚ї', desc: 'USDT, TON, BTC' },
+  //{ id: 'crypto', name: 'РљСЂРёРїС‚Рѕ', icon: 'в‚ї', desc: 'USDT, TON, BTC' },
   { id: 'stars', name: 'Telegram Stars', icon: 'в­ђ', desc: 'РћРїР»Р°С‚Р° Р·РІС‘Р·РґР°РјРё' },
   { id: 'invoice', name: 'Р”Р»СЏ СЋСЂ. Р»РёС†', icon: 'рџ“„', desc: 'Р‘РµР·РЅР°Р» СЃ РќР”РЎ' },
 ];
@@ -3182,6 +3184,156 @@ export default function CreateOrderPage() {
           >
             {c.confirm}
           </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\faq\page.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useTranslation } from '../../lib/i18n/useTranslation';
+import { ScreenTitle } from '../../components/ScreenTitle';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+interface FAQItem {
+  id: number;
+  question: string;
+  answer: string;
+}
+
+export default function FAQPage() {
+  const { t } = useTranslation();
+  const pathname = usePathname();
+  const router = useRouter();
+  const locale = pathname.split('/')[1] || 'ru';
+  const [openId, setOpenId] = useState<number | null>(null);
+
+  // РџСЂРёРјРµСЂ FAQ РґР°РЅРЅС‹С… - РїРѕС‚РѕРј РјРѕР¶РЅРѕ РІС‹РЅРµСЃС‚Рё РІ РїРµСЂРµРІРѕРґС‹ РёР»Рё Р±Р°Р·Сѓ
+  const faqItems: FAQItem[] = [
+    {
+      id: 1,
+      question: 'РљР°Рє РѕС„РѕСЂРјРёС‚СЊ Р·Р°РєР°Р·?',
+      answer: 'Р’С‹Р±РµСЂРёС‚Рµ РЅСѓР¶РЅСѓСЋ СѓСЃР»СѓРіСѓ РёР· РєР°С‚Р°Р»РѕРіР°, РЅР°Р¶РјРёС‚Рµ "Р—Р°РєР°Р·Р°С‚СЊ", Р·Р°РїРѕР»РЅРёС‚Рµ brief Рё РѕРїР»Р°С‚РёС‚Рµ. РџРѕСЃР»Рµ СЌС‚РѕРіРѕ РјС‹ СЃРІСЏР¶РµРјСЃСЏ СЃ РІР°РјРё РІ Telegram РґР»СЏ СѓС‚РѕС‡РЅРµРЅРёСЏ РґРµС‚Р°Р»РµР№.'
+    },
+    {
+      id: 2,
+      question: 'РљР°РєРёРµ СЃСЂРѕРєРё СЂР°Р·СЂР°Р±РѕС‚РєРё?',
+      answer: 'РЎСЂРѕРєРё Р·Р°РІРёСЃСЏС‚ РѕС‚ СЃР»РѕР¶РЅРѕСЃС‚Рё РїСЂРѕРµРєС‚Р°. Р›РµРЅРґРёРЅРі вЂ” 3-5 РґРЅРµР№, СЃР°Р№С‚-РІРёР·РёС‚РєР° вЂ” 5-7 РґРЅРµР№, РёРЅС‚РµСЂРЅРµС‚-РјР°РіР°Р·РёРЅ вЂ” РѕС‚ 2 РЅРµРґРµР»СЊ. РўРѕС‡РЅС‹Рµ СЃСЂРѕРєРё РѕР±СЃСѓР¶РґР°РµРј РїРѕСЃР»Рµ РїРѕР»СѓС‡РµРЅРёСЏ brief.'
+    },
+    {
+      id: 3,
+      question: 'РљР°РєРёРµ СЃРїРѕСЃРѕР±С‹ РѕРїР»Р°С‚С‹ РІС‹ РїСЂРёРЅРёРјР°РµС‚Рµ?',
+      answer: 'РњС‹ РїСЂРёРЅРёРјР°РµРј РєСЂРёРїС‚РѕРІР°Р»СЋС‚Сѓ (USDT, TON, BTC), Р±Р°РЅРєРѕРІСЃРєРёРµ РїРµСЂРµРІРѕРґС‹ Рё СЌР»РµРєС‚СЂРѕРЅРЅС‹Рµ РєРѕС€РµР»СЊРєРё. Р”Р»СЏ РјРµР¶РґСѓРЅР°СЂРѕРґРЅС‹С… РєР»РёРµРЅС‚РѕРІ РїСЂРµРґРїРѕС‡С‚РёС‚РµР»СЊРЅРµРµ РєСЂРёРїС‚Рѕ-РїР»Р°С‚РµР¶Рё.'
+    },
+    {
+      id: 4,
+      question: 'РњРѕР¶РЅРѕ Р»Рё РІРЅРµСЃС‚Рё РїСЂР°РІРєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°?',
+      answer: 'Р”Р°, РІ СЃС‚РѕРёРјРѕСЃС‚СЊ РІРєР»СЋС‡РµРЅРѕ 2 СЂР°СѓРЅРґР° Р±РµСЃРїР»Р°С‚РЅС‹С… РїСЂР°РІРѕРє. Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РґРѕСЂР°Р±РѕС‚РєРё РѕРїР»Р°С‡РёРІР°СЋС‚СЃСЏ РѕС‚РґРµР»СЊРЅРѕ РїРѕ РїРѕС‡Р°СЃРѕРІРѕР№ СЃС‚Р°РІРєРµ.'
+    },
+    {
+      id: 5,
+      question: 'РџСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚Рµ Р»Рё РІС‹ РїРѕРґРґРµСЂР¶РєСѓ РїРѕСЃР»Рµ Р·Р°РїСѓСЃРєР°?',
+      answer: 'Р”Р°, РјС‹ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµРј 30 РґРЅРµР№ Р±РµСЃРїР»Р°С‚РЅРѕР№ С‚РµС…РЅРёС‡РµСЃРєРѕР№ РїРѕРґРґРµСЂР¶РєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°. Р”Р°Р»РµРµ РјРѕР¶РЅРѕ РѕС„РѕСЂРјРёС‚СЊ РµР¶РµРјРµСЃСЏС‡РЅСѓСЋ РїРѕРґРїРёСЃРєСѓ РЅР° РїРѕРґРґРµСЂР¶РєСѓ.'
+    },
+    {
+      id: 6,
+      question: 'Р Р°Р±РѕС‚Р°РµС‚Рµ Р»Рё РІС‹ СЃ РєР»РёРµРЅС‚Р°РјРё РёР· РґСЂСѓРіРёС… СЃС‚СЂР°РЅ?',
+      answer: 'Р”Р°, РјС‹ СЂР°Р±РѕС‚Р°РµРј СЃ РєР»РёРµРЅС‚Р°РјРё РїРѕ РІСЃРµРјСѓ РјРёСЂСѓ. Р’СЃРµ РєРѕРјРјСѓРЅРёРєР°С†РёРё РІРµРґСѓС‚СЃСЏ РЅР° СЂСѓСЃСЃРєРѕРј РёР»Рё Р°РЅРіР»РёР№СЃРєРѕРј СЏР·С‹РєР°С… С‡РµСЂРµР· Telegram.'
+    },
+    {
+        id: 7,
+        question: 'Р§С‚Рѕ РґРµР»Р°С‚СЊ РµСЃР»Рё РЅРµ РЅР°С€С‘Р» РЅСѓР¶РЅС‹Р№ РјРЅРµ С‚РѕРІР°СЂ?',
+        answer: 'РЎРІСЏР¶РёС‚РµСЃСЊ СЃ РЅР°РјРё Рё РјС‹ РѕР±СЃСѓРґРёРј РІР°С€Сѓ Р·Р°РґР°С‡Сѓ Рё СЃРѕР±РµСЂРµРј РїРµСЂСЃРѕРЅР°Р»СЊРЅРѕ РїРѕРґ РІР°С€Рё С‚СЂРµР±РѕРІР°РЅРёСЏ С‚РѕРІР°СЂ.'
+    }
+  ];
+
+  function toggleItem(id: number) {
+    setOpenId(openId === id ? null : id);
+  }
+
+  return (
+    <>
+      {/* РљРЅРѕРїРєР° РЅР°Р·Р°Рґ */}
+      <button
+        onClick={() => router.back()}
+        className="mb-4 flex items-center gap-2 text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        РќР°Р·Р°Рґ
+      </button>
+
+      <ScreenTitle>{t.profile.faq || 'Р§Р°СЃС‚Рѕ Р·Р°РґР°РІР°РµРјС‹Рµ РІРѕРїСЂРѕСЃС‹'}</ScreenTitle>
+
+      <div className="mt-6 space-y-3">
+        {faqItems.map((item) => (
+          <div
+            key={item.id}
+            className="overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+          >
+            {/* Р“СЂР°РґРёРµРЅС‚РЅР°СЏ РїРѕР»РѕСЃРєР° СЃРІРµСЂС…Сѓ */}
+            <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+
+            {/* Р’РѕРїСЂРѕСЃ (РєР»РёРєР°Р±РµР»СЊРЅС‹Р№) */}
+            <button
+              onClick={() => toggleItem(item.id)}
+              className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[rgba(176,38,255,0.05)]"
+            >
+              <h3 className="text-base font-semibold text-[var(--text-main)]">
+                {item.question}
+              </h3>
+              <svg
+                className={`h-5 w-5 shrink-0 text-[var(--neon-purple)] transition-transform duration-300 ${
+                  openId === item.id ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* РћС‚РІРµС‚ (СЂР°СЃРєСЂС‹РІР°РµС‚СЃСЏ) */}
+            <div
+              className={`grid transition-all duration-300 ease-in-out ${
+                openId === item.id
+                  ? 'grid-rows-[1fr] opacity-100'
+                  : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="border-t border-[rgba(176,38,255,0.15)] px-5 py-4">
+                  <p className="text-sm leading-relaxed text-[var(--text-dim)]">
+                    {item.answer}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Р‘Р»РѕРє СЃ РїСЂРµРґР»РѕР¶РµРЅРёРµРј СЃРІСЏР·Р°С‚СЊСЃСЏ, РµСЃР»Рё РЅРµ РЅР°С€Р»Рё РѕС‚РІРµС‚ */}
+      <div className="mt-6 overflow-hidden rounded-2xl border border-[rgba(0,240,255,0.26)] bg-[linear-gradient(145deg,rgba(9,24,45,0.92),rgba(3,7,16,0.94))] shadow-[0_0_20px_rgba(0,240,255,0.12)]">
+        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-blue),var(--neon-purple),var(--neon-pink))]" />
+        <div className="px-5 py-4 text-center">
+          <p className="text-sm text-[var(--text-dim)]">
+            РќРµ РЅР°С€Р»Рё РѕС‚РІРµС‚ РЅР° СЃРІРѕР№ РІРѕРїСЂРѕСЃ?
+          </p>
+          <a
+            href={`/${locale}/contact`}
+            className="mt-2 inline-block text-sm font-semibold text-[var(--neon-blue)] transition hover:text-[var(--neon-pink)] hover:underline"
+          >
+            РЎРІСЏР·Р°С‚СЊСЃСЏ СЃ РїРѕРґРґРµСЂР¶РєРѕР№ в†’
+          </a>
         </div>
       </div>
     </>
@@ -3976,6 +4128,27 @@ export default function ProfilePage() {
             </p>
             <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
               {t.profile.legal_hint || 'РџРѕР»РёС‚РёРєР°, РѕС„РµСЂС‚Р° Рё СЂРµРєРІРёР·РёС‚С‹'}
+            </h3>
+          </div>
+          <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </Link>
+
+      {/* РџР»Р°С€РєР°: FAQ */}
+      <Link
+        href={`/${locale}/faq`}
+        className="mt-4 block overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+      >
+        <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+              {t.profile.faq || 'FAQ'}
+            </p>
+            <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">
+              {t.profile.faq_hint || 'РЎР°РјС‹Рµ С‡Р°СЃС‚С‹Рµ РІРѕРїСЂРѕСЃС‹ Рё РѕС‚РІРµС‚С‹'}
             </h3>
           </div>
           <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">

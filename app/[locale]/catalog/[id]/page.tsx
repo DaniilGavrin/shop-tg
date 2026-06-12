@@ -10,7 +10,9 @@ type Selections = Record<string, string | string[] | number | boolean>;
 
 async function fetchProduct(id: string): Promise<CatalogItem | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/catalog/${id}`);
+    const res = await fetch(`${API_BASE_URL}/catalog/${id}`, {
+      next: { revalidate: 86400 },
+    });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`API ${res.status}`);
     const data: { item: CatalogItem } = await res.json();

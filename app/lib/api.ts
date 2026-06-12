@@ -7,7 +7,7 @@ export async function getCatalog(): Promise<CatalogResponse> {
     console.log('[CATALOG] Fetching from API...');
     
     const response = await fetch(`${API_BASE_URL}/catalog`, {
-      cache: 'no-store',
+      next: { revalidate: 86400 }, 
     });
 
     console.log('[CATALOG] API STATUS:', response.status);
