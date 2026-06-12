@@ -7,8 +7,13 @@ type Props = {
 };
 
 export function ProductCard({ item }: Props) {
+  // 🛡️ ЗАЩИТА: Если ID нет, не рендерим карточку вообще
+  if (!item || !item.id) {
+    return null;
+  }
+
   const hasImage = item.preview_image && item.preview_image.trim() !== '';
-  
+
   return (
     <Link href={`/ru/catalog/${item.id}`}>
       <article className="group overflow-hidden rounded-3xl border border-[rgba(176,38,255,0.18)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.98))] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(0,240,255,0.35)] hover:shadow-[0_0_35px_rgba(176,38,255,0.28)]">
@@ -29,7 +34,6 @@ export function ProductCard({ item }: Props) {
             </div>
           )}
         </div>
-        
         {/* INFO */}
         <div className="p-3">
           <p className="text-sm font-bold text-[var(--neon-purple)]">

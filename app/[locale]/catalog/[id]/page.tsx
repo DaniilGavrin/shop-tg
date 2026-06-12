@@ -4,13 +4,20 @@ import { ProductConfigurator } from './ProductConfigurator';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
+// Серверная функция с реальным кэшем на 3 дня (259200 сек)
 async function getProduct(id: string): Promise<CatalogItem | null> {
   try {
+    if (!id || id === 'undefined' || id === 'null') {
+      return null;
+    }
+
     const res = await fetch(`${API_BASE_URL}/catalog/${id}`, {
-      next: { revalidate: 259200 }, // Кэш на 3 дня (259200 секунд)
+      next: { revalidate: 259200 }, // 3 дня. РАБОТАЕТ ТОЛЬКО В СЕРВЕРНЫХ КОМПОНЕНТАХ!
     });
-    if (res.status === 404) return null;
+    
+    if (res.status === 404 || res.status === 422) return null;
     if (!res.ok) throw new Error(`API ${res.status}`);
+    
     const data: { item: CatalogItem } = await res.json();
     return data.item.is_active ? data.item : null;
   } catch (error) {
@@ -19,11 +26,12 @@ async function getProduct(id: string): Promise<CatalogItem | null> {
   }
 }
 
+// ВНИМАНИЕ: Здесь НЕТ 'use client'
 export default async function ProductPage({ params }: { params: { locale: string; id: string } }) {
   const product = await getProduct(params.id);
 
   if (!product) {
-    notFound();
+    notFound(); // Покажет стандартную 404 страницу Next.js
   }
 
   const priceFormatted = new Intl.NumberFormat('ru-RU').format(product.base_price_rub);
@@ -88,6 +96,7 @@ export default async function ProductPage({ params }: { params: { locale: string
         </div>
       </section>
 
+      {/* Интерактивная часть вынесена в отдельный клиентский компонент */}
       {product.is_configurable && Object.keys(product.metadata.config_schema).length > 0 && (
         <ProductConfigurator product={product} locale={params.locale} />
       )}
