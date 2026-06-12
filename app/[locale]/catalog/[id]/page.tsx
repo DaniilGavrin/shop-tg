@@ -4,20 +4,16 @@ import { ProductConfigurator } from './ProductConfigurator';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
-// Серверная функция с реальным кэшем на 3 дня (259200 сек)
 async function getProduct(id: string): Promise<CatalogItem | null> {
   try {
     if (!id || id === 'undefined' || id === 'null') {
       return null;
     }
-
     const res = await fetch(`${API_BASE_URL}/catalog/${id}`, {
-      next: { revalidate: 259200 }, // 3 дня. РАБОТАЕТ ТОЛЬКО В СЕРВЕРНЫХ КОМПОНЕНТАХ!
+      next: { revalidate: 259200 }, // 3 дня
     });
-    
     if (res.status === 404 || res.status === 422) return null;
     if (!res.ok) throw new Error(`API ${res.status}`);
-    
     const data: { item: CatalogItem } = await res.json();
     return data.item.is_active ? data.item : null;
   } catch (error) {
@@ -26,16 +22,17 @@ async function getProduct(id: string): Promise<CatalogItem | null> {
   }
 }
 
-// ВНИМАНИЕ: Здесь НЕТ 'use client'
-export default async function ProductPage({ params }: { params: { locale: string; id: string } }) {
-  const product = await getProduct(params.id);
+export default async function ProductPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
+  const resolvedParams = await params;
+  
+  const product = await getProduct(resolvedParams.id);
 
   if (!product) {
-    notFound(); // Покажет стандартную 404 страницу Next.js
+    notFound();
   }
 
   const priceFormatted = new Intl.NumberFormat('ru-RU').format(product.base_price_rub);
-  const isRu = params.locale !== 'en';
+  const isRu = resolvedParams.locale !== 'en';
   const t = {
     back: isRu ? '← Назад' : '← Back',
     base_price: isRu ? 'Базовая цена:' : 'Base price:',
@@ -96,9 +93,8 @@ export default async function ProductPage({ params }: { params: { locale: string
         </div>
       </section>
 
-      {/* Интерактивная часть вынесена в отдельный клиентский компонент */}
       {product.is_configurable && Object.keys(product.metadata.config_schema).length > 0 && (
-        <ProductConfigurator product={product} locale={params.locale} />
+        <ProductConfigurator product={product} locale={resolvedParams.locale} />
       )}
       
       <div className="h-24" />

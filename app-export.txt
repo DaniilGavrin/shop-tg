@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 12.06.2026 17:35:18
+Дата: 12.06.2026 19:44:22
 
 =============================================
 
@@ -1030,8 +1030,13 @@ type Props = {
 };
 
 export function ProductCard({ item }: Props) {
+  // рџ›ЎпёЏ Р—РђР©РРўРђ: Р•СЃР»Рё ID РЅРµС‚, РЅРµ СЂРµРЅРґРµСЂРёРј РєР°СЂС‚РѕС‡РєСѓ РІРѕРѕР±С‰Рµ
+  if (!item || !item.id) {
+    return null;
+  }
+
   const hasImage = item.preview_image && item.preview_image.trim() !== '';
-  
+
   return (
     <Link href={`/ru/catalog/${item.id}`}>
       <article className="group overflow-hidden rounded-3xl border border-[rgba(176,38,255,0.18)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.98))] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(0,240,255,0.35)] hover:shadow-[0_0_35px_rgba(176,38,255,0.28)]">
@@ -1052,7 +1057,6 @@ export function ProductCard({ item }: Props) {
             </div>
           )}
         </div>
-        
         {/* INFO */}
         <div className="p-3">
           <p className="text-sm font-bold text-[var(--neon-purple)]">
@@ -1302,59 +1306,89 @@ export async function getFeaturedCatalog(): Promise<CatalogResponse> {
 ─────────────────────────────────────────
 FILE: lib\auth.ts
 ─────────────────────────────────────────
+// lib/auth.ts
 const API_BASE = 'https://api.bytewizard.ru';
 
+// Р“Р»РѕР±Р°Р»СЊРЅР°СЏ Р±Р»РѕРєРёСЂРѕРІРєР°: РµСЃР»Рё true, Р·РЅР°С‡РёС‚, СЂРµС„СЂРµС€ СѓР¶Рµ РёРґРµС‚.
+// Р’СЃРµ РЅРѕРІС‹Рµ Р·Р°РїСЂРѕСЃС‹ Р±СѓРґСѓС‚ Р¶РґР°С‚СЊ Р·Р°РІРµСЂС€РµРЅРёСЏ СЌС‚РѕРіРѕ РїСЂРѕРјРёСЃР°.
+let refreshPromise: Promise<boolean> | null = null;
+
 async function refreshToken(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include', // РћР±СЏР·Р°С‚РµР»СЊРЅРѕ: РѕС‚РїСЂР°РІР»СЏРµРј РєСѓРєСѓ refresh_token
-    });
-    
-    if (res.ok) {
-      console.log('[AUTH] Token refreshed successfully');
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('[AUTH] Refresh token request failed:', error);
-    return false;
+  // Р•СЃР»Рё СЂРµС„СЂРµС€ СѓР¶Рµ РёРґРµС‚, РІРѕР·РІСЂР°С‰Р°РµРј СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РїСЂРѕРјРёСЃ (Р·Р°С‰РёС‚Р° РѕС‚ РіРѕРЅРєРё)
+  if (refreshPromise) {
+    return refreshPromise;
   }
+
+  console.log('[AUTH] Starting silent token refresh...');
+  
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include', // Р’Р°Р¶РЅРѕ: РѕС‚РїСЂР°РІР»СЏРµРј РєСѓРєСѓ refresh_token
+        cache: 'no-store',
+      });
+      
+      if (res.ok) {
+        console.log('[AUTH] Token refreshed successfully');
+        return true;
+      }
+      console.warn('[AUTH] Refresh failed, status:', res.status);
+      return false;
+    } catch (error) {
+      console.error('[AUTH] Refresh token request failed:', error);
+      return false;
+    } finally {
+      // РћР±СЏР·Р°С‚РµР»СЊРЅРѕ СЃРЅРёРјР°РµРј Р±Р»РѕРєРёСЂРѕРІРєСѓ РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ (СѓСЃРїРµС€РЅРѕРіРѕ РёР»Рё РЅРµС‚)
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
+// РЈРЅРёРІРµСЂСЃР°Р»СЊРЅР°СЏ РѕР±РµСЂС‚РєР°. РРЎРџРћР›Р¬Р—РЈР™ Р•Р• Р’РњР•РЎРўРћ РћР‘Р«Р§РќРћР“Рћ fetch Р’ Р›Р®Р‘Р«РҐ Р—РђРџР РћРЎРђРҐ Рљ API
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  // 1. Р”РµР»Р°РµРј РёСЃС…РѕРґРЅС‹Р№ Р·Р°РїСЂРѕСЃ
+  let res = await fetch(url, {
+    ...options,
+    credentials: 'include',
+    cache: options.cache || 'no-store',
+  });
+
+  // 2. Р•СЃР»Рё С‚РѕРєРµРЅ РїСЂРѕС‚СѓС… (401)
+  if (res.status === 401) {
+    console.log('[AUTH] 401 detected. Queuing request for silent refresh...');
+    
+    // Р–РґРµРј Р·Р°РІРµСЂС€РµРЅРёСЏ СЂРµС„СЂРµС€Р°. Р•СЃР»Рё РѕРЅ СѓР¶Рµ РёРґРµС‚, РјС‹ РїСЂРѕСЃС‚Рѕ РІСЃС‚Р°РЅРµРј РІ РѕС‡РµСЂРµРґСЊ.
+    const isRefreshed = await refreshToken();
+    
+    if (isRefreshed) {
+      // 3. РўРѕРєРµРЅ РѕР±РЅРѕРІР»РµРЅ (Р±СЂР°СѓР·РµСЂ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїРѕРґСЃС‚Р°РІРёР» РЅРѕРІСѓСЋ РєСѓРєСѓ access_token).
+      // РўРёС…Рѕ РїРѕРІС‚РѕСЂСЏРµРј РёСЃС…РѕРґРЅС‹Р№ Р·Р°РїСЂРѕСЃ. РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЌС‚РѕРіРѕ РЅРµ Р·Р°РјРµС‚РёС‚.
+      console.log('[AUTH] Retrying original request with new token...');
+      res = await fetch(url, {
+        ...options,
+        credentials: 'include',
+        cache: options.cache || 'no-store',
+      });
+    } else {
+      // 4. Р РµС„СЂРµС€ РЅРµ СѓРґР°Р»СЃСЏ (РїСЂРѕС‚СѓС… Рё refresh_token, РёР»Рё РµРіРѕ РѕС‚РѕР·РІР°Р»Рё).
+      // Р’РѕР·РІСЂР°С‰Р°РµРј 401, С‡С‚РѕР±С‹ РєРѕРјРїРѕРЅРµРЅС‚ РјРѕРі РїРѕРєР°Р·Р°С‚СЊ "Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ".
+      console.warn('[AUTH] Silent refresh failed completely. Returning 401.');
+    }
+  }
+
+  return res;
+}
+
+// РџРѕР»СѓС‡РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ С‚РµРїРµСЂСЊ С‚РѕР¶Рµ РёСЃРїРѕР»СЊР·СѓРµС‚ РїСѓР»РµРЅРµРїСЂРѕР±РёРІР°РµРјС‹Р№ authFetch
 export async function getCurrentUser() {
   try {
-    // 1. РџСЂРѕР±СѓРµРј РїРѕР»СѓС‡РёС‚СЊ РґР°РЅРЅС‹Рµ СЃ С‚РµРєСѓС‰РёРј С‚РѕРєРµРЅРѕРј
-    let res = await fetch(`${API_BASE}/me`, {
-      method: 'GET',
-      credentials: 'include',
-      cache: 'no-store',
-    });
-
-    // 2. Р•СЃР»Рё С‚РѕРєРµРЅ РёСЃС‚С‘Рє (401), РїС‹С‚Р°РµРјСЃСЏ РµРіРѕ РѕР±РЅРѕРІРёС‚СЊ
-    if (res.status === 401) {
-      console.log('[AUTH] Access token expired, attempting refresh...');
-      const isRefreshed = await refreshToken();
-      
-      if (isRefreshed) {
-        // 3. Р•СЃР»Рё СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІРёР»Рё, РїРѕРІС‚РѕСЂСЏРµРј Р·Р°РїСЂРѕСЃ РЅР° /me 
-        // (Р±СЂР°СѓР·РµСЂ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїРѕРґСЃС‚Р°РІРёС‚ РЅРѕРІСѓСЋ РєСѓРєСѓ access_token)
-        res = await fetch(`${API_BASE}/me`, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-        });
-      } else {
-        // Р РµС„СЂРµС€ РЅРµ СѓРґР°Р»СЃСЏ (РЅР°РїСЂРёРјРµСЂ, РёСЃС‚С‘Рє Рё refresh token, РёР»Рё РµРіРѕ РѕС‚РѕР·РІР°Р»Рё)
-        console.log('[AUTH] Refresh failed, user is logged out');
-        return null;
-      }
-    }
-
+    const res = await authFetch(`${API_BASE}/me`, { method: 'GET' });
     if (res.ok) {
       return await res.json();
     }
-    
     return null;
   } catch (error) {
     console.error('[AUTH] Failed to fetch user:', error);
@@ -1547,6 +1581,17 @@ export const dictionaries = {
     }
   },
 } as const;
+
+
+─────────────────────────────────────────
+FILE: lib\i18n\server.ts
+─────────────────────────────────────────
+import { dictionaries } from './dictionaries';
+
+export function getTranslation(locale: string) {
+  const dict = dictionaries[locale as keyof typeof dictionaries] ?? dictionaries.ru;
+  return { t: dict, locale };
+}
 
 
 ─────────────────────────────────────────
@@ -2147,241 +2192,44 @@ export default function ProductLoading() {
 ─────────────────────────────────────────
 FILE: [locale]\catalog\[id]\page.tsx
 ─────────────────────────────────────────
-'use client';
-
-import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
-import type { CatalogItem, ConfigField } from '../../../types/catalog';
+import { notFound } from 'next/navigation';
+import type { CatalogItem } from '../../../types/catalog';
+import { ProductConfigurator } from './ProductConfigurator';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
-type Selections = Record<string, string | string[] | number | boolean>;
-
-async function fetchProduct(id: string): Promise<CatalogItem | null> {
+// РЎРµСЂРІРµСЂРЅР°СЏ С„СѓРЅРєС†РёСЏ СЃ СЂРµР°Р»СЊРЅС‹Рј РєСЌС€РµРј РЅР° 3 РґРЅСЏ (259200 СЃРµРє)
+async function getProduct(id: string): Promise<CatalogItem | null> {
   try {
+    if (!id || id === 'undefined' || id === 'null') {
+      return null;
+    }
+
     const res = await fetch(`${API_BASE_URL}/catalog/${id}`, {
-      next: { revalidate: 86400 },
+      next: { revalidate: 259200 }, // 3 РґРЅСЏ. Р РђР‘РћРўРђР•Рў РўРћР›Р¬РљРћ Р’ РЎР•Р Р’Р•Р РќР«РҐ РљРћРњРџРћРќР•РќРўРђРҐ!
     });
-    if (res.status === 404) return null;
+    
+    if (res.status === 404 || res.status === 422) return null;
     if (!res.ok) throw new Error(`API ${res.status}`);
+    
     const data: { item: CatalogItem } = await res.json();
     return data.item.is_active ? data.item : null;
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch product:', error);
     return null;
   }
 }
 
-// рџ”№ РќРћР’РђРЇ Р¤РЈРќРљР¦РРЇ: Р’Р°Р»РёРґР°С†РёСЏ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С… РїРѕР»РµР№
-function validateRequiredFields(
-  schema: Record<string, ConfigField>,
-  selections: Selections
-): { isValid: boolean; missing: string[] } {
-  const missing: string[] = [];
-  
-  for (const [fieldId, field] of Object.entries(schema)) {
-    // РџСЂРѕРїСѓСЃРєР°РµРј РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РїРѕР»СЏ
-    if (!field.required) continue;
-    
-    const val = selections[fieldId];
-    let isEmpty = false;
-
-    // РџСЂРѕРІРµСЂСЏРµРј РїСѓСЃС‚РѕС‚Сѓ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° РїРѕР»СЏ
-    switch (field.type) {
-      case 'textarea':
-      case 'select':
-        isEmpty = typeof val !== 'string' || val.trim() === '';
-        break;
-      case 'checkbox':
-        // Р”Р»СЏ С‡РµРєР±РѕРєСЃРѕРІ "РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ" РѕР±С‹С‡РЅРѕ Р·РЅР°С‡РёС‚ "РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РѕС‚РјРµС‡РµРЅ"
-        isEmpty = val !== true;
-        break;
-      case 'number':
-        isEmpty = typeof val !== 'number' || isNaN(val);
-        break;
-      case 'multiselect':
-        isEmpty = !Array.isArray(val) || val.length === 0;
-        break;
-      default:
-        isEmpty = val === undefined || val === null || val === '';
-    }
-
-    if (isEmpty) {
-      missing.push(field.label);
-    }
-  }
-  
-  return { isValid: missing.length === 0, missing };
-}
-
-function calculateDynamicPrice(
-  basePrice: number,
-  selections: Selections,
-  schema: Record<string, ConfigField>
-): number {
-  let total = basePrice;
-  for (const [fieldId, field] of Object.entries(schema)) {
-    const val = selections[fieldId];
-    if (val === undefined) continue;
-
-    if (field.type === 'checkbox' && val === true) {
-      total += field.price_modifier ?? 0;
-    } else if (field.type === 'select' && typeof val === 'string') {
-      const opt = field.options?.find(o => o.value === val);
-      total += opt?.price_modifier ?? 0;
-    } else if (field.type === 'number' && typeof val === 'number' && field.price_per_unit) {
-      const baseCount = (field.default ?? field.min ?? 0) as number;
-      const extra = Math.max(0, val - baseCount);
-      total += extra * field.price_per_unit;
-    } else if (field.type === 'multiselect' && Array.isArray(val)) {
-      for (const v of val) {
-        const opt = field.options?.find(o => o.value === v);
-        total += opt?.price_modifier ?? 0;
-      }
-    }
-  }
-  return Math.round(total);
-}
-
-function calculateDynamicDelivery(
-  baseDays: number,
-  selections: Selections,
-  schema: Record<string, ConfigField>,
-  deliveryMeta: { min_days: number; max_days: number }
-): number {
-  let optionDays = 0;
-  for (const [fieldId, field] of Object.entries(schema)) {
-    if (fieldId === 'urgency') continue;
-    const val = selections[fieldId];
-    if (val === undefined) continue;
-    
-    const getDays = (mod?: number, price?: number) => 
-      mod ?? Math.max(0, Math.floor((price ?? 0) / 8000));
-
-    if (field.type === 'checkbox' && val === true) {
-      optionDays += getDays(field.delivery_days_modifier, field.price_modifier);
-    } else if (field.type === 'select' && typeof val === 'string') {
-      const opt = field.options?.find(o => o.value === val);
-      optionDays += getDays(opt?.delivery_days_modifier, opt?.price_modifier);
-    } else if (field.type === 'multiselect' && Array.isArray(val)) {
-      for (const v of val) {
-        const opt = field.options?.find(o => o.value === v);
-        optionDays += getDays(opt?.delivery_days_modifier, opt?.price_modifier);
-      }
-    }
-  }
-
-  let totalDays = baseDays + optionDays;
-
-  const urgency = selections['urgency'] as string | undefined;
-  const URGENCY_MULTIPLIERS: Record<string, number> = {
-    normal: 1.0,
-    fast: 0.85,
-    ultra_fast: 0.70,
-  };
-  
-  const multiplier = URGENCY_MULTIPLIERS[urgency ?? 'normal'] ?? 1.0;
-  totalDays = Math.floor(totalDays * multiplier);
-
-  const min = deliveryMeta.min_days || Math.floor(baseDays * 0.4);
-  return Math.max(min, Math.ceil(totalDays));
-}
-
-export default function ProductPage() {
-  const router = useRouter();
-  const { locale, id } = useParams<{ locale: string; id: string }>();
-
-  const [product, setProduct] = useState<CatalogItem | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selections, setSelections] = useState<Selections>({});
-  const [toast, setToast] = useState<string | null>(null);
-
-  const isRu = locale !== 'en';
-
-  useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-    const load = async () => {
-      const data = await fetchProduct(id);
-      if (!cancelled) {
-        setProduct(data);
-        setLoading(false);
-        if (data?.metadata.config_schema) {
-          const defaults: Selections = {};
-          for (const [key, field] of Object.entries(data.metadata.config_schema)) {
-            if (field.type === 'number') defaults[key] = field.default ?? field.min ?? 0;
-            else if (field.type === 'checkbox') defaults[key] = false;
-            else if (field.type === 'select') defaults[key] = field.default ?? '';
-            else if (field.type === 'multiselect') defaults[key] = [];
-          }
-          setSelections(defaults);
-        }
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [id]);
-
-  const handleSelectionChange = useCallback((fieldId: string, value: Selections[string]) => {
-    setSelections(prev => ({ ...prev, [fieldId]: value }));
-  }, []);
-
-  const displayPrice = product
-    ? calculateDynamicPrice(product.base_price_rub, selections, product.metadata.config_schema)
-    : 0;
-
-  const displayDeliveryDays = product
-    ? calculateDynamicDelivery(
-        product.metadata.delivery.base_days,
-        selections,
-        product.metadata.config_schema,
-        product.metadata.delivery
-      )
-    : 0;
-
-  // рџ”№ РћР‘РќРћР’Р›Р•РќРќРђРЇ Р¤РЈРќРљР¦РРЇ: Р”РѕР±Р°РІР»РµРЅРёРµ РІ РєРѕСЂР·РёРЅСѓ СЃ РІР°Р»РёРґР°С†РёРµР№
-  const handleAddToCart = () => {
-    if (!product) return;
-    
-    // 1. Р—Р°РїСѓСЃРєР°РµРј РІР°Р»РёРґР°С†РёСЋ
-    const { isValid, missing } = validateRequiredFields(product.metadata.config_schema, selections);
-    
-    // 2. Р•СЃР»Рё РµСЃС‚СЊ РѕС€РёР±РєРё вЂ” Р±Р»РѕРєРёСЂСѓРµРј РґРѕР±Р°РІР»РµРЅРёРµ Рё РїРѕРєР°Р·С‹РІР°РµРј С‚РѕСЃС‚
-    if (!isValid) {
-      setToast(`вљ пёЏ Р—Р°РїРѕР»РЅРёС‚Рµ: ${missing.join(', ')}`);
-      setTimeout(() => setToast(null), 3000);
-      return;
-    }
-
-    // 3. Р•СЃР»Рё РІСЃС‘ РѕРє вЂ” РґРѕР±Р°РІР»СЏРµРј РІ РєРѕСЂР·РёРЅСѓ
-    const cart = JSON.parse(localStorage.getItem('bw_cart') || '[]');
-    cart.push({
-      productId: product.id,
-      name: product.name,
-      selections,
-      price: displayPrice,
-      deliveryDays: displayDeliveryDays,
-      addedAt: new Date().toISOString()
-    });
-    localStorage.setItem('bw_cart', JSON.stringify(cart));
-    
-    setToast(isRu ? 'вњ… Р”РѕР±Р°РІР»РµРЅРѕ РІ РєРѕСЂР·РёРЅСѓ!' : 'вњ… Added to cart!');
-    setTimeout(() => setToast(null), 2000);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] grid place-items-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--neon-purple)] border-t-transparent" />
-      </div>
-    );
-  }
+// Р’РќРРњРђРќРР•: Р—РґРµСЃСЊ РќР•Рў 'use client'
+export default async function ProductPage({ params }: { params: { locale: string; id: string } }) {
+  const product = await getProduct(params.id);
 
   if (!product) {
-    router.replace(`/${locale || 'ru'}/catalog`);
-    return null;
+    notFound(); // РџРѕРєР°Р¶РµС‚ СЃС‚Р°РЅРґР°СЂС‚РЅСѓСЋ 404 СЃС‚СЂР°РЅРёС†Сѓ Next.js
   }
 
-  const priceFormatted = new Intl.NumberFormat('ru-RU').format(displayPrice);
+  const priceFormatted = new Intl.NumberFormat('ru-RU').format(product.base_price_rub);
+  const isRu = params.locale !== 'en';
   const t = {
     back: isRu ? 'в†ђ РќР°Р·Р°Рґ' : 'в†ђ Back',
     base_price: isRu ? 'Р‘Р°Р·РѕРІР°СЏ С†РµРЅР°:' : 'Base price:',
@@ -2389,142 +2237,17 @@ export default function ProductPage() {
     days: isRu ? 'РґРЅ.' : 'days',
     features: isRu ? 'Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё:' : 'Features:',
     stack: isRu ? 'РўРµС…РЅРѕР»РѕРіРёРё:' : 'Stack:',
-    add_to_cart: isRu ? 'Р’ РєРѕСЂР·РёРЅСѓ' : 'Add to cart',
-    price_prefix: isRu ? 'РС‚РѕРіРѕ:' : 'Total:',
-    required: isRu ? '* РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ' : '* required',
-  };
-
-  const renderField = (fieldId: string, field: ConfigField) => {
-    const val = selections[fieldId];
-    const commonLabel = (
-      <label className="block text-sm font-medium text-[var(--text-main)] mb-1">
-        {field.label} {field.required && <span className="text-[var(--neon-pink)]">*</span>}
-        {field.description && <span className="block text-xs text-[var(--text-dim)] font-normal mt-0.5">{field.description}</span>}
-      </label>
-    );
-
-    if (field.type === 'textarea') {
-      return (
-        <div key={fieldId} className="space-y-1">
-          {commonLabel}
-          <textarea
-            value={val as string || ''}
-            onChange={e => handleSelectionChange(fieldId, e.target.value)}
-            rows={4}
-            required={field.required}
-            className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none"
-          />
-        </div>
-      );
-    }
-
-    if (field.type === 'select' && field.options) {
-      return (
-        <div key={fieldId} className="space-y-1">
-          {commonLabel}
-          <select
-            value={val as string || ''}
-            onChange={e => handleSelectionChange(fieldId, e.target.value)}
-            className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none"
-          >
-            {field.options.map(opt => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label} {opt.price_modifier ? `(+${opt.price_modifier.toLocaleString('ru-RU')} в‚Ѕ)` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-      );
-    }
-
-    if (field.type === 'multiselect' && field.options) {
-      const selected = (val as string[]) || [];
-      return (
-        <div key={fieldId} className="space-y-1">
-          {commonLabel}
-          <div className="flex flex-wrap gap-2">
-            {field.options.map(opt => {
-              const isActive = selected.includes(opt.value);
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    const next = isActive ? selected.filter(v => v !== opt.value) : [...selected, opt.value];
-                    handleSelectionChange(fieldId, next);
-                  }}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition ${
-                    isActive
-                      ? 'border-[var(--neon-purple)] bg-[rgba(176,38,255,0.2)] text-[var(--neon-purple)]'
-                      : 'border-[rgba(176,38,255,0.2)] text-[var(--text-dim)] hover:border-[var(--neon-pink)]'
-                  }`}
-                >
-                  {opt.label} {opt.price_modifier ? `+${opt.price_modifier.toLocaleString('ru-RU')}` : ''}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    if (field.type === 'checkbox') {
-      return (
-        <div key={fieldId} className="flex items-center gap-3 py-2">
-          <button
-            type="button"
-            onClick={() => handleSelectionChange(fieldId, !val)}
-            className={`w-5 h-5 rounded border transition flex items-center justify-center ${
-              val ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)]'
-            }`}
-          >
-            {val && <span className="text-[10px] text-white">вњ“</span>}
-          </button>
-          <span className="text-sm text-[var(--text-main)]">{field.label} {field.price_modifier ? `(+${field.price_modifier.toLocaleString('ru-RU')} в‚Ѕ)` : ''}</span>
-        </div>
-      );
-    }
-
-    if (field.type === 'number') {
-      return (
-        <div key={fieldId} className="space-y-1">
-          {commonLabel}
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min={field.min}
-              max={field.max}
-              value={val as number || 0}
-              onChange={e => handleSelectionChange(fieldId, Number(e.target.value))}
-              className="w-24 rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-2 text-sm text-[var(--text-main)] text-center focus:border-[var(--neon-purple)] focus:outline-none"
-            />
-            {field.price_per_unit && (
-              <span className="text-xs text-[var(--text-dim)]">+{field.price_per_unit.toLocaleString('ru-RU')} в‚Ѕ / РµРґ.</span>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    return null;
   };
 
   return (
     <>
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-purple)] text-[var(--neon-purple)] text-sm font-medium backdrop-blur-md animate-pulse shadow-[0_0_20px_rgba(176,38,255,0.3)]">
-          {toast}
-        </div>
-      )}
-
       <header className="sticky top-0 z-40 relative flex items-center h-14 px-4 bg-transparent">
-        <button type="button" onClick={() => router.back()} className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition" aria-label={t.back}>
+        <button type="button" onClick={() => window.history.back()} className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition" aria-label={t.back}>
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <h1 className="mx-auto text-center text-xl md:text-2xl font-bold text-gradient-neon truncate max-w-[75%] px-2">{product.name}</h1>
       </header>
-
+      
       <p className="mt-2 text-[var(--text-dim)] text-center max-w-2xl mx-auto px-2">{product.short_description}</p>
 
       <section className="mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_28px_rgba(176,38,255,0.18)]">
@@ -2536,12 +2259,8 @@ export default function ProductPage() {
               <span className="text-2xl font-bold text-[var(--neon-purple)]">{priceFormatted} в‚Ѕ</span>
             </div>
             <span className="px-3 py-1 rounded-full bg-[rgba(0,240,255,0.15)] border border-[rgba(0,240,255,0.3)] text-[var(--neon-blue)] text-sm">
-              {t.delivery} {displayDeliveryDays} {t.days}
+              {t.delivery} {product.metadata.delivery.base_days} {t.days}
             </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <span className="px-2 py-1 text-xs rounded bg-[rgba(176,38,255,0.15)] text-[var(--neon-purple)] border border-[rgba(176,38,255,0.25)] capitalize">{product.category}</span>
           </div>
 
           {product.metadata.stack?.length > 0 && (
@@ -2571,19 +2290,237 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂ */}
+      {/* РРЅС‚РµСЂР°РєС‚РёРІРЅР°СЏ С‡Р°СЃС‚СЊ РІС‹РЅРµСЃРµРЅР° РІ РѕС‚РґРµР»СЊРЅС‹Р№ РєР»РёРµРЅС‚СЃРєРёР№ РєРѕРјРїРѕРЅРµРЅС‚ */}
       {product.is_configurable && Object.keys(product.metadata.config_schema).length > 0 && (
-        <section className="mt-6 p-5 rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)]">
-          <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">вљ™пёЏ РќР°СЃС‚СЂРѕР№РєР° РїСЂРѕРµРєС‚Р°</h3>
-          <div className="space-y-4">
-            {Object.entries(product.metadata.config_schema).map(([key, field]) => renderField(key, field))}
-          </div>
-        </section>
+        <ProductConfigurator product={product} locale={params.locale} />
       )}
+      
+      <div className="h-24" />
+    </>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\catalog\[id]\ProductConfigurator.tsx
+─────────────────────────────────────────
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import type { CatalogItem, ConfigField } from '../../../types/catalog';
+
+type Selections = Record<string, string | string[] | number | boolean>;
+
+function validateRequiredFields(schema: Record<string, ConfigField>, selections: Selections): { isValid: boolean; missing: string[] } {
+  const missing: string[] = [];
+  for (const [fieldId, field] of Object.entries(schema)) {
+    if (!field.required) continue;
+    const val = selections[fieldId];
+    let isEmpty = false;
+    switch (field.type) {
+      case 'textarea': case 'select': isEmpty = typeof val !== 'string' || val.trim() === ''; break;
+      case 'checkbox': isEmpty = val !== true; break;
+      case 'number': isEmpty = typeof val !== 'number' || isNaN(val); break;
+      case 'multiselect': isEmpty = !Array.isArray(val) || val.length === 0; break;
+      default: isEmpty = val === undefined || val === null || val === '';
+    }
+    if (isEmpty) missing.push(field.label);
+  }
+  return { isValid: missing.length === 0, missing };
+}
+
+function calculateDynamicPrice(basePrice: number, selections: Selections, schema: Record<string, ConfigField>): number {
+  let total = basePrice;
+  for (const [fieldId, field] of Object.entries(schema)) {
+    const val = selections[fieldId];
+    if (val === undefined) continue;
+    if (field.type === 'checkbox' && val === true) total += field.price_modifier ?? 0;
+    else if (field.type === 'select' && typeof val === 'string') {
+      const opt = field.options?.find(o => o.value === val);
+      total += opt?.price_modifier ?? 0;
+    } else if (field.type === 'number' && typeof val === 'number' && field.price_per_unit) {
+      const baseCount = (field.default ?? field.min ?? 0) as number;
+      total += Math.max(0, val - baseCount) * field.price_per_unit;
+    } else if (field.type === 'multiselect' && Array.isArray(val)) {
+      for (const v of val) {
+        const opt = field.options?.find(o => o.value === v);
+        total += opt?.price_modifier ?? 0;
+      }
+    }
+  }
+  return Math.round(total);
+}
+
+function calculateDynamicDelivery(baseDays: number, selections: Selections, schema: Record<string, ConfigField>, deliveryMeta: { min_days: number; max_days: number }): number {
+  let optionDays = 0;
+  for (const [fieldId, field] of Object.entries(schema)) {
+    if (fieldId === 'urgency') continue;
+    const val = selections[fieldId];
+    if (val === undefined) continue;
+    const getDays = (mod?: number, price?: number) => mod ?? Math.max(0, Math.floor((price ?? 0) / 8000));
+    if (field.type === 'checkbox' && val === true) optionDays += getDays(field.delivery_days_modifier, field.price_modifier);
+    else if (field.type === 'select' && typeof val === 'string') {
+      const opt = field.options?.find(o => o.value === val);
+      optionDays += getDays(opt?.delivery_days_modifier, opt?.price_modifier);
+    } else if (field.type === 'multiselect' && Array.isArray(val)) {
+      for (const v of val) {
+        const opt = field.options?.find(o => o.value === v);
+        optionDays += getDays(opt?.delivery_days_modifier, opt?.price_modifier);
+      }
+    }
+  }
+  let totalDays = baseDays + optionDays;
+  const urgency = selections['urgency'] as string | undefined;
+  const URGENCY_MULTIPLIERS: Record<string, number> = { normal: 1.0, fast: 0.85, ultra_fast: 0.70 };
+  const multiplier = URGENCY_MULTIPLIERS[urgency ?? 'normal'] ?? 1.0;
+  totalDays = Math.floor(totalDays * multiplier);
+  const min = deliveryMeta.min_days || Math.floor(baseDays * 0.4);
+  return Math.max(min, Math.ceil(totalDays));
+}
+
+export function ProductConfigurator({ product, locale }: { product: CatalogItem; locale: string }) {
+  const router = useRouter();
+  const isRu = locale !== 'en';
+  
+  const [selections, setSelections] = useState<Selections>(() => {
+    const defaults: Selections = {};
+    for (const [key, field] of Object.entries(product.metadata.config_schema)) {
+      if (field.type === 'number') defaults[key] = field.default ?? field.min ?? 0;
+      else if (field.type === 'checkbox') defaults[key] = false;
+      else if (field.type === 'select') defaults[key] = field.default ?? '';
+      else if (field.type === 'multiselect') defaults[key] = [];
+    }
+    return defaults;
+  });
+  
+  const [toast, setToast] = useState<string | null>(null);
+
+  const handleSelectionChange = useCallback((fieldId: string, value: Selections[string]) => {
+    setSelections(prev => ({ ...prev, [fieldId]: value }));
+  }, []);
+
+  const displayPrice = calculateDynamicPrice(product.base_price_rub, selections, product.metadata.config_schema);
+  const displayDeliveryDays = calculateDynamicDelivery(product.metadata.delivery.base_days, selections, product.metadata.config_schema, product.metadata.delivery);
+
+  const handleAddToCart = () => {
+    const { isValid, missing } = validateRequiredFields(product.metadata.config_schema, selections);
+    if (!isValid) {
+      setToast(`вљ пёЏ Р—Р°РїРѕР»РЅРёС‚Рµ: ${missing.join(', ')}`);
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    const cart = JSON.parse(localStorage.getItem('bw_cart') || '[]');
+    cart.push({
+      productId: product.id,
+      name: product.name,
+      selections,
+      price: displayPrice,
+      deliveryDays: displayDeliveryDays,
+      addedAt: new Date().toISOString()
+    });
+    localStorage.setItem('bw_cart', JSON.stringify(cart));
+    setToast(isRu ? 'вњ… Р”РѕР±Р°РІР»РµРЅРѕ РІ РєРѕСЂР·РёРЅСѓ!' : 'вњ… Added to cart!');
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const priceFormatted = new Intl.NumberFormat('ru-RU').format(displayPrice);
+  const t = {
+    add_to_cart: isRu ? 'Р’ РєРѕСЂР·РёРЅСѓ' : 'Add to cart',
+    price_prefix: isRu ? 'РС‚РѕРіРѕ:' : 'Total:',
+  };
+
+  const renderField = (fieldId: string, field: ConfigField) => {
+    const val = selections[fieldId];
+    const commonLabel = (
+      <label className="block text-sm font-medium text-[var(--text-main)] mb-1">
+        {field.label} {field.required && <span className="text-[var(--neon-pink)]">*</span>}
+        {field.description && <span className="block text-xs text-[var(--text-dim)] font-normal mt-0.5">{field.description}</span>}
+      </label>
+    );
+
+    if (field.type === 'textarea') {
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <textarea value={val as string || ''} onChange={e => handleSelectionChange(fieldId, e.target.value)} rows={4} required={field.required} className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
+        </div>
+      );
+    }
+    if (field.type === 'select' && field.options) {
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <select value={val as string || ''} onChange={e => handleSelectionChange(fieldId, e.target.value)} className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none">
+            {field.options.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label} {opt.price_modifier ? `(+${opt.price_modifier.toLocaleString('ru-RU')} в‚Ѕ)` : ''}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+    if (field.type === 'multiselect' && field.options) {
+      const selected = (val as string[]) || [];
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <div className="flex flex-wrap gap-2">
+            {field.options.map(opt => {
+              const isActive = selected.includes(opt.value);
+              return (
+                <button key={opt.value} type="button" onClick={() => {
+                  const next = isActive ? selected.filter(v => v !== opt.value) : [...selected, opt.value];
+                  handleSelectionChange(fieldId, next);
+                }} className={`px-3 py-1.5 text-xs rounded-lg border transition ${isActive ? 'border-[var(--neon-purple)] bg-[rgba(176,38,255,0.2)] text-[var(--neon-purple)]' : 'border-[rgba(176,38,255,0.2)] text-[var(--text-dim)] hover:border-[var(--neon-pink)]'}`}>
+                  {opt.label} {opt.price_modifier ? `+${opt.price_modifier.toLocaleString('ru-RU')}` : ''}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    if (field.type === 'checkbox') {
+      return (
+        <div key={fieldId} className="flex items-center gap-3 py-2">
+          <button type="button" onClick={() => handleSelectionChange(fieldId, !val)} className={`w-5 h-5 rounded border transition flex items-center justify-center ${val ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)]'}`}>
+            {val && <span className="text-[10px] text-white">вњ“</span>}
+          </button>
+          <span className="text-sm text-[var(--text-main)]">{field.label} {field.price_modifier ? `(+${field.price_modifier.toLocaleString('ru-RU')} в‚Ѕ)` : ''}</span>
+        </div>
+      );
+    }
+    if (field.type === 'number') {
+      return (
+        <div key={fieldId} className="space-y-1">
+          {commonLabel}
+          <div className="flex items-center gap-2">
+            <input type="number" min={field.min} max={field.max} value={val as number || 0} onChange={e => handleSelectionChange(fieldId, Number(e.target.value))} className="w-24 rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-2 text-sm text-[var(--text-main)] text-center focus:border-[var(--neon-purple)] focus:outline-none" />
+            {field.price_per_unit && <span className="text-xs text-[var(--text-dim)]">+{field.price_per_unit.toLocaleString('ru-RU')} в‚Ѕ / РµРґ.</span>}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <>
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-purple)] text-[var(--neon-purple)] text-sm font-medium backdrop-blur-md animate-pulse shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+          {toast}
+        </div>
+      )}
+
+      <section className="mt-6 p-5 rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)]">
+        <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">вљ™пёЏ РќР°СЃС‚СЂРѕР№РєР° РїСЂРѕРµРєС‚Р°</h3>
+        <div className="space-y-4">
+          {Object.entries(product.metadata.config_schema).map(([key, field]) => renderField(key, field))}
+        </div>
+      </section>
 
       <div className="h-24" />
 
-      {/* Р›РёРїРєРёР№ Р±Р°СЂ */}
       <div className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb">
         <div className="mx-auto max-w-md px-4 pb-2">
           <div className="flex items-center gap-3 p-3 rounded-2xl border border-[rgba(176,38,255,0.4)] bg-[var(--bg-surface-glass)] backdrop-blur-xl shadow-[0_-4px_32px_rgba(0,0,0,0.4),var(--glow-purple)]">
@@ -2591,11 +2528,7 @@ export default function ProductPage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-dim)]">{t.price_prefix}</p>
               <p className="text-lg font-bold text-[var(--neon-purple)] truncate">{priceFormatted} в‚Ѕ</p>
             </div>
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              className="shrink-0 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)] transition hover:opacity-90 active:scale-[0.98]"
-            >
+            <button type="button" onClick={handleAddToCart} className="shrink-0 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)] transition hover:opacity-90 active:scale-[0.98]">
               {t.add_to_cart}
             </button>
           </div>
@@ -2610,32 +2543,76 @@ export default function ProductPage() {
 FILE: [locale]\contact\page.tsx
 ─────────────────────────────────────────
 'use client';
-
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../components/ScreenTitle';
+import { useState, useEffect } from 'react';
+
+// Р—РђРљРћРњРњР•РќРўРР РћР’РђРќРћ: РўРёРї РґР»СЏ РєСЌС€Р°
+// type CachedContacts = {
+//   data: typeof CONTACTS;
+//   timestamp: number;
+// };
 
 export default function ContactPage() {
   const { t } = useTranslation();
+  
+  // Р—РђРљРћРњРњР•РќРўРР РћР’РђРќРћ: РЎС‚РµР№С‚ РґР»СЏ РєСЌС€РёСЂРѕРІР°РЅРЅС‹С… РєРѕРЅС‚Р°РєС‚РѕРІ
+  // const [contacts, setContacts] = useState(CONTACTS);
+  
+  // Р—РђРљРћРњРњР•РќРўРР РћР’РђРќРћ: РљР»РёРµРЅС‚СЃРєРёР№ РєСЌС€ РЅР° 3 РјРµСЃСЏС†Р° (7776000000 РјСЃ)
+  // useEffect(() => {
+  //   const CACHE_KEY = 'bw_contacts_cache';
+  //   const CACHE_DURATION = 7776000000; // 3 РјРµСЃСЏС†Р° РІ РјРёР»Р»РёСЃРµРєСѓРЅРґР°С…
+  //   
+  //   try {
+  //     const cached = localStorage.getItem(CACHE_KEY);
+  //     if (cached) {
+  //       const { data, timestamp }: CachedContacts = JSON.parse(cached);
+  //       const age = Date.now() - timestamp;
+  //       
+  //       if (age < CACHE_DURATION) {
+  //         console.log('[CONTACTS] Loaded from cache, age:', Math.round(age / 86400000), 'days');
+  //         setContacts(data);
+  //         return;
+  //       }
+  //       console.log('[CONTACTS] Cache expired, refreshing...');
+  //     }
+  //     
+  //     // Р•СЃР»Рё РєСЌС€Р° РЅРµС‚ РёР»Рё СѓСЃС‚Р°СЂРµР», СЃРѕС…СЂР°РЅСЏРµРј С‚РµРєСѓС‰РёРµ РґР°РЅРЅС‹Рµ
+  //     // Р’ Р±СѓРґСѓС‰РµРј Р·РґРµСЃСЊ Р±СѓРґРµС‚ fetch Рє API
+  //     const freshData = CONTACTS; // РџРѕС‚РѕРј Р·Р°РјРµРЅРёС€СЊ РЅР°: await fetchContacts()
+  //     setContacts(freshData);
+  //     
+  //     localStorage.setItem(CACHE_KEY, JSON.stringify({
+  //       data: freshData,
+  //       timestamp: Date.now()
+  //     }));
+  //     console.log('[CONTACTS] Cached for 3 months');
+  //   } catch (e) {
+  //     console.error('[CONTACTS] Cache error:', e);
+  //   }
+  // }, []);
+  
+  // Р—РђРљРћРњРњР•РќРўРР РћР’РђРќРћ: РСЃРїРѕР»СЊР·СѓРµРј РєСЌС€РёСЂРѕРІР°РЅРЅС‹Рµ contacts РІРјРµСЃС‚Рѕ CONTACTS
+  // const displayContacts = contacts;
+  
 
-  // рџ“ќ Р—РђРњР•РќР Р—РќРђР§Р•РќРРЇ РќРђ РЎР’РћР Р Р•РђР›Р¬РќР«Р• Р”РђРќРќР«Р•
-  const CONTACTS = [
+  const displayContacts = [
     { label: t.contact.email_label, value: 'daniilgavrin@bytewizard.ru', href: 'mailto:daniilgavrin@bytewizard.ru' },
     { label: t.contact.telegram_label, value: '@danya_gavrin', href: 'https://t.me/danya_gavrin', external: true },
     { label: t.contact.vk_label, value: 'vk.com/danya_gavrin', href: 'https://vk.com/danya_gavrin', external: true },
-    //{ label: t.contact.wechat_label, value: 'your_wechat_id', href: '#' }, // WeChat РЅРµ РёРјРµРµС‚ РїСЂСЏРјРѕР№ РІРµР±-СЃСЃС‹Р»РєРё, Р»СѓС‡С€Рµ РєРѕРїРёСЂРѕРІР°С‚СЊ ID
-    //{ label: t.contact.discord_label, value: 'your_username#0000', href: '#' }, // Discord Р»СѓС‡С€Рµ РєРѕРїРёСЂРѕРІР°С‚СЊ РёР»Рё РґР°С‚СЊ invite-СЃСЃС‹Р»РєСѓ
+    //{ label: t.contact.wechat_label, value: 'your_wechat_id', href: '#' },
+    //{ label: t.contact.discord_label, value: 'your_username#0000', href: '#' },
   ];
-
+  
   return (
     <>
       <ScreenTitle>{t.nav.contact}</ScreenTitle>
-
-      {CONTACTS.map((contact) => {
+      {displayContacts.map((contact) => {
         const isExternal = contact.external || contact.href.startsWith('http');
         const isPlaceholder = contact.href === '#';
-
         const cardStyle = "block mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]";
-
+        
         if (isPlaceholder) {
           return (
             <button
@@ -2657,7 +2634,7 @@ export default function ContactPage() {
             </button>
           );
         }
-
+        
         return (
           <a
             key={contact.label}
@@ -2679,7 +2656,6 @@ export default function ContactPage() {
           </a>
         );
       })}
-
       <p className="mt-6 text-center text-xs text-[var(--text-dim)]">{t.contact.hint}</p>
     </>
   );
@@ -2697,6 +2673,7 @@ import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
 import { useUser } from '../../../lib/UserContext';
 import Link from 'next/link';
+import { authFetch } from '../../../lib/auth';
 
 type TempOrder = {
   id: string;
@@ -2836,10 +2813,9 @@ export default function CreateOrderPage() {
         } : {}),
       };
 
-      const res = await fetch(`${PAY_API_BASE}/orders/create`, {
+      const res = await authFetch(`${PAY_API_BASE}/orders/create`, { // <-- Р—РђРњР•РќР fetch РќРђ authFetch
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', 
         body: JSON.stringify(payload),
       });
 
@@ -3194,13 +3170,10 @@ export default function CreateOrderPage() {
 
 
 ─────────────────────────────────────────
-FILE: [locale]\faq\page.tsx
+FILE: [locale]\faq\FAQClient.tsx
 ─────────────────────────────────────────
+// [locale]/faq/FAQClient.tsx (РќРћР’Р«Р™ Р¤РђР™Р›)
 'use client';
-
-import { useTranslation } from '../../lib/i18n/useTranslation';
-import { ScreenTitle } from '../../components/ScreenTitle';
-import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface FAQItem {
@@ -3209,127 +3182,59 @@ interface FAQItem {
   answer: string;
 }
 
-export default function FAQPage() {
-  const { t } = useTranslation();
-  const pathname = usePathname();
-  const router = useRouter();
-  const locale = pathname.split('/')[1] || 'ru';
+export function FAQClient({ items, locale }: { items: FAQItem[]; locale: string }) {
   const [openId, setOpenId] = useState<number | null>(null);
-
-  // РџСЂРёРјРµСЂ FAQ РґР°РЅРЅС‹С… - РїРѕС‚РѕРј РјРѕР¶РЅРѕ РІС‹РЅРµСЃС‚Рё РІ РїРµСЂРµРІРѕРґС‹ РёР»Рё Р±Р°Р·Сѓ
-  const faqItems: FAQItem[] = [
-    {
-      id: 1,
-      question: 'РљР°Рє РѕС„РѕСЂРјРёС‚СЊ Р·Р°РєР°Р·?',
-      answer: 'Р’С‹Р±РµСЂРёС‚Рµ РЅСѓР¶РЅСѓСЋ СѓСЃР»СѓРіСѓ РёР· РєР°С‚Р°Р»РѕРіР°, РЅР°Р¶РјРёС‚Рµ "Р—Р°РєР°Р·Р°С‚СЊ", Р·Р°РїРѕР»РЅРёС‚Рµ brief Рё РѕРїР»Р°С‚РёС‚Рµ. РџРѕСЃР»Рµ СЌС‚РѕРіРѕ РјС‹ СЃРІСЏР¶РµРјСЃСЏ СЃ РІР°РјРё РІ Telegram РґР»СЏ СѓС‚РѕС‡РЅРµРЅРёСЏ РґРµС‚Р°Р»РµР№.'
-    },
-    {
-      id: 2,
-      question: 'РљР°РєРёРµ СЃСЂРѕРєРё СЂР°Р·СЂР°Р±РѕС‚РєРё?',
-      answer: 'РЎСЂРѕРєРё Р·Р°РІРёСЃСЏС‚ РѕС‚ СЃР»РѕР¶РЅРѕСЃС‚Рё РїСЂРѕРµРєС‚Р°. Р›РµРЅРґРёРЅРі вЂ” 3-5 РґРЅРµР№, СЃР°Р№С‚-РІРёР·РёС‚РєР° вЂ” 5-7 РґРЅРµР№, РёРЅС‚РµСЂРЅРµС‚-РјР°РіР°Р·РёРЅ вЂ” РѕС‚ 2 РЅРµРґРµР»СЊ. РўРѕС‡РЅС‹Рµ СЃСЂРѕРєРё РѕР±СЃСѓР¶РґР°РµРј РїРѕСЃР»Рµ РїРѕР»СѓС‡РµРЅРёСЏ brief.'
-    },
-    {
-      id: 3,
-      question: 'РљР°РєРёРµ СЃРїРѕСЃРѕР±С‹ РѕРїР»Р°С‚С‹ РІС‹ РїСЂРёРЅРёРјР°РµС‚Рµ?',
-      answer: 'РњС‹ РїСЂРёРЅРёРјР°РµРј РєСЂРёРїС‚РѕРІР°Р»СЋС‚Сѓ (USDT, TON, BTC), Р±Р°РЅРєРѕРІСЃРєРёРµ РїРµСЂРµРІРѕРґС‹ Рё СЌР»РµРєС‚СЂРѕРЅРЅС‹Рµ РєРѕС€РµР»СЊРєРё. Р”Р»СЏ РјРµР¶РґСѓРЅР°СЂРѕРґРЅС‹С… РєР»РёРµРЅС‚РѕРІ РїСЂРµРґРїРѕС‡С‚РёС‚РµР»СЊРЅРµРµ РєСЂРёРїС‚Рѕ-РїР»Р°С‚РµР¶Рё.'
-    },
-    {
-      id: 4,
-      question: 'РњРѕР¶РЅРѕ Р»Рё РІРЅРµСЃС‚Рё РїСЂР°РІРєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°?',
-      answer: 'Р”Р°, РІ СЃС‚РѕРёРјРѕСЃС‚СЊ РІРєР»СЋС‡РµРЅРѕ 2 СЂР°СѓРЅРґР° Р±РµСЃРїР»Р°С‚РЅС‹С… РїСЂР°РІРѕРє. Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РґРѕСЂР°Р±РѕС‚РєРё РѕРїР»Р°С‡РёРІР°СЋС‚СЃСЏ РѕС‚РґРµР»СЊРЅРѕ РїРѕ РїРѕС‡Р°СЃРѕРІРѕР№ СЃС‚Р°РІРєРµ.'
-    },
-    {
-      id: 5,
-      question: 'РџСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚Рµ Р»Рё РІС‹ РїРѕРґРґРµСЂР¶РєСѓ РїРѕСЃР»Рµ Р·Р°РїСѓСЃРєР°?',
-      answer: 'Р”Р°, РјС‹ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµРј 30 РґРЅРµР№ Р±РµСЃРїР»Р°С‚РЅРѕР№ С‚РµС…РЅРёС‡РµСЃРєРѕР№ РїРѕРґРґРµСЂР¶РєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°. Р”Р°Р»РµРµ РјРѕР¶РЅРѕ РѕС„РѕСЂРјРёС‚СЊ РµР¶РµРјРµСЃСЏС‡РЅСѓСЋ РїРѕРґРїРёСЃРєСѓ РЅР° РїРѕРґРґРµСЂР¶РєСѓ.'
-    },
-    {
-      id: 6,
-      question: 'Р Р°Р±РѕС‚Р°РµС‚Рµ Р»Рё РІС‹ СЃ РєР»РёРµРЅС‚Р°РјРё РёР· РґСЂСѓРіРёС… СЃС‚СЂР°РЅ?',
-      answer: 'Р”Р°, РјС‹ СЂР°Р±РѕС‚Р°РµРј СЃ РєР»РёРµРЅС‚Р°РјРё РїРѕ РІСЃРµРјСѓ РјРёСЂСѓ. Р’СЃРµ РєРѕРјРјСѓРЅРёРєР°С†РёРё РІРµРґСѓС‚СЃСЏ РЅР° СЂСѓСЃСЃРєРѕРј РёР»Рё Р°РЅРіР»РёР№СЃРєРѕРј СЏР·С‹РєР°С… С‡РµСЂРµР· Telegram.'
-    },
-    {
-        id: 7,
-        question: 'Р§С‚Рѕ РґРµР»Р°С‚СЊ РµСЃР»Рё РЅРµ РЅР°С€С‘Р» РЅСѓР¶РЅС‹Р№ РјРЅРµ С‚РѕРІР°СЂ?',
-        answer: 'РЎРІСЏР¶РёС‚РµСЃСЊ СЃ РЅР°РјРё Рё РјС‹ РѕР±СЃСѓРґРёРј РІР°С€Сѓ Р·Р°РґР°С‡Сѓ Рё СЃРѕР±РµСЂРµРј РїРµСЂСЃРѕРЅР°Р»СЊРЅРѕ РїРѕРґ РІР°С€Рё С‚СЂРµР±РѕРІР°РЅРёСЏ С‚РѕРІР°СЂ.'
-    }
-  ];
 
   function toggleItem(id: number) {
     setOpenId(openId === id ? null : id);
   }
 
   return (
-    <>
-      {/* РљРЅРѕРїРєР° РЅР°Р·Р°Рґ */}
-      <button
-        onClick={() => router.back()}
-        className="mb-4 flex items-center gap-2 text-sm text-[var(--text-dim)] transition hover:text-[var(--neon-blue)]"
-      >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        РќР°Р·Р°Рґ
-      </button>
-
-      <ScreenTitle>{t.profile.faq || 'Р§Р°СЃС‚Рѕ Р·Р°РґР°РІР°РµРјС‹Рµ РІРѕРїСЂРѕСЃС‹'}</ScreenTitle>
-
-      <div className="mt-6 space-y-3">
-        {faqItems.map((item) => (
-          <div
-            key={item.id}
-            className="overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+    <div className="mt-6 space-y-3">
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className="overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+        >
+          <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+          <button
+            onClick={() => toggleItem(item.id)}
+            className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[rgba(176,38,255,0.05)]"
           >
-            {/* Р“СЂР°РґРёРµРЅС‚РЅР°СЏ РїРѕР»РѕСЃРєР° СЃРІРµСЂС…Сѓ */}
-            <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
-
-            {/* Р’РѕРїСЂРѕСЃ (РєР»РёРєР°Р±РµР»СЊРЅС‹Р№) */}
-            <button
-              onClick={() => toggleItem(item.id)}
-              className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[rgba(176,38,255,0.05)]"
-            >
-              <h3 className="text-base font-semibold text-[var(--text-main)]">
-                {item.question}
-              </h3>
-              <svg
-                className={`h-5 w-5 shrink-0 text-[var(--neon-purple)] transition-transform duration-300 ${
-                  openId === item.id ? 'rotate-180' : ''
-                }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {/* РћС‚РІРµС‚ (СЂР°СЃРєСЂС‹РІР°РµС‚СЃСЏ) */}
-            <div
-              className={`grid transition-all duration-300 ease-in-out ${
-                openId === item.id
-                  ? 'grid-rows-[1fr] opacity-100'
-                  : 'grid-rows-[0fr] opacity-0'
+            <h3 className="text-base font-semibold text-[var(--text-main)]">
+              {item.question}
+            </h3>
+            <svg
+              className={`h-5 w-5 shrink-0 text-[var(--neon-purple)] transition-transform duration-300 ${
+                openId === item.id ? 'rotate-180' : ''
               }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <div className="overflow-hidden">
-                <div className="border-t border-[rgba(176,38,255,0.15)] px-5 py-4">
-                  <p className="text-sm leading-relaxed text-[var(--text-dim)]">
-                    {item.answer}
-                  </p>
-                </div>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${
+              openId === item.id ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="border-t border-[rgba(176,38,255,0.15)] px-5 py-4">
+                <p className="text-sm leading-relaxed text-[var(--text-dim)]">
+                  {item.answer}
+                </p>
               </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Р‘Р»РѕРє СЃ РїСЂРµРґР»РѕР¶РµРЅРёРµРј СЃРІСЏР·Р°С‚СЊСЃСЏ, РµСЃР»Рё РЅРµ РЅР°С€Р»Рё РѕС‚РІРµС‚ */}
+        </div>
+      ))}
+      
       <div className="mt-6 overflow-hidden rounded-2xl border border-[rgba(0,240,255,0.26)] bg-[linear-gradient(145deg,rgba(9,24,45,0.92),rgba(3,7,16,0.94))] shadow-[0_0_20px_rgba(0,240,255,0.12)]">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-blue),var(--neon-purple),var(--neon-pink))]" />
         <div className="px-5 py-4 text-center">
-          <p className="text-sm text-[var(--text-dim)]">
-            РќРµ РЅР°С€Р»Рё РѕС‚РІРµС‚ РЅР° СЃРІРѕР№ РІРѕРїСЂРѕСЃ?
-          </p>
+          <p className="text-sm text-[var(--text-dim)]">РќРµ РЅР°С€Р»Рё РѕС‚РІРµС‚ РЅР° СЃРІРѕР№ РІРѕРїСЂРѕСЃ?</p>
           <a
             href={`/${locale}/contact`}
             className="mt-2 inline-block text-sm font-semibold text-[var(--neon-blue)] transition hover:text-[var(--neon-pink)] hover:underline"
@@ -3338,6 +3243,42 @@ export default function FAQPage() {
           </a>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+─────────────────────────────────────────
+FILE: [locale]\faq\page.tsx
+─────────────────────────────────────────
+import { ScreenTitle } from '../../components/ScreenTitle';
+import { getTranslation } from '../../lib/i18n/server';
+import { FAQClient } from './FAQClient';
+import { notFound } from 'next/navigation';
+
+// РЎРµСЂРІРµСЂРЅС‹Р№ РєСЌС€ РЅР° 1 РЅРµРґРµР»СЋ (604800 СЃРµРєСѓРЅРґ)
+export const revalidate = 604800;
+
+// Р”Р°РЅРЅС‹Рµ FAQ (РїРѕРєР° РІ РєРѕРґРµ, РїРѕС‚РѕРј РјРѕР¶РЅРѕ РІС‹РЅРµСЃС‚Рё РІ API)
+const faqItems = [
+  { id: 1, question: 'РљР°Рє РѕС„РѕСЂРјРёС‚СЊ Р·Р°РєР°Р·?', answer: 'Р’С‹Р±РµСЂРёС‚Рµ РЅСѓР¶РЅСѓСЋ СѓСЃР»СѓРіСѓ РёР· РєР°С‚Р°Р»РѕРіР°, РЅР°Р¶РјРёС‚Рµ "Р—Р°РєР°Р·Р°С‚СЊ", Р·Р°РїРѕР»РЅРёС‚Рµ brief Рё РѕРїР»Р°С‚РёС‚Рµ. РџРѕСЃР»Рµ СЌС‚РѕРіРѕ РјС‹ СЃРІСЏР¶РµРјСЃСЏ СЃ РІР°РјРё РІ Telegram РґР»СЏ СѓС‚РѕС‡РЅРµРЅРёСЏ РґРµС‚Р°Р»РµР№.' },
+  { id: 2, question: 'РљР°РєРёРµ СЃСЂРѕРєРё СЂР°Р·СЂР°Р±РѕС‚РєРё?', answer: 'РЎСЂРѕРєРё Р·Р°РІРёСЃСЏС‚ РѕС‚ СЃР»РѕР¶РЅРѕСЃС‚Рё РїСЂРѕРµРєС‚Р°. Р›РµРЅРґРёРЅРі вЂ” 3-5 РґРЅРµР№, СЃР°Р№С‚-РІРёР·РёС‚РєР° вЂ” 5-7 РґРЅРµР№, РёРЅС‚РµСЂРЅРµС‚-РјР°РіР°Р·РёРЅ вЂ” РѕС‚ 2 РЅРµРґРµР»СЊ. РўРѕС‡РЅС‹Рµ СЃСЂРѕРєРё РѕР±СЃСѓР¶РґР°РµРј РїРѕСЃР»Рµ РїРѕР»СѓС‡РµРЅРёСЏ brief.' },
+  { id: 3, question: 'РљР°РєРёРµ СЃРїРѕСЃРѕР±С‹ РѕРїР»Р°С‚С‹ РІС‹ РїСЂРёРЅРёРјР°РµС‚Рµ?', answer: 'РњС‹ РїСЂРёРЅРёРјР°РµРј РєСЂРёРїС‚РѕРІР°Р»СЋС‚Сѓ (USDT, TON, BTC), Р±Р°РЅРєРѕРІСЃРєРёРµ РїРµСЂРµРІРѕРґС‹ Рё СЌР»РµРєС‚СЂРѕРЅРЅС‹Рµ РєРѕС€РµР»СЊРєРё. Р”Р»СЏ РјРµР¶РґСѓРЅР°СЂРѕРґРЅС‹С… РєР»РёРµРЅС‚РѕРІ РїСЂРµРґРїРѕС‡С‚РёС‚РµР»СЊРЅРµРµ РєСЂРёРїС‚Рѕ-РїР»Р°С‚РµР¶Рё.' },
+  { id: 4, question: 'РњРѕР¶РЅРѕ Р»Рё РІРЅРµСЃС‚Рё РїСЂР°РІРєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°?', answer: 'Р”Р°, РІ СЃС‚РѕРёРјРѕСЃС‚СЊ РІРєР»СЋС‡РµРЅРѕ 2 СЂР°СѓРЅРґР° Р±РµСЃРїР»Р°С‚РЅС‹С… РїСЂР°РІРѕРє. Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РґРѕСЂР°Р±РѕС‚РєРё РѕРїР»Р°С‡РёРІР°СЋС‚СЃСЏ РѕС‚РґРµР»СЊРЅРѕ РїРѕ РїРѕС‡Р°СЃРѕРІРѕР№ СЃС‚Р°РІРєРµ.' },
+  { id: 5, question: 'РџСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚Рµ Р»Рё РІС‹ РїРѕРґРґРµСЂР¶РєСѓ РїРѕСЃР»Рµ Р·Р°РїСѓСЃРєР°?', answer: 'Р”Р°, РјС‹ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµРј 30 РґРЅРµР№ Р±РµСЃРїР»Р°С‚РЅРѕР№ С‚РµС…РЅРёС‡РµСЃРєРѕР№ РїРѕРґРґРµСЂР¶РєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°. Р”Р°Р»РµРµ РјРѕР¶РЅРѕ РѕС„РѕСЂРјРёС‚СЊ РµР¶РµРјРµСЃСЏС‡РЅСѓСЋ РїРѕРґРїРёСЃРєСѓ РЅР° РїРѕРґРґРµСЂР¶РєСѓ.' },
+  { id: 6, question: 'Р Р°Р±РѕС‚Р°РµС‚Рµ Р»Рё РІС‹ СЃ РєР»РёРµРЅС‚Р°РјРё РёР· РґСЂСѓРіРёС… СЃС‚СЂР°РЅ?', answer: 'Р”Р°, РјС‹ СЂР°Р±РѕС‚Р°РµРј СЃ РєР»РёРµРЅС‚Р°РјРё РїРѕ РІСЃРµРјСѓ РјРёСЂСѓ. Р’СЃРµ РєРѕРјРјСѓРЅРёРєР°С†РёРё РІРµРґСѓС‚СЃСЏ РЅР° СЂСѓСЃСЃРєРѕРј РёР»Рё Р°РЅРіР»РёР№СЃРєРѕРј СЏР·С‹РєР°С… С‡РµСЂРµР· Telegram.' },
+  { id: 7, question: 'Р§С‚Рѕ РґРµР»Р°С‚СЊ РµСЃР»Рё РЅРµ РЅР°С€РµР» РЅСѓР¶РЅС‹Р№ РјРЅРµ С‚РѕРІР°СЂ?', answer: 'РЎРІСЏР¶РёС‚РµСЃСЊ СЃ РЅР°РјРё Рё РјС‹ РѕР±СЃСѓРґРёРј РІР°С€Сѓ Р·Р°РґР°С‡Сѓ Рё СЃРѕР±РµСЂРµРј РїРµСЂСЃРѕРЅР°Р»СЊРЅРѕ РїРѕРґ РІР°С€Рё С‚СЂРµР±РѕРІР°РЅРёСЏ С‚РѕРІР°СЂ.' }
+];
+
+export default function FAQPage({ params }: { params: { locale: string } }) {
+  const { t } = getTranslation(params.locale);
+  
+  if (!t) notFound();
+
+  return (
+    <>
+      <ScreenTitle>{t.profile.faq || 'Р§Р°СЃС‚Рѕ Р·Р°РґР°РІР°РµРјС‹Рµ РІРѕРїСЂРѕСЃС‹'}</ScreenTitle>
+      <FAQClient items={faqItems} locale={params.locale} />
     </>
   );
 }
@@ -3421,9 +3362,9 @@ export default function LegalPage() {
 ─────────────────────────────────────────
 FILE: [locale]\legal\license\page.tsx
 ─────────────────────────────────────────
-'use client';
-
 import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export const revalidate = 259200
 
 export default function LicensePage() {
   return (
@@ -3491,9 +3432,9 @@ export default function LicensePage() {
 ─────────────────────────────────────────
 FILE: [locale]\legal\privacy\page.tsx
 ─────────────────────────────────────────
-'use client';
-
 import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export const revalidate = 259200;
 
 export default function PrivacyPolicyPage() {
   return (
@@ -3611,9 +3552,9 @@ export default function PrivacyPolicyPage() {
 ─────────────────────────────────────────
 FILE: [locale]\legal\refund\page.tsx
 ─────────────────────────────────────────
-'use client';
-
 import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export const revalidate = 259200
 
 export default function RefundPage() {
   return (
@@ -3708,9 +3649,9 @@ export default function RefundPage() {
 ─────────────────────────────────────────
 FILE: [locale]\legal\requisites\page.tsx
 ─────────────────────────────────────────
-'use client';
-
 import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export const revalidate = 15552000;
 
 export default function RequisitesPage() {
   return (
@@ -3809,9 +3750,9 @@ export default function RequisitesPage() {
 ─────────────────────────────────────────
 FILE: [locale]\legal\terms\page.tsx
 ─────────────────────────────────────────
-'use client';
-
 import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export const revalidate = 259200;
 
 export default function TermsPage() {
   return (
@@ -4196,6 +4137,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
 import { useUser } from '../../../lib/UserContext';
 import Link from 'next/link';
+import { authFetch } from '../../../lib/auth';
 
 type Order = {
   order_code: string;
@@ -4258,24 +4200,21 @@ export default function OrdersPage() {
     }
 
     const loadOrders = async () => {
-      try {
-        const res = await fetch(`${PAY_API_BASE}/orders`, {
-          credentials: 'include',
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          setOrders(data.orders || []);
-        } else if (res.status === 401) {
-          console.log('[ORDERS] Unauthorized, user not logged in');
-          setOrders([]);
-        }
-      } catch (e) {
-        console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·РѕРІ:', e);
-      } finally {
-        setLoading(false);
+    try {
+      const res = await authFetch(`${PAY_API_BASE}/orders`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data.orders || []);
+      } else if (res.status === 401) {
+        console.log('[ORDERS] Unauthorized, user not logged in');
+        setOrders([]);
       }
-    };
+    } catch (e) {
+      console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·РѕРІ:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     loadOrders();
   }, [user]);
@@ -4364,6 +4303,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../../components/ScreenTitle';
 import { useUser } from '../../../../lib/UserContext';
+import { authFetch } from '../../../../lib/auth';
 
 type OrderDetail = {
   order_code: string;
@@ -4448,13 +4388,11 @@ export default function OrderDetailPage() {
     if (!window.confirm(c.cancel_confirm)) return;
     setCanceling(true);
     try {
-      const res = await fetch(`${PAY_API_BASE}/orders/${orderId}/cancel`, {
+      const res = await authFetch(`${PAY_API_BASE}/orders/${orderId}/cancel`, { // <-- Р—РђРњР•РќР
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({}), 
+        body: JSON.stringify({}),
       });
-      
       if (res.ok) {
         setOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
         alert(c.cancel_success);
@@ -4476,24 +4414,22 @@ export default function OrderDetailPage() {
     }
 
     const loadOrder = async () => {
-      try {
-        const res = await fetch(`${PAY_API_BASE}/orders/${orderId}`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setOrder(data.order);
-        } else {
-          console.error(`[ORDER DETAIL] Failed to load: ${res.status}`);
-          setOrder(null);
-        }
-      } catch (e) {
-        console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·Р°:', e);
+    try {
+      const res = await authFetch(`${PAY_API_BASE}/orders/${orderId}`); // <-- Р—РђРњР•РќР
+      if (res.ok) {
+        const data = await res.json();
+        setOrder(data.order);
+      } else {
+        console.error(`[ORDER DETAIL] Failed to load: ${res.status}`);
         setOrder(null);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (e) {
+      console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РєР°Р·Р°:', e);
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
+  };
     loadOrder();
   }, [orderId, user]);
 
