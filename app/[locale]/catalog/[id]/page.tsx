@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { CatalogItem } from '../../../types/catalog';
 import { ProductConfigurator } from './ProductConfigurator';
+import { BackButton } from './BackButton';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
@@ -45,9 +46,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
   return (
     <>
       <header className="sticky top-0 z-40 relative flex items-center h-14 px-4 bg-transparent">
-        <button type="button" onClick={() => window.history.back()} className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition" aria-label={t.back}>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        </button>
+        <BackButton />
         <h1 className="mx-auto text-center text-xl md:text-2xl font-bold text-gradient-neon truncate max-w-[75%] px-2">{product.name}</h1>
       </header>
       
