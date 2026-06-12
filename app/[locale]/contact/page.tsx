@@ -1,30 +1,75 @@
+// [locale]/contact/page.tsx
 'use client';
-
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../components/ScreenTitle';
+import { useState, useEffect } from 'react';
+
+// ЗАКОММЕНТИРОВАНО: Тип для кэша
+// type CachedContacts = {
+//   data: typeof CONTACTS;
+//   timestamp: number;
+// };
 
 export default function ContactPage() {
   const { t } = useTranslation();
+  
+  // ЗАКОММЕНТИРОВАНО: Стейт для кэшированных контактов
+  // const [contacts, setContacts] = useState(CONTACTS);
+  
+  // ЗАКОММЕНТИРОВАНО: Клиентский кэш на 3 месяца (7776000000 мс)
+  // useEffect(() => {
+  //   const CACHE_KEY = 'bw_contacts_cache';
+  //   const CACHE_DURATION = 7776000000; // 3 месяца в миллисекундах
+  //   
+  //   try {
+  //     const cached = localStorage.getItem(CACHE_KEY);
+  //     if (cached) {
+  //       const { data, timestamp }: CachedContacts = JSON.parse(cached);
+  //       const age = Date.now() - timestamp;
+  //       
+  //       if (age < CACHE_DURATION) {
+  //         console.log('[CONTACTS] Loaded from cache, age:', Math.round(age / 86400000), 'days');
+  //         setContacts(data);
+  //         return;
+  //       }
+  //       console.log('[CONTACTS] Cache expired, refreshing...');
+  //     }
+  //     
+  //     // Если кэша нет или устарел, сохраняем текущие данные
+  //     // В будущем здесь будет fetch к API
+  //     const freshData = CONTACTS; // Потом заменишь на: await fetchContacts()
+  //     setContacts(freshData);
+  //     
+  //     localStorage.setItem(CACHE_KEY, JSON.stringify({
+  //       data: freshData,
+  //       timestamp: Date.now()
+  //     }));
+  //     console.log('[CONTACTS] Cached for 3 months');
+  //   } catch (e) {
+  //     console.error('[CONTACTS] Cache error:', e);
+  //   }
+  // }, []);
+  
+  // ЗАКОММЕНТИРОВАНО: Используем кэшированные contacts вместо CONTACTS
+  // const displayContacts = contacts;
+  
 
-  // 📝 ЗАМЕНИ ЗНАЧЕНИЯ НА СВОИ РЕАЛЬНЫЕ ДАННЫЕ
-  const CONTACTS = [
+  const displayContacts = [
     { label: t.contact.email_label, value: 'daniilgavrin@bytewizard.ru', href: 'mailto:daniilgavrin@bytewizard.ru' },
     { label: t.contact.telegram_label, value: '@danya_gavrin', href: 'https://t.me/danya_gavrin', external: true },
     { label: t.contact.vk_label, value: 'vk.com/danya_gavrin', href: 'https://vk.com/danya_gavrin', external: true },
-    //{ label: t.contact.wechat_label, value: 'your_wechat_id', href: '#' }, // WeChat не имеет прямой веб-ссылки, лучше копировать ID
-    //{ label: t.contact.discord_label, value: 'your_username#0000', href: '#' }, // Discord лучше копировать или дать invite-ссылку
+    //{ label: t.contact.wechat_label, value: 'your_wechat_id', href: '#' },
+    //{ label: t.contact.discord_label, value: 'your_username#0000', href: '#' },
   ];
-
+  
   return (
     <>
       <ScreenTitle>{t.nav.contact}</ScreenTitle>
-
-      {CONTACTS.map((contact) => {
+      {displayContacts.map((contact) => {
         const isExternal = contact.external || contact.href.startsWith('http');
         const isPlaceholder = contact.href === '#';
-
         const cardStyle = "block mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]";
-
+        
         if (isPlaceholder) {
           return (
             <button
@@ -46,7 +91,7 @@ export default function ContactPage() {
             </button>
           );
         }
-
+        
         return (
           <a
             key={contact.label}
@@ -68,7 +113,6 @@ export default function ContactPage() {
           </a>
         );
       })}
-
       <p className="mt-6 text-center text-xs text-[var(--text-dim)]">{t.contact.hint}</p>
     </>
   );
