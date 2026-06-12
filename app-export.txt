@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 12.06.2026 16:30:56
+Дата: 12.06.2026 17:35:18
 
 =============================================
 
@@ -1262,7 +1262,7 @@ export async function getCatalog(): Promise<CatalogResponse> {
     console.log('[CATALOG] Fetching from API...');
     
     const response = await fetch(`${API_BASE_URL}/catalog`, {
-      cache: 'no-store',
+      next: { revalidate: 86400 }, 
     });
 
     console.log('[CATALOG] API STATUS:', response.status);
@@ -2159,7 +2159,9 @@ type Selections = Record<string, string | string[] | number | boolean>;
 
 async function fetchProduct(id: string): Promise<CatalogItem | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/catalog/${id}`);
+    const res = await fetch(`${API_BASE_URL}/catalog/${id}`, {
+      next: { revalidate: 86400 },
+    });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`API ${res.status}`);
     const data: { item: CatalogItem } = await res.json();

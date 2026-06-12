@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
 import { useUser } from '../../../lib/UserContext';
 import Link from 'next/link';
+import { authFetch } from '../../../lib/auth';
 
 type Order = {
   order_code: string;
@@ -67,24 +68,21 @@ export default function OrdersPage() {
     }
 
     const loadOrders = async () => {
-      try {
-        const res = await fetch(`${PAY_API_BASE}/orders`, {
-          credentials: 'include',
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          setOrders(data.orders || []);
-        } else if (res.status === 401) {
-          console.log('[ORDERS] Unauthorized, user not logged in');
-          setOrders([]);
-        }
-      } catch (e) {
-        console.error('Ошибка загрузки заказов:', e);
-      } finally {
-        setLoading(false);
+    try {
+      const res = await authFetch(`${PAY_API_BASE}/orders`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data.orders || []);
+      } else if (res.status === 401) {
+        console.log('[ORDERS] Unauthorized, user not logged in');
+        setOrders([]);
       }
-    };
+    } catch (e) {
+      console.error('Ошибка загрузки заказов:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     loadOrders();
   }, [user]);

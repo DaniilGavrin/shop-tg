@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ScreenTitle } from '../../../../components/ScreenTitle';
 import { useUser } from '../../../../lib/UserContext';
+import { authFetch } from '../../../../lib/auth';
 
 type OrderDetail = {
   order_code: string;
@@ -87,13 +88,11 @@ export default function OrderDetailPage() {
     if (!window.confirm(c.cancel_confirm)) return;
     setCanceling(true);
     try {
-      const res = await fetch(`${PAY_API_BASE}/orders/${orderId}/cancel`, {
+      const res = await authFetch(`${PAY_API_BASE}/orders/${orderId}/cancel`, { // <-- ЗАМЕНИ
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({}), 
+        body: JSON.stringify({}),
       });
-      
       if (res.ok) {
         setOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
         alert(c.cancel_success);
@@ -115,24 +114,22 @@ export default function OrderDetailPage() {
     }
 
     const loadOrder = async () => {
-      try {
-        const res = await fetch(`${PAY_API_BASE}/orders/${orderId}`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setOrder(data.order);
-        } else {
-          console.error(`[ORDER DETAIL] Failed to load: ${res.status}`);
-          setOrder(null);
-        }
-      } catch (e) {
-        console.error('Ошибка загрузки заказа:', e);
+    try {
+      const res = await authFetch(`${PAY_API_BASE}/orders/${orderId}`); // <-- ЗАМЕНИ
+      if (res.ok) {
+        const data = await res.json();
+        setOrder(data.order);
+      } else {
+        console.error(`[ORDER DETAIL] Failed to load: ${res.status}`);
         setOrder(null);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (e) {
+      console.error('Ошибка загрузки заказа:', e);
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
+  };
     loadOrder();
   }, [orderId, user]);
 

@@ -6,6 +6,7 @@ import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { ScreenTitle } from '../../../components/ScreenTitle';
 import { useUser } from '../../../lib/UserContext';
 import Link from 'next/link';
+import { authFetch } from '../../../lib/auth';
 
 type TempOrder = {
   id: string;
@@ -145,10 +146,9 @@ export default function CreateOrderPage() {
         } : {}),
       };
 
-      const res = await fetch(`${PAY_API_BASE}/orders/create`, {
+      const res = await authFetch(`${PAY_API_BASE}/orders/create`, { // <-- ЗАМЕНИ fetch НА authFetch
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', 
         body: JSON.stringify(payload),
       });
 
