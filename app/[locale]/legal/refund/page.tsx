@@ -1,6 +1,6 @@
-'use client';
-
 import { ScreenTitle } from '../../../components/ScreenTitle';
+
+export const revalidate = 259200
 
 export default function RefundPage() {
   return (
