@@ -18,7 +18,9 @@ export const dictionaries = {
       change: 'Изменить',
       contacts_hint: 'Все способы связи',
       legal: 'Документы',
-      legal_hint: 'Оферта, политика, реквизиты'
+      legal_hint: 'Оферта, политика, реквизиты',
+      faq: 'FAQ',
+      faq_hint: 'Самые частые вопросы и ответы на них'
     },
     legal: {
       title: 'Документы',
@@ -59,7 +61,9 @@ export const dictionaries = {
       change: 'Change',
       contacts_hint: 'All ways to connect',
       legal: 'Legal',
-      legal_hint: 'Terms, privacy, requisites'
+      legal_hint: 'Terms, privacy, requisites',
+      faq: 'FAQ',
+      faq_hint: 'The most frequently asked questions and answers to them'
     },
     legal: {
       title: 'Legal',
