@@ -26,6 +26,8 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/images') ||
+    pathname.startsWith('/manifets.json') ||
+    pathname.startsWith('/icon') ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/yandex_') ||
     pathname === '/robots.txt' ||
@@ -56,5 +58,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next|api|images|.*\\..*).*)'],
+  matcher: ['/((?!_next|api|json|images|.*\\..*).*)'],
 };
