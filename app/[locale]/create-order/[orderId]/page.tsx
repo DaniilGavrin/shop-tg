@@ -26,7 +26,7 @@ type PaymentMethod = {
 const PAYMENT_METHODS: PaymentMethod[] = [
   { id: 'card', name: 'Банковская карта', icon: '💳', desc: 'Visa, MC, МИР' },
   { id: 'sbp', name: 'СБП', icon: '🏦', desc: 'Система быстрых платежей' },
-  //{ id: 'crypto', name: 'Крипто', icon: '₿', desc: 'USDT, TON, BTC' },
+  { id: 'crypto', name: 'Крипто', icon: '₿', desc: 'USDT, TON, BTC' },
   { id: 'stars', name: 'Telegram Stars', icon: '⭐', desc: 'Оплата звёздами' },
   { id: 'invoice', name: 'Для юр. лиц', icon: '📄', desc: 'Безнал с НДС' },
 ];
