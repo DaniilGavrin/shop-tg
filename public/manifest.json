@@ -1,12 +1,36 @@
 {
+  "id": "/ru",
   "name": "ByteWizard Shop",
   "short_name": "ByteWizard",
   "description": "Магазин цифровых услуг и разработка ПО",
+  "categories": ["business", "productivity"],
+  "lang": "ru",
+  "dir": "ltr",
   "start_url": "/ru",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait",
   "background_color": "#05020a",
   "theme_color": "#05020a",
-  "orientation": "portrait",
+  "prefer_related_applications": true,
+  "shortcuts": [
+    {
+      "name": "Каталог",
+      "short_name": "Каталог",
+      "url": "/ru/catalog",
+      "description": "Перейти в каталог услуг"
+    },
+    {
+      "name": "Корзина",
+      "short_name": "Корзина",
+      "url": "/ru/cart",
+      "description": "Перейти в корзину"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "icons": [
     {
       "src": "/icon-192.png",
@@ -20,5 +44,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ]  
 }
