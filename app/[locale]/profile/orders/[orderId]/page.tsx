@@ -33,6 +33,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState(false);
+  const [showStatusHelp, setShowStatusHelp] = useState(false);
 
   const c = {
     back: isRu ? '← К списку заказов' : '← Back to orders',
@@ -59,6 +60,63 @@ export default function OrderDetailPage() {
     cancel_error: isRu ? 'Ошибка при отмене заказа' : 'Error cancelling order',
     login_required: isRu ? 'Требуется вход' : 'Login required',
   };
+
+  const statusDescriptions = [
+    {
+      status: 'pending',
+      icon: '⏳',
+      title: isRu ? 'Ожидает оплаты' : 'Pending payment',
+      desc: isRu 
+        ? 'Заказ создан, но оплата ещё не поступила. Вы можете оплатить его или отменить.' 
+        : 'Order created, but payment has not been received yet. You can pay or cancel it.',
+      color: 'text-yellow-400',
+    },
+    {
+      status: 'paid',
+      icon: '✅',
+      title: isRu ? 'Оплачен' : 'Paid',
+      desc: isRu 
+        ? 'Оплата успешно получена. Мы уже начали работу над вашим заказом.' 
+        : 'Payment successfully received. We have already started working on your order.',
+      color: 'text-green-400',
+    },
+    {
+      status: 'in_progress',
+      icon: '⚙️',
+      title: isRu ? 'В работе' : 'In progress',
+      desc: isRu 
+        ? 'Заказ оплачен и находится в активной разработке. Мы свяжемся с вами для уточнения деталей.' 
+        : 'Order is paid and in active development. We will contact you to clarify details.',
+      color: 'text-[var(--neon-purple)]',
+    },
+    {
+      status: 'failed',
+      icon: '❌',
+      title: isRu ? 'Отклонён' : 'Failed',
+      desc: isRu 
+        ? 'Платёж был отклонён банком или платёжной системой. Средства не списаны. Попробуйте оплатить другим способом.' 
+        : 'Payment was declined by the bank or payment system. Funds were not charged. Try another payment method.',
+      color: 'text-red-400',
+    },
+    {
+      status: 'cancelled',
+      icon: '🚫',
+      title: isRu ? 'Отменён' : 'Cancelled',
+      desc: isRu 
+        ? 'Заказ был отменён вами или администрацией. Если оплата поступила — средства будут возвращены.' 
+        : 'Order was cancelled by you or administration. If payment was made — funds will be refunded.',
+      color: 'text-gray-400',
+    },
+    {
+      status: 'refunded',
+      icon: '↩️',
+      title: isRu ? 'Возвращён' : 'Refunded',
+      desc: isRu 
+        ? 'Средства по заказу были возвращены на ваш счёт. Возврат может занять до 10 рабочих дней.' 
+        : 'Funds for the order have been returned to your account. Refund may take up to 10 business days.',
+      color: 'text-blue-400',
+    },
+  ];
 
   const getStatusInfo = (status: string) => {
     const map: Record<string, { label: string; color: string; bg: string; icon: string }> = {
@@ -185,6 +243,71 @@ export default function OrderDetailPage() {
               <span className="text-lg">{statusInfo.icon}</span>
               <span>{statusInfo.label}</span>
             </span>
+          </div>
+        </div>
+
+        {/* 🔥 Справочник статусов */}
+        <div className="rounded-2xl border border-[rgba(0,240,255,0.26)] bg-[linear-gradient(145deg,rgba(9,24,45,0.92),rgba(3,7,16,0.94))] shadow-[0_0_20px_rgba(0,240,255,0.12)] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowStatusHelp(!showStatusHelp)}
+            className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[rgba(0,240,255,0.05)]"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">ℹ️</span>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--text-main)]">
+                  {isRu ? 'Что означают статусы заказа?' : 'What do order statuses mean?'}
+                </h3>
+                <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
+                  {isRu ? 'Нажмите, чтобы раскрыть' : 'Tap to expand'}
+                </p>
+              </div>
+            </div>
+            <svg
+              className={`h-5 w-5 shrink-0 text-[var(--neon-blue)] transition-transform duration-300 ${
+                showStatusHelp ? 'rotate-180' : ''
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${
+              showStatusHelp ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="border-t border-[rgba(0,240,255,0.15)] px-5 py-4 space-y-3">
+                {statusDescriptions.map((item) => (
+                  <div
+                    key={item.status}
+                    className={`flex items-start gap-3 p-3 rounded-xl border ${
+                      order.status === item.status
+                        ? 'border-[rgba(0,240,255,0.5)] bg-[rgba(0,240,255,0.08)]'
+                        : 'border-[rgba(176,38,255,0.15)] bg-[rgba(0,0,0,0.2)]'
+                    }`}
+                  >
+                    <span className="text-xl shrink-0 mt-0.5">{item.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-sm font-bold ${item.color}`}>{item.title}</span>
+                        {order.status === item.status && (
+                          <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-[rgba(0,240,255,0.2)] border border-[rgba(0,240,255,0.4)] text-[var(--neon-blue)]">
+                            {isRu ? 'текущий' : 'current'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[var(--text-dim)] leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
