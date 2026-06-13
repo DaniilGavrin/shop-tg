@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нет подключения — ByteWizard</title>
+  <style>
+    body {
+      background: #05020a;
+      color: #f3e8ff;
+      font-family: 'Exo 2', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 400px;
+    }
+    h1 {
+      color: #b026ff;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    p {
+      color: #8b5cf6;
+      line-height: 1.6;
+    }
+    button {
+      margin-top: 2rem;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #b026ff, #ff007f);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📡 Нет подключения</h1>
+    <p>Проверьте интернет-соединение и попробуйте снова</p>
+    <button onclick="window.location.reload()">Попробовать снова</button>
+  </div>
+</body>
+</html>

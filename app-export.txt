@@ -1,5 +1,5 @@
 ﻿=== ByteWizard App Export ===
-Дата: 12.06.2026 19:44:22
+Дата: 12.06.2026 20:33:40
 
 =============================================
 
@@ -1021,8 +1021,11 @@ export function HomeIntro() {
 ─────────────────────────────────────────
 FILE: components\ProductCard.tsx
 ─────────────────────────────────────────
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import type { CatalogItem } from '../types/catalog';
 
 type Props = {
@@ -1030,17 +1033,18 @@ type Props = {
 };
 
 export function ProductCard({ item }: Props) {
-  // рџ›ЎпёЏ Р—РђР©РРўРђ: Р•СЃР»Рё ID РЅРµС‚, РЅРµ СЂРµРЅРґРµСЂРёРј РєР°СЂС‚РѕС‡РєСѓ РІРѕРѕР±С‰Рµ
   if (!item || !item.id) {
     return null;
   }
 
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] || 'ru';
+
   const hasImage = item.preview_image && item.preview_image.trim() !== '';
 
   return (
-    <Link href={`/ru/catalog/${item.id}`}>
+    <Link href={`/${locale}/catalog/${item.id}`}>
       <article className="group overflow-hidden rounded-3xl border border-[rgba(176,38,255,0.18)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.98))] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(0,240,255,0.35)] hover:shadow-[0_0_35px_rgba(176,38,255,0.28)]">
-        {/* IMAGE */}
         <div className="aspect-square bg-[radial-gradient(circle_at_top,rgba(176,38,255,0.18),transparent_70%)] group-hover:scale-[1.02] transition-transform duration-300 relative overflow-hidden">
           {hasImage ? (
             <Image
@@ -1057,7 +1061,6 @@ export function ProductCard({ item }: Props) {
             </div>
           )}
         </div>
-        {/* INFO */}
         <div className="p-3">
           <p className="text-sm font-bold text-[var(--neon-purple)]">
             РћРў {item.base_price_rub.toLocaleString('ru-RU')} в‚Ѕ
@@ -2166,6 +2169,27 @@ export default async function CatalogPage() {
 
 
 ─────────────────────────────────────────
+FILE: [locale]\catalog\[id]\BackButton.tsx
+─────────────────────────────────────────
+'use client';
+
+export function BackButton() {
+  return (
+    <button 
+      type="button" 
+      onClick={() => window.history.back()} 
+      className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition" 
+      aria-label="РќР°Р·Р°Рґ"
+    >
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+  );
+}
+
+
+─────────────────────────────────────────
 FILE: [locale]\catalog\[id]\loading.tsx
 ─────────────────────────────────────────
 export default function ProductLoading() {
@@ -2195,23 +2219,20 @@ FILE: [locale]\catalog\[id]\page.tsx
 import { notFound } from 'next/navigation';
 import type { CatalogItem } from '../../../types/catalog';
 import { ProductConfigurator } from './ProductConfigurator';
+import { BackButton } from './BackButton';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.bytewizard.ru';
 
-// РЎРµСЂРІРµСЂРЅР°СЏ С„СѓРЅРєС†РёСЏ СЃ СЂРµР°Р»СЊРЅС‹Рј РєСЌС€РµРј РЅР° 3 РґРЅСЏ (259200 СЃРµРє)
 async function getProduct(id: string): Promise<CatalogItem | null> {
   try {
     if (!id || id === 'undefined' || id === 'null') {
       return null;
     }
-
     const res = await fetch(`${API_BASE_URL}/catalog/${id}`, {
-      next: { revalidate: 259200 }, // 3 РґРЅСЏ. Р РђР‘РћРўРђР•Рў РўРћР›Р¬РљРћ Р’ РЎР•Р Р’Р•Р РќР«РҐ РљРћРњРџРћРќР•РќРўРђРҐ!
+      next: { revalidate: 259200 }, // 3 РґРЅСЏ
     });
-    
     if (res.status === 404 || res.status === 422) return null;
     if (!res.ok) throw new Error(`API ${res.status}`);
-    
     const data: { item: CatalogItem } = await res.json();
     return data.item.is_active ? data.item : null;
   } catch (error) {
@@ -2220,16 +2241,17 @@ async function getProduct(id: string): Promise<CatalogItem | null> {
   }
 }
 
-// Р’РќРРњРђРќРР•: Р—РґРµСЃСЊ РќР•Рў 'use client'
-export default async function ProductPage({ params }: { params: { locale: string; id: string } }) {
-  const product = await getProduct(params.id);
+export default async function ProductPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
+  const resolvedParams = await params;
+  
+  const product = await getProduct(resolvedParams.id);
 
   if (!product) {
-    notFound(); // РџРѕРєР°Р¶РµС‚ СЃС‚Р°РЅРґР°СЂС‚РЅСѓСЋ 404 СЃС‚СЂР°РЅРёС†Сѓ Next.js
+    notFound();
   }
 
   const priceFormatted = new Intl.NumberFormat('ru-RU').format(product.base_price_rub);
-  const isRu = params.locale !== 'en';
+  const isRu = resolvedParams.locale !== 'en';
   const t = {
     back: isRu ? 'в†ђ РќР°Р·Р°Рґ' : 'в†ђ Back',
     base_price: isRu ? 'Р‘Р°Р·РѕРІР°СЏ С†РµРЅР°:' : 'Base price:',
@@ -2242,9 +2264,7 @@ export default async function ProductPage({ params }: { params: { locale: string
   return (
     <>
       <header className="sticky top-0 z-40 relative flex items-center h-14 px-4 bg-transparent">
-        <button type="button" onClick={() => window.history.back()} className="absolute left-3 p-2 rounded-xl border border-[rgba(176,38,255,0.3)] text-[var(--neon-purple)] hover:border-[var(--neon-pink)] hover:text-[var(--neon-pink)] active:scale-[0.98] transition" aria-label={t.back}>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        </button>
+        <BackButton />
         <h1 className="mx-auto text-center text-xl md:text-2xl font-bold text-gradient-neon truncate max-w-[75%] px-2">{product.name}</h1>
       </header>
       
@@ -2290,9 +2310,8 @@ export default async function ProductPage({ params }: { params: { locale: string
         </div>
       </section>
 
-      {/* РРЅС‚РµСЂР°РєС‚РёРІРЅР°СЏ С‡Р°СЃС‚СЊ РІС‹РЅРµСЃРµРЅР° РІ РѕС‚РґРµР»СЊРЅС‹Р№ РєР»РёРµРЅС‚СЃРєРёР№ РєРѕРјРїРѕРЅРµРЅС‚ */}
       {product.is_configurable && Object.keys(product.metadata.config_schema).length > 0 && (
-        <ProductConfigurator product={product} locale={params.locale} />
+        <ProductConfigurator product={product} locale={resolvedParams.locale} />
       )}
       
       <div className="h-24" />
@@ -3267,7 +3286,8 @@ const faqItems = [
   { id: 4, question: 'РњРѕР¶РЅРѕ Р»Рё РІРЅРµСЃС‚Рё РїСЂР°РІРєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°?', answer: 'Р”Р°, РІ СЃС‚РѕРёРјРѕСЃС‚СЊ РІРєР»СЋС‡РµРЅРѕ 2 СЂР°СѓРЅРґР° Р±РµСЃРїР»Р°С‚РЅС‹С… РїСЂР°РІРѕРє. Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РґРѕСЂР°Р±РѕС‚РєРё РѕРїР»Р°С‡РёРІР°СЋС‚СЃСЏ РѕС‚РґРµР»СЊРЅРѕ РїРѕ РїРѕС‡Р°СЃРѕРІРѕР№ СЃС‚Р°РІРєРµ.' },
   { id: 5, question: 'РџСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚Рµ Р»Рё РІС‹ РїРѕРґРґРµСЂР¶РєСѓ РїРѕСЃР»Рµ Р·Р°РїСѓСЃРєР°?', answer: 'Р”Р°, РјС‹ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµРј 30 РґРЅРµР№ Р±РµСЃРїР»Р°С‚РЅРѕР№ С‚РµС…РЅРёС‡РµСЃРєРѕР№ РїРѕРґРґРµСЂР¶РєРё РїРѕСЃР»Рµ СЃРґР°С‡Рё РїСЂРѕРµРєС‚Р°. Р”Р°Р»РµРµ РјРѕР¶РЅРѕ РѕС„РѕСЂРјРёС‚СЊ РµР¶РµРјРµСЃСЏС‡РЅСѓСЋ РїРѕРґРїРёСЃРєСѓ РЅР° РїРѕРґРґРµСЂР¶РєСѓ.' },
   { id: 6, question: 'Р Р°Р±РѕС‚Р°РµС‚Рµ Р»Рё РІС‹ СЃ РєР»РёРµРЅС‚Р°РјРё РёР· РґСЂСѓРіРёС… СЃС‚СЂР°РЅ?', answer: 'Р”Р°, РјС‹ СЂР°Р±РѕС‚Р°РµРј СЃ РєР»РёРµРЅС‚Р°РјРё РїРѕ РІСЃРµРјСѓ РјРёСЂСѓ. Р’СЃРµ РєРѕРјРјСѓРЅРёРєР°С†РёРё РІРµРґСѓС‚СЃСЏ РЅР° СЂСѓСЃСЃРєРѕРј РёР»Рё Р°РЅРіР»РёР№СЃРєРѕРј СЏР·С‹РєР°С… С‡РµСЂРµР· Telegram.' },
-  { id: 7, question: 'Р§С‚Рѕ РґРµР»Р°С‚СЊ РµСЃР»Рё РЅРµ РЅР°С€РµР» РЅСѓР¶РЅС‹Р№ РјРЅРµ С‚РѕРІР°СЂ?', answer: 'РЎРІСЏР¶РёС‚РµСЃСЊ СЃ РЅР°РјРё Рё РјС‹ РѕР±СЃСѓРґРёРј РІР°С€Сѓ Р·Р°РґР°С‡Сѓ Рё СЃРѕР±РµСЂРµРј РїРµСЂСЃРѕРЅР°Р»СЊРЅРѕ РїРѕРґ РІР°С€Рё С‚СЂРµР±РѕРІР°РЅРёСЏ С‚РѕРІР°СЂ.' }
+  { id: 7, question: 'Р§С‚Рѕ РґРµР»Р°С‚СЊ РµСЃР»Рё РЅРµ РЅР°С€РµР» РЅСѓР¶РЅС‹Р№ РјРЅРµ С‚РѕРІР°СЂ?', answer: 'РЎРІСЏР¶РёС‚РµСЃСЊ СЃ РЅР°РјРё Рё РјС‹ РѕР±СЃСѓРґРёРј РІР°С€Сѓ Р·Р°РґР°С‡Сѓ Рё СЃРѕР±РµСЂРµРј РїРµСЂСЃРѕРЅР°Р»СЊРЅРѕ РїРѕРґ РІР°С€Рё С‚СЂРµР±РѕРІР°РЅРёСЏ С‚РѕРІР°СЂ.' },
+  { id: 8, question: 'Р§С‚Рѕ РјРѕР¶РЅРѕ Р·Р°РєР°Р·Р°С‚СЊ Сѓ РІР°СЃ?', answer: 'Р’СЃС‘ С‡С‚Рѕ РІ РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ СЃРІСЏР·Р°РЅРЅРѕРµ СЃ СЂР°Р·СЂР°Р±РѕС‚РєРѕР№, Рё РїСЂРё СЌС‚РѕРј СЏРІР»СЏРµС‚СЃСЏ Р·Р°РєРѕРЅРЅС‹Рј, РґРµС‚Р°Р»СЊРЅРѕ СѓС‚РѕС‡РЅРёС‚СЊ РІС‹ РјРѕР¶РµС‚Рµ СЃРІРѕР№ Р·Р°РєР°Р· РЅР°РїРёСЃР°РІ РЅР°Рј'}
 ];
 
 export default function FAQPage({ params }: { params: { locale: string } }) {
