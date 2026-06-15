@@ -1,69 +1,34 @@
 'use client';
 
-import { useEffect } from 'react';
+import Script from 'next/script';
 
 const YANDEX_METRIKA_ID = '109855733';
 
 export function YandexMetrika() {
-  useEffect(() => {
-    // Проверяем, что мы в браузере и Метрика ещё не загружена
-    if (typeof window === 'undefined') return;
-    if ((window as any).ym) return;
+  return (
+    <>
+      <Script
+        id="yandex-metrika"
+        strategy="afterInteractive" // Загружается ПОСЛЕ того, как страница стала интерактивной (не блокирует LCP)
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+            })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
 
-    // Таймаут: если Яндекс лежит больше 5 секунд — забиваем
-    const timeoutId = setTimeout(() => {
-      console.warn('⚠️ Yandex.Metrika: timeout, skipping initialization');
-    }, 5000);
-
-    try {
-      // Загружаем скрипт асинхронно
-      const script = document.createElement('script');
-      script.src = 'https://mc.yandex.ru/metrika/tag.js';
-      script.async = true;
-      
-      // Обработка ошибок загрузки (если Яндекс недоступен)
-      script.onerror = () => {
-        clearTimeout(timeoutId);
-        console.warn('⚠️ Yandex.Metrika: failed to load, skipping');
-      };
-
-      script.onload = () => {
-        clearTimeout(timeoutId);
-        
-        try {
-          // Инициализируем Метрику
-          (window as any).ym = (window as any).ym || function() {
-            ((window as any).ym.a = (window as any).ym.a || []).push(arguments);
-          };
-          (window as any).ym.l = Date.now(); // 🔥 ИСПРАВЛЕНО
-          
-          (window as any).ym(YANDEX_METRIKA_ID, 'init', {
-            ssr: true,
-            webvisor: true,
-            clickmap: true,
-            ecommerce: "dataLayer",
-            accurateTrackBounce: true,
-            trackLinks: true,
-          });
-          
-          console.log('✅ Yandex.Metrika initialized');
-        } catch (initError) {
-          console.warn('⚠️ Yandex.Metrika: init error', initError);
-        }
-      };
-
-      document.head.appendChild(script);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      console.warn('⚠️ Yandex.Metrika: script creation error', error);
-    }
-
-    // Cleanup при размонтировании
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
-  // Компонент ничего не рендерит
-  return null;
+            ym(${YANDEX_METRIKA_ID}, "init", {
+              ssr: true,
+              webvisor: true,
+              clickmap: true,
+              ecommerce: "dataLayer",
+              accurateTrackBounce: true,
+              trackLinks: true
+            });
+          `,
+        }}
+      />
+    </>
+  );
 }
