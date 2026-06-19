@@ -157,7 +157,6 @@ export default function CreateOrderPage() {
         const url = data.payment_url || data.link || data.redirect_url || data.data?.payment_url;
         
         if (url) {
-          // 🔥 ОТправляем цель в Яндекс.Метрику (ДО редиректа!)
           if (typeof window !== 'undefined' && (window as any).ym) {
             (window as any).ym(109855733, 'reachGoal', 'order_created');
             console.log('✅ Yandex.Metrika goal: order_created');
