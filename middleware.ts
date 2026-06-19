@@ -25,8 +25,9 @@ export function middleware(request: NextRequest) {
 
   if (
     pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
     pathname.startsWith('/images') ||
-    pathname.startsWith('/manifets.json') ||
+    pathname.startsWith('/manifest.json') ||
     pathname.startsWith('/icon') ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/yandex_') ||
