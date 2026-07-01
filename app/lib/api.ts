@@ -1,4 +1,4 @@
-import type { CatalogResponse } from '../types/catalog';
+﻿import type { CatalogResponse } from '../types/catalog';
 
 const API_BASE_URL = 'https://api.bytewizard.ru';
 

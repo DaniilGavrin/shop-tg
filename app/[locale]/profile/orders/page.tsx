@@ -50,9 +50,9 @@ export default function OrdersPage() {
       failed: { label: c.failed, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', icon: '❌' },
       cancelled: { label: c.cancelled, color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/30', icon: '🚫' },
       refunded: { label: c.refunded, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', icon: '↩️' },
-      in_progress: { label: c.in_progress, color: 'text-[var(--neon-purple)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.4)]', icon: '⚙️' },
+      in_progress: { label: c.in_progress, color: 'text-[var(--primary)]', bg: 'bg-[var(--muted)] border-[var(--border)]', icon: '⚙️' },
     };
-    return map[status] || { label: status, color: 'text-[var(--text-dim)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.2)]', icon: '📦' };
+    return map[status] || { label: status, color: 'text-[var(--muted-foreground)]', bg: 'bg-[var(--muted)] border-[var(--border)]', icon: '📦' };
   };
 
   const formatDate = (dateStr: string) => {
@@ -93,8 +93,8 @@ export default function OrdersPage() {
     return (
       <div className="min-h-[60vh] grid place-items-center text-center px-6">
         <div className="text-5xl mb-4">🔒</div>
-        <h2 className="text-xl font-bold text-[var(--text-main)] mb-2">{c.login_required}</h2>
-        <button onClick={() => router.push(`/${locale}/`)} className="mt-4 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
+        <h2 className="text-xl font-bold text-[var(--foreground)] mb-2">{c.login_required}</h2>
+        <button onClick={() => router.push(`/${locale}/`)} className="mt-4 px-6 py-3 rounded-xl font-semibold bg-[var(--primary)] text-white">
           {c.to_catalog}
         </button>
       </div>
@@ -106,11 +106,11 @@ export default function OrdersPage() {
       <ScreenTitle>{c.title}</ScreenTitle>
 
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)] p-8 text-center">
+        <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
           <div className="text-5xl mb-3">📭</div>
-          <p className="text-[var(--text-main)] font-medium mb-1">{c.no_orders}</p>
-          <p className="text-xs text-[var(--text-dim)] mb-4">{c.no_orders_sub}</p>
-          <button onClick={() => router.push(`/${locale}/catalog`)} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)]">
+          <p className="text-[var(--foreground)] font-medium mb-1">{c.no_orders}</p>
+          <p className="text-xs text-[var(--muted-foreground)] mb-4">{c.no_orders_sub}</p>
+          <button onClick={() => router.push(`/${locale}/catalog`)} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[var(--primary)] text-white shadow-sm">
             {c.to_catalog}
           </button>
         </div>
@@ -122,12 +122,12 @@ export default function OrdersPage() {
               <Link 
                 key={order.order_code} 
                 href={`/${locale}/profile/orders/${order.order_code}`}
-                className="group block rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)] p-4 transition-all duration-300 hover:border-[var(--neon-purple)] hover:shadow-[0_0_24px_rgba(176,38,255,0.15)] hover:-translate-y-0.5"
+                className="group block rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 transition-all duration-300 hover:border-[var(--neon-purple)] hover:shadow-sm hover:-translate-y-0.5"
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.order_label}</p>
-                    <p className="text-sm font-mono text-[var(--text-main)] truncate group-hover:text-[var(--neon-purple)] transition-colors">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] mb-0.5">{c.order_label}</p>
+                    <p className="text-sm font-mono text-[var(--foreground)] truncate group-hover:text-[var(--primary)] transition-colors">
                       {order.order_code}
                     </p>
                   </div>
@@ -137,18 +137,18 @@ export default function OrdersPage() {
                   </span>
                 </div>
 
-                <div className="flex items-end justify-between pt-3 border-t border-[rgba(176,38,255,0.15)]">
+                <div className="flex items-end justify-between pt-3 border-t border-[var(--border)]">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.sum}</p>
-                    <p className="text-lg font-bold text-[var(--neon-purple)]">{order.total_rub.toLocaleString('ru-RU')} ₽</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] mb-0.5">{c.sum}</p>
+                    <p className="text-lg font-bold text-[var(--primary)]">{order.total_rub.toLocaleString('ru-RU')} ₽</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-0.5">{c.date}</p>
-                    <p className="text-xs text-[var(--text-dim)]">{formatDate(order.created_at)}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] mb-0.5">{c.date}</p>
+                    <p className="text-xs text-[var(--muted-foreground)]">{formatDate(order.created_at)}</p>
                   </div>
                 </div>
                 
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--neon-purple)]">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--primary)]">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

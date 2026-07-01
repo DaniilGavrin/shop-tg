@@ -1,4 +1,4 @@
-import type { CatalogItem } from '../types/catalog';
+﻿import type { CatalogItem } from '../types/catalog';
 import { ProductCard } from './ProductCard';
 
 type Props = {

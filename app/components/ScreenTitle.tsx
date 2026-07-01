@@ -1,14 +1,10 @@
-import type { ReactNode } from 'react';
-
-
-type ScreenTitleProps = {
-  children: ReactNode;
-};
-
-export function ScreenTitle({ children }: ScreenTitleProps) {
+﻿import type { ReactNode } from 'react';
+export function ScreenTitle({ children }: { children: ReactNode }) {
   return (
     <header className="text-center">
-      <h1 className="text-3xl font-bold text-gradient-neon">{children}</h1>
+      <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+        {children}
+      </h1>
     </header>
   );
 }

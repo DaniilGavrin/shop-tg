@@ -67,7 +67,7 @@ export default function ContactPage() {
       {displayContacts.map((contact) => {
         const isExternal = contact.external || contact.href.startsWith('http');
         const isPlaceholder = contact.href === '#';
-        const cardStyle = "block mt-4 overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]";
+        const cardStyle = "block mt-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition hover:border-[var(--border)] hover:shadow-sm";
         
         if (isPlaceholder) {
           return (
@@ -77,13 +77,13 @@ export default function ContactPage() {
               onClick={() => navigator.clipboard.writeText(contact.value)}
               className={`${cardStyle} w-full text-left`}
             >
-              <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+              <div className="h-1 bg-[var(--primary)]" />
               <div className="flex items-center justify-between px-5 py-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">{contact.label}</p>
-                  <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">{contact.value}</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--muted-foreground)]">{contact.label}</p>
+                  <h3 className="mt-1 text-base font-semibold text-[var(--foreground)]">{contact.value}</h3>
                 </div>
-                <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                 </svg>
               </div>
@@ -99,20 +99,20 @@ export default function ContactPage() {
             rel={isExternal ? 'noreferrer' : undefined}
             className={cardStyle}
           >
-            <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+            <div className="h-1 bg-[var(--primary)]" />
             <div className="flex items-center justify-between px-5 py-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--text-dim)]">{contact.label}</p>
-                <h3 className="mt-1 text-base font-semibold text-[var(--text-main)]">{contact.value}</h3>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--muted-foreground)]">{contact.label}</p>
+                <h3 className="mt-1 text-base font-semibold text-[var(--foreground)]">{contact.value}</h3>
               </div>
-              <svg className="h-5 w-5 text-[var(--neon-purple)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </a>
         );
       })}
-      <p className="mt-6 text-center text-xs text-[var(--text-dim)]">{t.contact.hint}</p>
+      <p className="mt-6 text-center text-xs text-[var(--muted-foreground)]">{t.contact.hint}</p>
     </>
   );
 }

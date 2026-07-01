@@ -1,4 +1,4 @@
-// lib/auth.ts
+﻿// lib/auth.ts
 const API_BASE = 'https://api.bytewizard.ru';
 
 // Глобальная блокировка: если true, значит, рефреш уже идет.

@@ -1,4 +1,4 @@
-export type DeliveryInfo = {
+﻿export type DeliveryInfo = {
   base_days: number;
   min_days: number;
   avg_days: number;

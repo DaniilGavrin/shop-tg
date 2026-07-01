@@ -20,18 +20,18 @@ export function FAQClient({ items, locale }: { items: FAQItem[]; locale: string 
       {items.map((item) => (
         <div
           key={item.id}
-          className="overflow-hidden rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[linear-gradient(145deg,rgba(24,9,45,0.92),rgba(7,3,16,0.94))] shadow-[0_0_20px_rgba(176,38,255,0.12)] transition hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_0_28px_rgba(0,240,255,0.18)]"
+          className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition hover:border-[var(--border)] hover:shadow-sm"
         >
-          <div className="h-1 bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue),var(--neon-pink))]" />
+          <div className="h-1 bg-[var(--primary)]" />
           <button
             onClick={() => toggleItem(item.id)}
-            className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[rgba(176,38,255,0.05)]"
+            className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[var(--muted)]"
           >
-            <h3 className="text-base font-semibold text-[var(--text-main)]">
+            <h3 className="text-base font-semibold text-[var(--foreground)]">
               {item.question}
             </h3>
             <svg
-              className={`h-5 w-5 shrink-0 text-[var(--neon-purple)] transition-transform duration-300 ${
+              className={`h-5 w-5 shrink-0 text-[var(--primary)] transition-transform duration-300 ${
                 openId === item.id ? 'rotate-180' : ''
               }`}
               fill="none"
@@ -47,8 +47,8 @@ export function FAQClient({ items, locale }: { items: FAQItem[]; locale: string 
             }`}
           >
             <div className="overflow-hidden">
-              <div className="border-t border-[rgba(176,38,255,0.15)] px-5 py-4">
-                <p className="text-sm leading-relaxed text-[var(--text-dim)]">
+              <div className="border-t border-[var(--border)] px-5 py-4">
+                <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">
                   {item.answer}
                 </p>
               </div>
@@ -57,13 +57,13 @@ export function FAQClient({ items, locale }: { items: FAQItem[]; locale: string 
         </div>
       ))}
       
-      <div className="mt-6 overflow-hidden rounded-2xl border border-[rgba(0,240,255,0.26)] bg-[linear-gradient(145deg,rgba(9,24,45,0.92),rgba(3,7,16,0.94))] shadow-[0_0_20px_rgba(0,240,255,0.12)]">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
         <div className="h-1 bg-[linear-gradient(90deg,var(--neon-blue),var(--neon-purple),var(--neon-pink))]" />
         <div className="px-5 py-4 text-center">
-          <p className="text-sm text-[var(--text-dim)]">Не нашли ответ на свой вопрос?</p>
+          <p className="text-sm text-[var(--muted-foreground)]">Не нашли ответ на свой вопрос?</p>
           <a
             href={`/${locale}/contact`}
-            className="mt-2 inline-block text-sm font-semibold text-[var(--neon-blue)] transition hover:text-[var(--neon-pink)] hover:underline"
+            className="mt-2 inline-block text-sm font-semibold text-[var(--primary)] transition hover:text-[var(--primary)] hover:underline"
           >
             Связаться с поддержкой →
           </a>

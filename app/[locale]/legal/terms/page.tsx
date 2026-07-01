@@ -7,9 +7,9 @@ export default function TermsPage() {
     <>
       <ScreenTitle>Публичная оферта</ScreenTitle>
       
-      <div className="mt-6 space-y-6 text-sm text-[var(--text-main)] leading-relaxed">
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">1. Общие положения</h2>
+      <div className="mt-6 space-y-6 text-sm text-[var(--foreground)] leading-relaxed">
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">1. Общие положения</h2>
           <p className="mb-2">
             Настоящий документ (далее — «Оферта») является публичной офертой ИП Гаврин Даниил Никитич 
             (ИНН 434584462396, далее — «Исполнитель») и определяет условия оказания услуг через сайт 
@@ -21,8 +21,8 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">2. Предмет договора</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">2. Предмет договора</h2>
           <p className="mb-2">
             Исполнитель обязуется оказать Заказчику услуги по разработке программного обеспечения, 
             созданию цифровых продуктов и иных услуг, представленных в каталоге Сайта, а Заказчик 
@@ -34,68 +34,68 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">3. Порядок оформления заказа</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">3. Порядок оформления заказа</h2>
           <p className="mb-2">3.1. Заказчик оформляет заказ через Сайт, выбирая необходимые услуги и указывая контактные данные.</p>
           <p className="mb-2">3.2. После оформления заказа Исполнитель направляет Заказчику счёт на оплату.</p>
           <p className="mb-2">3.3. Заказ считается принятым в работу с момента поступления оплаты на расчётный счёт Исполнителя.</p>
           <p>3.4. Срок исполнения заказа исчисляется с момента получения оплаты и согласовывается с Заказчиком индивидуально.</p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">4. Стоимость и порядок оплаты</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">4. Стоимость и порядок оплаты</h2>
           <p className="mb-2">4.1. Стоимость услуг определяется согласно ценам, указанным в каталоге Сайта.</p>
           <p className="mb-2">4.2. Оплата производится в рублях Российской Федерации любым удобным для Заказчика способом.</p>
           <p>4.3. Исполнитель вправе изменять стоимость услуг в одностороннем порядке, однако стоимость уже оформленных и оплаченных заказов изменению не подлежит.</p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">5. Права и обязанности сторон</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">5. Права и обязанности сторон</h2>
           <p className="mb-2"><strong>5.1. Исполнитель обязуется:</strong></p>
-          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)] mb-3">
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--muted-foreground)] mb-3">
             <li>Оказать услуги качественно и в согласованные сроки</li>
             <li>Информировать Заказчика о ходе выполнения заказа</li>
             <li>Соблюдать конфиденциальность персональных данных Заказчика</li>
           </ul>
           <p className="mb-2"><strong>5.2. Заказчик обязуется:</strong></p>
-          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)] mb-3">
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--muted-foreground)] mb-3">
             <li>Предоставить достоверную информацию для выполнения заказа</li>
             <li>Своевременно оплачивать услуги</li>
             <li>Принять выполненные работы в установленные сроки</li>
           </ul>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">6. Ответственность сторон</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">6. Ответственность сторон</h2>
           <p className="mb-2">6.1. За неисполнение или ненадлежащее исполнение обязательств стороны несут ответственность в соответствии с действующим законодательством РФ.</p>
           <p className="mb-2">6.2. Исполнитель не несёт ответственности за убытки, возникшие по вине Заказчика или вследствие предоставления недостоверной информации.</p>
           <p>6.3. Исполнитель не несёт ответственности за задержки, вызванные обстоятельствами непреодолимой силы (форс-мажор).</p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">7. Возврат и отмена заказа</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">7. Возврат и отмена заказа</h2>
           <p className="mb-2">7.1. Заказчик вправе отказаться от заказа в любое время до начала его исполнения, уплатив Исполнителю фактически понесённые расходы.</p>
           <p className="mb-2">7.2. Возврат денежных средств осуществляется тем же способом, которым производилась оплата.</p>
           <p>7.3. Подробные условия возврата описаны в разделе «Возврат и отмена».</p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">8. Недобросовестные действия Заказчика</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">8. Недобросовестные действия Заказчика</h2>
           <p className="mb-2">
             Заказчику категорически запрещается использование уязвимостей, ошибок (багов) программного 
             обеспечения Сайта, а также попытка манипуляции стоимостью услуг (в т.ч. путем подмены данных 
             на стороне клиента, перехвата запросов или иного вмешательства в работу интерфейса).
           </p>
           <p className="mb-2">В случае выявления фактов, указанных выше, Исполнитель вправе:</p>
-          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--text-dim)]">
+          <ul className="list-disc list-inside space-y-1 ml-4 text-[var(--muted-foreground)]">
             <li>В одностороннем внесудебном порядке расторгнуть настоящий Договор и аннулировать Заказ</li>
             <li>Заблокировать учетную запись Заказчика на Сайте без права восстановления</li>
             <li>Удержать сумму фактически оплаченного такого Заказа в качестве компенсации за административные издержки и убытки</li>
           </ul>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">9. Согласие на обработку персональных данных</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">9. Согласие на обработку персональных данных</h2>
           <p className="mb-2">
             Оформляя заказ на Сайте, Заказчик даёт своё согласие Исполнителю на обработку своих персональных 
             данных (имя, фамилия, номер телефона, адрес электронной почты, Telegram ID) в целях исполнения 
@@ -107,21 +107,21 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">10. Разрешение споров</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">10. Разрешение споров</h2>
           <p className="mb-2">10.1. Все споры разрешаются путём переговоров. Претензии направляются в письменном виде на email Исполнителя.</p>
           <p>10.2. При невозможности урегулирования спора путём переговоров, он подлежит рассмотрению в суде по месту нахождения Исполнителя.</p>
         </section>
 
-        <section className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h2 className="text-lg font-bold text-[var(--neon-purple)] mb-3">11. Срок действия оферты</h2>
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-lg font-bold text-[var(--primary)] mb-3">11. Срок действия оферты</h2>
           <p>
             Настоящая оферта вступает в силу с момента публикации на Сайте и действует до её отмены. 
             Исполнитель вправе в одностороннем порядке изменять условия оферты, опубликовав новую редакцию на Сайте.
           </p>
         </section>
 
-        <div className="mt-8 pt-6 border-t border-[rgba(176,38,255,0.2)] text-center text-xs text-[var(--text-dim)]">
+        <div className="mt-8 pt-6 border-t border-[var(--border)] text-center text-xs text-[var(--muted-foreground)]">
           <p>Дата публикации: {new Date().toLocaleDateString('ru-RU')}</p>
           <p className="mt-2">ИП Гаврин Даниил Никитич | ИНН 434584462396</p>
         </div>

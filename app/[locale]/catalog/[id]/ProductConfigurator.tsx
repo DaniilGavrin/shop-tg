@@ -127,9 +127,9 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
   const renderField = (fieldId: string, field: ConfigField) => {
     const val = selections[fieldId];
     const commonLabel = (
-      <label className="block text-sm font-medium text-[var(--text-main)] mb-1">
-        {field.label} {field.required && <span className="text-[var(--neon-pink)]">*</span>}
-        {field.description && <span className="block text-xs text-[var(--text-dim)] font-normal mt-0.5">{field.description}</span>}
+      <label className="block text-sm font-medium text-[var(--foreground)] mb-1">
+        {field.label} {field.required && <span className="text-[var(--primary)]">*</span>}
+        {field.description && <span className="block text-xs text-[var(--muted-foreground)] font-normal mt-0.5">{field.description}</span>}
       </label>
     );
 
@@ -137,7 +137,7 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
       return (
         <div key={fieldId} className="space-y-1">
           {commonLabel}
-          <textarea value={val as string || ''} onChange={e => handleSelectionChange(fieldId, e.target.value)} rows={4} required={field.required} className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none" />
+          <textarea value={val as string || ''} onChange={e => handleSelectionChange(fieldId, e.target.value)} rows={4} required={field.required} className="w-full rounded-xl border border-[var(--border)] bg-[var(--secondary)] p-3 text-sm text-[var(--foreground)] focus:border-[var(--primary)] focus:outline-none" />
         </div>
       );
     }
@@ -145,7 +145,7 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
       return (
         <div key={fieldId} className="space-y-1">
           {commonLabel}
-          <select value={val as string || ''} onChange={e => handleSelectionChange(fieldId, e.target.value)} className="w-full rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-main)] focus:border-[var(--neon-purple)] focus:outline-none">
+          <select value={val as string || ''} onChange={e => handleSelectionChange(fieldId, e.target.value)} className="w-full rounded-xl border border-[var(--border)] bg-[var(--secondary)] p-3 text-sm text-[var(--foreground)] focus:border-[var(--primary)] focus:outline-none">
             {field.options.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label} {opt.price_modifier ? `(+${opt.price_modifier.toLocaleString('ru-RU')} ₽)` : ''}</option>
             ))}
@@ -165,7 +165,7 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
                 <button key={opt.value} type="button" onClick={() => {
                   const next = isActive ? selected.filter(v => v !== opt.value) : [...selected, opt.value];
                   handleSelectionChange(fieldId, next);
-                }} className={`px-3 py-1.5 text-xs rounded-lg border transition ${isActive ? 'border-[var(--neon-purple)] bg-[rgba(176,38,255,0.2)] text-[var(--neon-purple)]' : 'border-[rgba(176,38,255,0.2)] text-[var(--text-dim)] hover:border-[var(--neon-pink)]'}`}>
+                }} className={`px-3 py-1.5 text-xs rounded-lg border transition ${isActive ? 'border-[var(--neon-purple)] bg-[var(--muted)] text-[var(--primary)]' : 'border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--neon-pink)]'}`}>
                   {opt.label} {opt.price_modifier ? `+${opt.price_modifier.toLocaleString('ru-RU')}` : ''}
                 </button>
               );
@@ -180,7 +180,7 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
           <button type="button" onClick={() => handleSelectionChange(fieldId, !val)} className={`w-5 h-5 rounded border transition flex items-center justify-center ${val ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)]'}`}>
             {val && <span className="text-[10px] text-white">✓</span>}
           </button>
-          <span className="text-sm text-[var(--text-main)]">{field.label} {field.price_modifier ? `(+${field.price_modifier.toLocaleString('ru-RU')} ₽)` : ''}</span>
+          <span className="text-sm text-[var(--foreground)]">{field.label} {field.price_modifier ? `(+${field.price_modifier.toLocaleString('ru-RU')} ₽)` : ''}</span>
         </div>
       );
     }
@@ -189,8 +189,8 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
         <div key={fieldId} className="space-y-1">
           {commonLabel}
           <div className="flex items-center gap-2">
-            <input type="number" min={field.min} max={field.max} value={val as number || 0} onChange={e => handleSelectionChange(fieldId, Number(e.target.value))} className="w-24 rounded-xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface)] p-2 text-sm text-[var(--text-main)] text-center focus:border-[var(--neon-purple)] focus:outline-none" />
-            {field.price_per_unit && <span className="text-xs text-[var(--text-dim)]">+{field.price_per_unit.toLocaleString('ru-RU')} ₽ / ед.</span>}
+            <input type="number" min={field.min} max={field.max} value={val as number || 0} onChange={e => handleSelectionChange(fieldId, Number(e.target.value))} className="w-24 rounded-xl border border-[var(--border)] bg-[var(--secondary)] p-2 text-sm text-[var(--foreground)] text-center focus:border-[var(--primary)] focus:outline-none" />
+            {field.price_per_unit && <span className="text-xs text-[var(--muted-foreground)]">+{field.price_per_unit.toLocaleString('ru-RU')} ₽ / ед.</span>}
           </div>
         </div>
       );
@@ -201,13 +201,13 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
   return (
     <>
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-purple)] text-[var(--neon-purple)] text-sm font-medium backdrop-blur-md animate-pulse shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--card)] border border-[var(--neon-purple)] text-[var(--primary)] text-sm font-medium backdrop-blur-md animate-pulse shadow-sm">
           {toast}
         </div>
       )}
 
-      <section className="mt-6 p-5 rounded-2xl border border-[rgba(176,38,255,0.2)] bg-[var(--bg-surface-glass)]">
-        <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">⚙️ Настройка проекта</h3>
+      <section className="mt-6 p-5 rounded-2xl border border-[var(--border)] bg-[var(--card)]">
+        <h3 className="text-lg font-bold text-[var(--foreground)] mb-4">⚙️ Настройка проекта</h3>
         <div className="space-y-4">
           {Object.entries(product.metadata.config_schema).map(([key, field]) => renderField(key, field))}
         </div>
@@ -217,12 +217,12 @@ export function ProductConfigurator({ product, locale }: { product: CatalogItem;
 
       <div className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb">
         <div className="mx-auto max-w-md px-4 pb-2">
-          <div className="flex items-center gap-3 p-3 rounded-2xl border border-[rgba(176,38,255,0.4)] bg-[var(--bg-surface-glass)] backdrop-blur-xl shadow-[0_-4px_32px_rgba(0,0,0,0.4),var(--glow-purple)]">
+          <div className="flex items-center gap-3 p-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] backdrop-blur-xl shadow-md">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-dim)]">{t.price_prefix}</p>
-              <p className="text-lg font-bold text-[var(--neon-purple)] truncate">{priceFormatted} ₽</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">{t.price_prefix}</p>
+              <p className="text-lg font-bold text-[var(--primary)] truncate">{priceFormatted} ₽</p>
             </div>
-            <button type="button" onClick={handleAddToCart} className="shrink-0 px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white shadow-[var(--glow-purple)] transition hover:opacity-90 active:scale-[0.98]">
+            <button type="button" onClick={handleAddToCart} className="shrink-0 px-6 py-3 rounded-xl font-semibold bg-[var(--primary)] text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]">
               {t.add_to_cart}
             </button>
           </div>

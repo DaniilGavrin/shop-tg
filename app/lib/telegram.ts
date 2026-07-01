@@ -1,4 +1,4 @@
-import type { TelegramUser, TelegramWebApp } from '../types/telegram';
+﻿import type { TelegramUser, TelegramWebApp } from '../types/telegram';
 
 const FALLBACK_USER: TelegramUser = {
   id: 0,

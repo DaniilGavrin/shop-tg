@@ -150,8 +150,8 @@ export default function CartPage() {
   if (cart.length === 0) {
     return (
       <div className="min-h-[50vh] grid place-items-center text-center px-6">
-        <h2 className="text-xl font-bold text-[var(--text-dim)] mb-4">{c.empty}</h2>
-        <button onClick={() => router.push(`/${locale}/catalog`)} className="text-[var(--neon-purple)] underline hover:text-[var(--neon-pink)] transition">{c.back_to_catalog}</button>
+        <h2 className="text-xl font-bold text-[var(--muted-foreground)] mb-4">{c.empty}</h2>
+        <button onClick={() => router.push(`/${locale}/catalog`)} className="text-[var(--primary)] underline hover:text-[var(--primary)] transition">{c.back_to_catalog}</button>
       </div>
     );
   }
@@ -160,20 +160,20 @@ export default function CartPage() {
     <>
       {/* 🔹 Toast уведомление */}
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--bg-surface-glass)] border border-[var(--neon-pink)] text-[var(--neon-pink)] text-sm font-medium backdrop-blur-md shadow-[0_0_20px_rgba(255,0,127,0.3)] animate-pulse">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-xl bg-[var(--card)] border border-[var(--neon-pink)] text-[var(--primary)] text-sm font-medium backdrop-blur-md shadow-sm animate-pulse">
           {toast}
         </div>
       )}
 
       <ScreenTitle>{t.nav.cart}</ScreenTitle>
       <div className="mt-4 flex items-center justify-between px-2">
-        <button type="button" onClick={toggleSelectAll} className="flex items-center gap-2 text-sm font-medium text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
+        <button type="button" onClick={toggleSelectAll} className="flex items-center gap-2 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary)] transition">
           <span className={`w-5 h-5 rounded border flex items-center justify-center transition ${allSelected ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)] hover:border-[var(--neon-purple)]'}`}>
             {allSelected && <span className="text-[10px] text-white">✓</span>}
           </span>
           {c.select_all}
         </button>
-        {selectedCount > 0 && <span className="text-xs text-[var(--text-dim)]">{selectedCount} {c.selected_count}</span>}
+        {selectedCount > 0 && <span className="text-xs text-[var(--muted-foreground)]">{selectedCount} {c.selected_count}</span>}
       </div>
 
       <div className="mt-2 space-y-3 pb-6">
@@ -185,32 +185,32 @@ export default function CartPage() {
             .map(([k, v]) => ({ label: formatLabel(k), value: formatSelectionValue(k, v) }));
 
           return (
-            <div key={item.productId} className={`relative rounded-2xl border p-4 transition-all ${isSelected ? 'border-[var(--neon-purple)] bg-[rgba(176,38,255,0.08)]' : 'border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)]'}`}>
-              <button type="button" onClick={() => toggleSelect(item.productId)} className={`absolute top-3 left-3 w-6 h-6 rounded-lg border flex items-center justify-center transition ${isSelected ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)] bg-[var(--bg-surface)]'}`} aria-label="Select">
+            <div key={item.productId} className={`relative rounded-2xl border p-4 transition-all ${isSelected ? 'border-[var(--neon-purple)] bg-[var(--muted)]' : 'border-[var(--border)] bg-[var(--card)]'}`}>
+              <button type="button" onClick={() => toggleSelect(item.productId)} className={`absolute top-3 left-3 w-6 h-6 rounded-lg border flex items-center justify-center transition ${isSelected ? 'border-[var(--neon-purple)] bg-[var(--neon-purple)]' : 'border-[var(--text-dim)] bg-[var(--secondary)]'}`} aria-label="Select">
                 {isSelected && <span className="text-white text-sm font-bold">✓</span>}
               </button>
-              <button type="button" onClick={() => handleRemove(item.productId)} className="absolute top-3 right-3 p-2 rounded-lg text-[var(--text-dim)] hover:text-[var(--neon-pink)]" aria-label="Remove">
+              <button type="button" onClick={() => handleRemove(item.productId)} className="absolute top-3 right-3 p-2 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--primary)]" aria-label="Remove">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
               <div className="pl-8 pr-8">
-                <h3 className={`font-bold text-[var(--text-main)] text-lg ${!isSelected && 'opacity-70'}`}>{item.name}</h3>
-                <p className="mt-1 text-xs text-[var(--neon-blue)]">{c.delivery} <span className="text-[var(--text-main)]">{item.deliveryDays}</span> {c.days}</p>
+                <h3 className={`font-bold text-[var(--foreground)] text-lg ${!isSelected && 'opacity-70'}`}>{item.name}</h3>
+                <p className="mt-1 text-xs text-[var(--primary)]">{c.delivery} <span className="text-[var(--foreground)]">{item.deliveryDays}</span> {c.days}</p>
                 {displayOptions.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-1.5">{c.options}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] mb-1.5">{c.options}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {displayOptions.map((opt, i) => (
-                        <span key={i} className="px-2 py-1 text-[11px] rounded-md border bg-[rgba(176,38,255,0.1)] text-[var(--text-main)] border-[rgba(176,38,255,0.25)]">
-                          {opt.label}: <span className="text-[var(--neon-purple)]">{opt.value}</span>
+                        <span key={i} className="px-2 py-1 text-[11px] rounded-md border bg-[var(--muted)] text-[var(--foreground)] border-[var(--border)]">
+                          {opt.label}: <span className="text-[var(--primary)]">{opt.value}</span>
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
-                <div className="mt-4 pt-3 border-t border-[rgba(176,38,255,0.15)]">
-                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-[var(--bg-surface)] border-[rgba(176,38,255,0.2)]">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-dim)]">{c.total}</span>
-                    <span className="text-xl font-bold text-[var(--neon-purple)]">{priceFormatted} ₽</span>
+                <div className="mt-4 pt-3 border-t border-[var(--border)]">
+                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-[var(--secondary)] border-[var(--border)]">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">{c.total}</span>
+                    <span className="text-xl font-bold text-[var(--primary)]">{priceFormatted} ₽</span>
                   </div>
                 </div>
               </div>
@@ -224,15 +224,15 @@ export default function CartPage() {
             type="button"
             disabled={selectedCount === 0}
             onClick={handleCheckout}
-            className={`w-full py-4 rounded-2xl font-bold text-white shadow-[var(--glow-purple)] transition active:scale-[0.98] ${
+            className={`w-full py-4 rounded-2xl font-bold text-white shadow-sm transition active:scale-[0.98] ${
               selectedCount > 0
-                ? 'bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] hover:opacity-95'
-                : 'bg-[var(--bg-surface)] border border-[rgba(176,38,255,0.3)] text-[var(--text-dim)] cursor-not-allowed'
+                ? 'bg-[var(--primary)] hover:opacity-95'
+                : 'bg-[var(--secondary)] border border-[var(--border)] text-[var(--muted-foreground)] cursor-not-allowed'
             }`}
           >
             {c.checkout_btn} ({selectedCount})
           </button>
-          <p className="mt-2 text-center text-xs text-[var(--text-dim)]">
+          <p className="mt-2 text-center text-xs text-[var(--muted-foreground)]">
             {isRu ? 'Переход к оформлению • Заказ хранится 1 час' : 'Proceed to checkout • Order valid for 1 hour'}
           </p>
         </div>

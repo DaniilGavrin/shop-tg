@@ -1,25 +1,14 @@
-'use client';
-
+﻿'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-
 import { BottomNavigation } from './components/BottomNavigation';
 import { getDisplayTelegramUser, setupTelegramWebApp } from './lib/telegram';
 import { getCurrentUser } from './lib/auth';
 import { UserProvider } from './lib/UserContext';
-
 import type { AppTab, TelegramUser } from './types/telegram';
 
-type ClientLayoutProps = {
-  children: React.ReactNode;
-};
-
 const DEFAULT_USER: TelegramUser = {
-  id: 0,
-  first_name: 'Guest',
-  last_name: '',
-  username: 'guest',
-  photo_url: '',
+  id: 0, first_name: 'Guest', last_name: '', username: 'guest', photo_url: '',
 };
 
 function getLocale(pathname: string) {
@@ -35,34 +24,21 @@ function getActiveTab(pathname: string, locale: string): AppTab {
   return 'home';
 }
 
-export function ClientLayout({ children }: ClientLayoutProps) {
+export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
   const locale = useMemo(() => getLocale(pathname), [pathname]);
-
-  const activeTab = useMemo(
-    () => getActiveTab(pathname, locale),
-    [pathname, locale]
-  );
-
-  const showBottomNav = useMemo(
-    () => !/\/catalog\/\d+$/.test(pathname),
-    [pathname]
-  );
-
+  const activeTab = useMemo(() => getActiveTab(pathname, locale), [pathname, locale]);
+  const showBottomNav = useMemo(() => !/\/catalog\/\d+$/.test(pathname), [pathname]);
   const [user, setUser] = useState<TelegramUser>(DEFAULT_USER);
 
   useEffect(() => {
     setupTelegramWebApp();
-
     let cancelled = false;
-
     const run = async () => {
       try {
         const authUser = await getCurrentUser();
-
         if (!cancelled && authUser?.user) {
           setUser({
             id: Number(authUser.user.tg_id),
@@ -71,25 +47,14 @@ export function ClientLayout({ children }: ClientLayoutProps) {
             username: authUser.user.username || '',
             photo_url: authUser.user.photo_url || '',
           });
-
           return;
         }
-      } catch {
-        // ignore auth failures
-      }
-
+      } catch {}
       const tgUser = getDisplayTelegramUser();
-
-      if (!cancelled && tgUser && tgUser.id !== 0) {
-        setUser(tgUser);
-      }
+      if (!cancelled && tgUser && tgUser.id !== 0) setUser(tgUser);
     };
-
     run();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const handleTabChange = (tab: AppTab) => {
@@ -99,32 +64,24 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       cart: `/${locale}/cart`,
       profile: `/${locale}/profile`,
     };
-
-    startTransition(() => {
-      router.push(routes[tab]);
-    });
+    startTransition(() => router.push(routes[tab]));
   };
+
   return (
     <UserProvider user={user}>
       <main className="app-shell min-h-screen w-full flex flex-col overflow-x-hidden">
-        
         {isPending && (
-          <div className="fixed top-0 left-0 right-0 h-1 bg-[var(--neon-purple)] animate-pulse z-50" />
-        )}
-
-        <section className="app-content flex-1 w-full min-w-0">
-          {children}
-        </section>
-
-        {showBottomNav ? (
-          <BottomNavigation
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
+          <div
+            className="fixed top-0 left-0 right-0 h-1 animate-pulse z-50"
+            style={{ backgroundColor: 'var(--primary)' }}
           />
+        )}
+        <section className="app-content flex-1 w-full min-w-0">{children}</section>
+        {showBottomNav ? (
+          <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
         ) : (
           <div className="safe-area-pb" />
         )}
-
       </main>
     </UserProvider>
   );

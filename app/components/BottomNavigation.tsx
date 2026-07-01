@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import type { AppTab } from '../types/telegram';
 import styles from './BottomNavigation.module.css';
 import { useRouter } from 'next/navigation';

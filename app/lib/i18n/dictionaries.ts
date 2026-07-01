@@ -1,4 +1,4 @@
-export const dictionaries = {
+﻿export const dictionaries = {
   ru: {
     home: {
       welcome: 'Добро пожаловать',

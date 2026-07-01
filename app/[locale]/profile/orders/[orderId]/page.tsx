@@ -87,7 +87,7 @@ export default function OrderDetailPage() {
       desc: isRu 
         ? 'Заказ оплачен и находится в активной разработке. Мы свяжемся с вами для уточнения деталей.' 
         : 'Order is paid and in active development. We will contact you to clarify details.',
-      color: 'text-[var(--neon-purple)]',
+      color: 'text-[var(--primary)]',
     },
     {
       status: 'failed',
@@ -125,9 +125,9 @@ export default function OrderDetailPage() {
       failed: { label: c.failed, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', icon: '❌' },
       cancelled: { label: c.cancelled, color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/30', icon: '🚫' },
       refunded: { label: c.refunded, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', icon: '↩️' },
-      in_progress: { label: c.in_progress, color: 'text-[var(--neon-purple)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.4)]', icon: '⚙️' },
+      in_progress: { label: c.in_progress, color: 'text-[var(--primary)]', bg: 'bg-[var(--muted)] border-[var(--border)]', icon: '⚙️' },
     };
-    return map[status] || { label: status, color: 'text-[var(--text-dim)]', bg: 'bg-[rgba(176,38,255,0.1)] border-[rgba(176,38,255,0.2)]', icon: '📦' };
+    return map[status] || { label: status, color: 'text-[var(--muted-foreground)]', bg: 'bg-[var(--muted)] border-[var(--border)]', icon: '📦' };
   };
 
   const renderConfigValue = (key: string, value: any) => {
@@ -197,8 +197,8 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-[60vh] grid place-items-center text-center px-6">
         <div className="text-5xl mb-4">🔒</div>
-        <h2 className="text-xl font-bold text-[var(--text-main)] mb-4">{c.login_required}</h2>
-        <button onClick={() => router.push(`/${locale}/profile`)} className="px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
+        <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">{c.login_required}</h2>
+        <button onClick={() => router.push(`/${locale}/profile`)} className="px-6 py-3 rounded-xl font-semibold bg-[var(--primary)] text-white">
           {isRu ? 'Войти' : 'Login'}
         </button>
       </div>
@@ -209,8 +209,8 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-[60vh] grid place-items-center text-center px-6">
         <div className="text-5xl mb-4">🔍</div>
-        <h2 className="text-xl font-bold text-[var(--text-main)] mb-4">{c.not_found}</h2>
-        <button onClick={() => router.push(`/${locale}/profile/orders`)} className="px-6 py-3 rounded-xl font-semibold bg-[linear-gradient(135deg,var(--neon-purple),var(--neon-pink))] text-white">
+        <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">{c.not_found}</h2>
+        <button onClick={() => router.push(`/${locale}/profile/orders`)} className="px-6 py-3 rounded-xl font-semibold bg-[var(--primary)] text-white">
           {c.back}
         </button>
       </div>
@@ -223,19 +223,19 @@ export default function OrderDetailPage() {
   return (
     <>
       <ScreenTitle>{c.order_details}</ScreenTitle>
-      <button onClick={() => router.push(`/${locale}/profile/orders`)} className="mt-4 flex items-center gap-2 text-sm text-[var(--neon-purple)] hover:text-[var(--neon-pink)] transition">
+      <button onClick={() => router.push(`/${locale}/profile/orders`)} className="mt-4 flex items-center gap-2 text-sm text-[var(--primary)] hover:text-[var(--primary)] transition">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         {c.back}
       </button>
       
       <div className="mt-4 space-y-4 pb-8">
         {/* Заголовок заказа */}
-        <div className="rounded-2xl border border-[rgba(176,38,255,0.3)] bg-[var(--bg-surface-glass)] p-5">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-1">ID Заказа</p>
-              <p className="text-lg font-mono font-bold text-[var(--text-main)]">{order.order_code}</p>
-              <p className="text-xs text-[var(--text-dim)] mt-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] mb-1">ID Заказа</p>
+              <p className="text-lg font-mono font-bold text-[var(--foreground)]">{order.order_code}</p>
+              <p className="text-xs text-[var(--muted-foreground)] mt-1">
                 {new Date(order.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
@@ -247,25 +247,25 @@ export default function OrderDetailPage() {
         </div>
 
         {/* 🔥 Справочник статусов */}
-        <div className="rounded-2xl border border-[rgba(0,240,255,0.26)] bg-[linear-gradient(145deg,rgba(9,24,45,0.92),rgba(3,7,16,0.94))] shadow-[0_0_20px_rgba(0,240,255,0.12)] overflow-hidden">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm overflow-hidden">
           <button
             type="button"
             onClick={() => setShowStatusHelp(!showStatusHelp)}
-            className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[rgba(0,240,255,0.05)]"
+            className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-[var(--muted)]"
           >
             <div className="flex items-center gap-3">
               <span className="text-xl">ℹ️</span>
               <div>
-                <h3 className="text-sm font-semibold text-[var(--text-main)]">
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">
                   {isRu ? 'Что означают статусы заказа?' : 'What do order statuses mean?'}
                 </h3>
-                <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
+                <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5">
                   {isRu ? 'Нажмите, чтобы раскрыть' : 'Tap to expand'}
                 </p>
               </div>
             </div>
             <svg
-              className={`h-5 w-5 shrink-0 text-[var(--neon-blue)] transition-transform duration-300 ${
+              className={`h-5 w-5 shrink-0 text-[var(--primary)] transition-transform duration-300 ${
                 showStatusHelp ? 'rotate-180' : ''
               }`}
               fill="none"
@@ -282,14 +282,14 @@ export default function OrderDetailPage() {
             }`}
           >
             <div className="overflow-hidden">
-              <div className="border-t border-[rgba(0,240,255,0.15)] px-5 py-4 space-y-3">
+              <div className="border-t border-[var(--border)] px-5 py-4 space-y-3">
                 {statusDescriptions.map((item) => (
                   <div
                     key={item.status}
                     className={`flex items-start gap-3 p-3 rounded-xl border ${
                       order.status === item.status
-                        ? 'border-[rgba(0,240,255,0.5)] bg-[rgba(0,240,255,0.08)]'
-                        : 'border-[rgba(176,38,255,0.15)] bg-[rgba(0,0,0,0.2)]'
+                        ? 'border-[var(--border)] bg-[var(--muted)]'
+                        : 'border-[var(--border)] bg-[var(--secondary)]'
                     }`}
                   >
                     <span className="text-xl shrink-0 mt-0.5">{item.icon}</span>
@@ -297,12 +297,12 @@ export default function OrderDetailPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`text-sm font-bold ${item.color}`}>{item.title}</span>
                         {order.status === item.status && (
-                          <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-[rgba(0,240,255,0.2)] border border-[rgba(0,240,255,0.4)] text-[var(--neon-blue)]">
+                          <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-[var(--muted)] border border-[var(--border)] text-[var(--primary)]">
                             {isRu ? 'текущий' : 'current'}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-[var(--text-dim)] leading-relaxed">{item.desc}</p>
+                      <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -312,24 +312,24 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Состав заказа */}
-        <div className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5">
-          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-4">{c.items}</h3>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] mb-4">{c.items}</h3>
           <div className="space-y-4">
             {order.items.map((item, idx) => (
-              <div key={idx} className="pb-4 border-b border-[rgba(176,38,255,0.15)] last:border-0 last:pb-0">
+              <div key={idx} className="pb-4 border-b border-[var(--border)] last:border-0 last:pb-0">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-[var(--text-main)]">{item.product_name}</h4>
-                  <span className="font-bold text-[var(--neon-purple)]">{item.price_rub.toLocaleString('ru-RU')} ₽</span>
+                  <h4 className="font-semibold text-[var(--foreground)]">{item.product_name}</h4>
+                  <span className="font-bold text-[var(--primary)]">{item.price_rub.toLocaleString('ru-RU')} ₽</span>
                 </div>
-                <p className="text-xs text-[var(--neon-blue)] mb-3">{c.delivery}: {item.delivery_days} {c.days}</p>
+                <p className="text-xs text-[var(--primary)] mb-3">{c.delivery}: {item.delivery_days} {c.days}</p>
                 {Object.keys(item.config).length > 0 && (
-                  <div className="grid grid-cols-1 gap-2 bg-[rgba(0,0,0,0.2)] rounded-xl p-3">
+                  <div className="grid grid-cols-1 gap-2 bg-[var(--secondary)] rounded-xl p-3">
                     {(() => {
                       const parsedConfig = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
                       return Object.entries(parsedConfig).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-xs">
-                          <span className="text-[var(--text-dim)]">{formatLabel(key)}:</span>
-                          <span className="text-[var(--text-main)] font-medium text-right max-w-[60%] break-words">
+                          <span className="text-[var(--muted-foreground)]">{formatLabel(key)}:</span>
+                          <span className="text-[var(--foreground)] font-medium text-right max-w-[60%] break-words">
                             {renderConfigValue(key, value)}
                           </span>
                         </div>
@@ -343,28 +343,28 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Итого и Контакты */}
-        <div className="rounded-2xl border border-[rgba(176,38,255,0.26)] bg-[var(--bg-surface-glass)] p-5 space-y-4">
-          <div className="flex justify-between items-center pt-2 border-t border-[rgba(176,38,255,0.15)]">
-            <span className="text-sm font-bold text-[var(--text-dim)] uppercase tracking-[0.1em]">{c.total}</span>
-            <span className="text-2xl font-bold text-[var(--neon-purple)]">{order.total_rub.toLocaleString('ru-RU')} ₽</span>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 space-y-4">
+          <div className="flex justify-between items-center pt-2 border-t border-[var(--border)]">
+            <span className="text-sm font-bold text-[var(--muted-foreground)] uppercase tracking-[0.1em]">{c.total}</span>
+            <span className="text-2xl font-bold text-[var(--primary)]">{order.total_rub.toLocaleString('ru-RU')} ₽</span>
           </div>
-          <div className="pt-4 border-t border-[rgba(176,38,255,0.15)]">
-            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--text-dim)] mb-3">{c.contacts}</h3>
+          <div className="pt-4 border-t border-[var(--border)]">
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] mb-3">{c.contacts}</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-[var(--text-dim)]">{c.email}:</span>
-                <span className="text-[var(--text-main)]">{order.client_email}</span>
+                <span className="text-[var(--muted-foreground)]">{c.email}:</span>
+                <span className="text-[var(--foreground)]">{order.client_email}</span>
               </div>
               {order.client_phone && (
                 <div className="flex justify-between">
-                  <span className="text-[var(--text-dim)]">{c.phone}:</span>
-                  <span className="text-[var(--text-main)]">{order.client_phone}</span>
+                  <span className="text-[var(--muted-foreground)]">{c.phone}:</span>
+                  <span className="text-[var(--foreground)]">{order.client_phone}</span>
                 </div>
               )}
               {order.client_comment && (
-                <div className="mt-3 pt-3 border-t border-[rgba(176,38,255,0.1)]">
-                  <p className="text-[var(--text-dim)] text-xs mb-1">{c.comment}:</p>
-                  <p className="text-[var(--text-main)] bg-[rgba(176,38,255,0.1)] p-3 rounded-xl text-sm italic">
+                <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                  <p className="text-[var(--muted-foreground)] text-xs mb-1">{c.comment}:</p>
+                  <p className="text-[var(--foreground)] bg-[var(--muted)] p-3 rounded-xl text-sm italic">
                     "{order.client_comment}"
                   </p>
                 </div>
@@ -380,8 +380,8 @@ export default function OrderDetailPage() {
           disabled={!canCancel}
           className={`w-full py-4 rounded-2xl font-bold text-white transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
             canCancel
-              ? 'bg-[linear-gradient(135deg,var(--neon-pink),#ff4d4d)] hover:opacity-90 shadow-[0_0_20px_rgba(255,0,127,0.3)]'
-              : 'bg-[var(--bg-surface)] border border-[rgba(176,38,255,0.2)] text-[var(--text-dim)] cursor-not-allowed opacity-60'
+              ? 'bg-[var(--destructive)] hover:opacity-90 shadow-sm'
+              : 'bg-[var(--secondary)] border border-[var(--border)] text-[var(--muted-foreground)] cursor-not-allowed opacity-60'
           }`}
         >
           {canceling ? (
@@ -399,7 +399,7 @@ export default function OrderDetailPage() {
           )}
         </button>
         {!canCancel && order.status !== 'pending' && (
-          <p className="text-center text-xs text-[var(--text-dim)]">
+          <p className="text-center text-xs text-[var(--muted-foreground)]">
             {isRu ? 'Отмена невозможна: заказ уже обрабатывается или оплачен.' : 'Cancellation is not available: order is already processed or paid.'}
           </p>
         )}

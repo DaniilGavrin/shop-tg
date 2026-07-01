@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef } from 'react';
 
@@ -140,15 +140,15 @@ export function TelegramLoginButton() {
         rounded-xl
         border
         border-[var(--neon-purple)]
-        bg-[rgba(176,38,255,0.12)]
+        bg-primary/10
         px-4
         py-2
         text-sm
         font-semibold
-        text-[var(--neon-purple)]
+        text-primary
         transition
         hover:border-[var(--neon-pink)]
-        hover:text-[var(--neon-pink)]
+        hover:text-destructive
       "
     >
       Login with Telegram

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { ProductCard } from './ProductCard';
@@ -64,7 +64,7 @@ export function FeaturedProducts() {
 
   return (
     <section className="mt-8">
-      <h2 className="mb-4 text-xl font-bold text-[var(--text-main)]">
+      <h2 className="mb-4 text-xl font-bold text-foreground">
         {t.home.featured_title}
       </h2>
       
@@ -80,10 +80,10 @@ export function FeaturedProducts() {
 function FeaturedSkeleton() {
   return (
     <section className="mt-8 animate-pulse">
-      <div className="mb-4 h-7 w-40 rounded bg-[var(--bg-surface)]" />
+      <div className="mb-4 h-7 w-40 rounded bg-secondary" />
       <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-64 rounded-3xl bg-[var(--bg-surface)]" />
+          <div key={i} className="h-64 rounded-xl bg-secondary" />
         ))}
       </div>
     </section>
